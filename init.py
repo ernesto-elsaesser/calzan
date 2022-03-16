@@ -21,56 +21,42 @@ for color in COLORS:
     "Siegpunkte": 0,
   }
 
-lands = [
-  "Stroh", "num": 4, "y": 0, "x": 2 },
-  "Holz", "num": 6, "y": 0, "x": 4 },
-  "Stroh", "num": 9, "y": 0, "x": 6 },
-  "Lehm", "num": 2, "y": 1, "x": 1 },
-  "Holz", "num": 5, "y": 1, "x": 3 },
-  "Schafe", "num": 12, "y": 1, "x": 5 },
-  "Schafe", "num": 4, "y": 1, "x": 7 },
-  "Schafe", "num": 9, "y": 2, "x": 0 },
-  "Lehm", "num": 8, "y": 2, "x": 2 },
-  "Sand", "num": None, "y": 2, "x": 4 },
-  "Granit", "num": 8, "y": 2, "x": 6 },
-  "Schafe", "num": 10, "y": 2, "x": 8 },
-  "Holz", "num": 3, "y": 3, "x": 1 },
-  "Granit", "num": 5, "y": 3, "x": 3 },
-  "Lehm", "num": 10, "y": 3, "x": 5 },
-  "Holz", "num": 11, "y": 3, "x": 7 },
-  "Stroh", "num": 3, "y": 4, "x": 2 },
-  "Stroh", "num": 6, "y": 4, "x": 4 },
-  "Granit", "num": 11, "y": 4, "x": 6 },
+config = [
+  ("Stroh", 4, 0, 2),
+  ("Holz", 6, 0, 4),
+  ("Stroh", 9, 0, 6),
+  ("Lehm", 2, 1, 1),
+  ("Holz", 5, 1, 3),
+  ("Schafe", 12, 1, 5),
+  ("Schafe", 4, 1, 7),
+  ("Schafe", 9, 2, 0),
+  ("Lehm", 8, 2, 2),
+  ("Sand", 0, 2, 4),
+  ("Granit", 8, 2, 6),
+  ("Schafe", 10, 2, 8),
+  ("Holz", 3, 3, 1),
+  ("Granit", 5, 3, 3),
+  ("Lehm", 10, 3, 5),
+  ("Holz", 11, 3, 7),
+  ("Stroh", 3, 4, 2),
+  ("Stroh", 6, 4, 4),
+  ("Granit", 11, 4, 6),
 ]
 
 tiles = []
 
-for land, num in zip(lands, nums):
+for land, num, y, x in config:
     tiles.append({
         "type": land,
         "num": num,
-
-tiles = [
-  { "type": "Stroh", "num": 4, "y": 0, "x": 2 },
-  { "type": "Holz", "num": 6, "y": 0, "x": 4 },
-  { "type": "Stroh", "num": 9, "y": 0, "x": 6 },
-  { "type": "Lehm", "num": 2, "y": 1, "x": 1 },
-  { "type": "Holz", "num": 5, "y": 1, "x": 3 },
-  { "type": "Schafe", "num": 12, "y": 1, "x": 5 },
-  { "type": "Schafe", "num": 4, "y": 1, "x": 7 },
-  { "type": "Schafe", "num": 9, "y": 2, "x": 0 },
-  { "type": "Lehm", "num": 8, "y": 2, "x": 2 },
-  { "type": "Sand", "num": None, "y": 2, "x": 4 },
-  { "type": "Granit", "num": 8, "y": 2, "x": 6 },
-  { "type": "Schafe", "num": 10, "y": 2, "x": 8 },
-  { "type": "Holz", "num": 3, "y": 3, "x": 1 },
-  { "type": "Granit", "num": 5, "y": 3, "x": 3 },
-  { "type": "Lehm", "num": 10, "y": 3, "x": 5 },
-  { "type": "Holz", "num": 11, "y": 3, "x": 7 },
-  { "type": "Stroh", "num": 3, "y": 4, "x": 2 },
-  { "type": "Stroh", "num": 6, "y": 4, "x": 4 },
-  { "type": "Granit", "num": 11, "y": 4, "x": 6 },
-]
+        "x": x,
+        "y": y,
+        "above": {"color": "", "city": False},
+        "below": {"color": "", "city": False},
+        "upright": {"color": ""},
+        "right": {"color": ""},
+        "lowright": {"color": ""},
+    })
 
 data = {
     'dice': 0,

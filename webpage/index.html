@@ -32,14 +32,22 @@
             .tile {
                 height: 100px;
                 width: 100px;
+                transform: translate(-50px, -50px);
+            }
+            .town {
+                height: 30px;
+                width: 30px;
+                transform: translate(-15px, -15px);
             }
             .city {
-                height: 50px;
-                width: 50px;
+                height: 60px;
+                width: 60px;
+                transform: translate(-30px, -30px);
             }
             .road {
-                height: 25px;
-                width: 25px;
+                height: 10px;
+                width: 10px;
+                transform: translate(-5px, -5px);
             }
         </style>
     </head>
@@ -59,7 +67,7 @@
         <script src="/__/firebase/init.js"></script>
         <script>
 
-const players = document.getElementById("dice");
+const players = document.getElementById("players");
 const dice = document.getElementById("dice");
 const board = document.getElementById("board");
 
@@ -74,6 +82,20 @@ var colorMap = {
 
 var data = null;
 var chosenColor = null;
+
+function createToken(cls, top, left, color, text) {
+    var token = document.createElement('div');
+    token.className = 'token ' + cls;
+    token.style.top = top.toString() + 'px';
+    token.style.left = left.toString() + 'px';
+    token.style.backgroundColor = color;
+    if (text != null) {
+        const label = document.createElement('p');
+        label.innerHTML = text;
+        token.appendChild(label);
+    }
+    return token;
+}
 
 function update() {
 
@@ -96,28 +118,53 @@ function update() {
     board.innerHTML = "";
 
     for (const tileData of Object.values(data.tiles)) {
-        var tile = document.createElement('div');
-        tile.className = 'token tile';
-        var top = 60 + (tileData.y * 100);
-        var left = 30 + (tileData.x * 60);
-        tile.style.top = top.toString() + 'px';
-        tile.style.left = left.toString() + 'px';
-        tile.style.backgroundColor = colorMap[tileData.type];
-        if (tileData.num) {
-            var label = document.createElement('p');
-            label.innerHTML = tileData.num.toString();
-            tile.appendChild(label);
-        }
+        const tileColor = colorMap[tileData.type];
+        const top = 110 + (tileData.y * 100);
+        const left = 80 + (tileData.x * 60);
+        const text = tileData.num > 0 ? tileData.num.toString(): null;
+        const tile = createToken('tile', top, left, tileColor, text);
         board.appendChild(tile);
+
+        if (tileData.above.color) {
+            const aboveClass = tileData.above.city ? 'city' : 'town';
+            const above = createToken(aboveClass, top - 68, left,
+                                        tileData.above.color);
+            board.appendChild(above);
+        }
+
+        if (tileData.below.color) {
+            const belowClass = tileData.below.city ? 'city' : 'town';
+            const below = createToken(belowClass, top + 68, left,
+                                        tileData.below.color);
+            board.appendChild(below);
+        }
+
+        if (tileData.right.color) {
+            const right = createToken('road', top, left - 60,
+                                        tileData.right.color);
+            board.appendChild(right);
+        }
+
+        if (tileData.upright.color) {
+            const upright = createToken('road', top - 50, left - 30,
+                                        tileData.upright.color);
+            board.appendChild(upright);
+        }
+
+        if (tileData.lowright.color) {
+            const lowright = createToken('road', top + 50, left - 30,
+                                        tileData.lowright.color);
+            board.appendChild(lowright);
+        }
     }
 
     if (chosenColor == null) {
         return;
     }
 
-    const playerData = data.players[chosenColor];
+    const stats = data.players[chosenColor];
 
-    for (const [name, amount] of Object.entries(playerData.stats)) {
+    for (const [name, amount] of Object.entries(stats)) {
         document.getElementById(name).innerHTML = amount.toString();
     }
 }

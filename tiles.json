@@ -1,78 +1,116 @@
 {
-  "00": {
-    "type": "Weizen",
-    "number": 4
+  "0": {
+    "type": "Stroh",
+    "num": 4,
+    "y": 0,
+    "x": 2
   },
-  "01": {
-    "type": "Wald",
-    "number": 6
+  "1": {
+    "type": "Holz",
+    "num": 6,
+    "y": 0,
+    "x": 4
   },
-  "02": {
-    "type": "Weizen",
-    "number": 9
+  "2": {
+    "type": "Stroh",
+    "num": 9,
+    "y": 0,
+    "x": 6
+  },
+  "3": {
+    "type": "Lehm",
+    "num": 2,
+    "y": 1,
+    "x": 1
+  },
+  "4": {
+    "type": "Holz",
+    "num": 5,
+    "y": 1,
+    "x": 3
+  },
+  "5": {
+    "type": "Schafe",
+    "num": 12,
+    "y": 1,
+    "x": 5
+  },
+  "6": {
+    "type": "Schafe",
+    "num": 4,
+    "y": 1,
+    "x": 7
+  },
+  "7": {
+    "type": "Schafe",
+    "num": 9,
+    "y": 2,
+    "x": 0
+  },
+  "8": {
+    "type": "Lehm",
+    "num": 8,
+    "y": 2,
+    "x": 2
+  },
+  "9": {
+    "type": "Sand",
+    "num": null,
+    "y": 2,
+    "x": 4
   },
   "10": {
-    "type": "Lehm",
-    "number": 2
+    "type": "Granit",
+    "num": 8,
+    "y": 2,
+    "x": 6
   },
   "11": {
-    "type": "Wald",
-    "number": 5
+    "type": "Schafe",
+    "num": 10,
+    "y": 2,
+    "x": 8
   },
   "12": {
-    "type": "Wiese",
-    "number": 12
+    "type": "Holz",
+    "num": 3,
+    "y": 3,
+    "x": 1
   },
   "13": {
-    "type": "Wiese",
-    "number": 4
+    "type": "Granit",
+    "num": 5,
+    "y": 3,
+    "x": 3
   },
-  "20": {
-    "type": "Wiese",
-    "number": 9
-  },
-  "21": {
+  "14": {
     "type": "Lehm",
-    "number": 8
+    "num": 10,
+    "y": 3,
+    "x": 5
   },
-  "22": {
-    "type": "Wüste",
-    "number": null
+  "15": {
+    "type": "Holz",
+    "num": 11,
+    "y": 3,
+    "x": 7
   },
-  "23": {
-    "type": "Berg",
-    "number": 8
+  "16": {
+    "type": "Stroh",
+    "num": 3,
+    "y": 4,
+    "x": 2
   },
-  "24": {
-    "type": "Wiese",
-    "number": 10
+  "17": {
+    "type": "Stroh",
+    "num": 6,
+    "y": 4,
+    "x": 4
   },
-  "30": {
-    "type": "Wald",
-    "number": 3
-  },
-  "31": {
-    "type": "Berg",
-    "number": 5
-  },
-  "32": {
-    "type": "Lehm",
-    "number": 10
-  },
-  "33": {
-    "type": "Wald",
-    "number": 11
-  },
-  "40": {
-    "type": "Weizen",
-    "number": 3
-  },
-  "41": {
-    "type": "Weizen",
-    "number": 6
-  },
-  "42": {
-    "type": "Berg",
-    "number": 11
+  "18": {
+    "type": "Granit",
+    "num": 11,
+    "y": 4,
+    "x": 6
   }
 }

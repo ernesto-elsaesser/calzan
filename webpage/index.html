@@ -6,13 +6,119 @@
         <meta charset="utf-8" />
 
         <style>
-            input:focus { outline: none; }
-            a { display: block; text-decoration: none; outline: none; color: black; }
+            .player {
+                width: 100px;
+                height: 40px;
+                display: inline-block;
+            }
+            #board {
+                background-color: deepskyblue;
+                width: 640px;
+                height: 640px;
+                margin: 20px auto;
+                position: relative;
+                border-radius: 50px;
+            }
+            .tile {
+                height: 100px;
+                width: 100px;
+                border-radius: 50%;
+                display: inline-block;
+                position: absolute;
+            }
+            .tile p {
+                text-align: center;
+                margin-top: 35px;
+                font-size: 32px;
+            }
         </style>
     </head>
     <body>
         <div style="text-align: center">
-            <p style="margin-top: 200px; font-size: 20;">Bald wird gecalzt!</p>
+            <h3>SPIELER</h3>
+            <div>
+                <button class="player" style="background-color: red" onclick="choose('Rot')"></button>
+                <button class="player" style="background-color: blue" onclick="choose('Blau')"></button>
+            </div>
+            <h3>ROHSTOFFE</h3>
+            <div>
+                Holz: <span id="wood">0</span> Lehm: <span id="clay">0</span> Stroh: <span id="straw">0</span> Schafe: <span id="sheep">0</span> Granit: <span id="granite">0</span>
+            </div>
+            <div id="board"></div>
         </div>
+
+        <script src="/__/firebase/8.10.1/firebase-app.js"></script>
+        <script src="/__/firebase/8.10.1/firebase-database.js"></script>
+        <script src="/__/firebase/init.js"></script>
+        <script>
+
+const board = document.getElementById("board");
+
+var colorMap = {
+    'Sand': 'moccasin',
+    'Holz': 'darkgreen',
+    'Lehm': 'chocolate',
+    'Stroh': 'gold',
+    'Schafe': 'chartreuse',
+    'Granit': 'dimgray'
+};
+
+var resourceLabels = {
+    'Holz': document.getElementById('wood'),
+    'Lehm': document.getElementById('clay'),
+    'Stroh': document.getElementById('straw'),
+    'Schafe': document.getElementById('sheep'),
+    'Granit': document.getElementById('granite')
+};
+
+var data = null;
+var chosenPlayer = null;
+
+function update() {
+
+    if (data == null) {
+        return;
+    }
+
+    board.innerHTML = "";
+
+    for (const [key, tileData] of Object.entries(data.tiles)) {
+        var tile = document.createElement('div');
+        tile.className = 'tile';
+        var top = 60 + (tileData.y * 100);
+        var left = 30 + (tileData.x * 60);
+        tile.style.top = top.toString() + 'px';
+        tile.style.left = left.toString() + 'px';
+        tile.style.backgroundColor = colorMap[tileData.type];
+        if (tileData.num) {
+            var label = document.createElement('p');
+            label.innerHTML = tileData.num.toString();
+            tile.appendChild(label);
+        }
+        board.appendChild(tile);
+    }
+
+    if (chosenPlayer == null) {
+        return;
+    }
+
+    for (const [type, amount] of Object.entries(data.players[chosenPlayer])) {
+        resourceLabels[type].innerHTML = amount.toString();
+    }
+}
+
+
+function choose(player) {
+    chosenPlayer = player;
+    update();
+}
+
+const ref = firebase.database().ref('/');
+
+ref.on('value', (snapshot) => {
+  data = snapshot.val();
+  update();
+});
+        </script>
     </body>
 </html>

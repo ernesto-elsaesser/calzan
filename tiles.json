@@ -1,0 +1,78 @@
+{
+  "00": {
+    "type": "Weizen",
+    "number": 4
+  },
+  "01": {
+    "type": "Wald",
+    "number": 6
+  },
+  "02": {
+    "type": "Weizen",
+    "number": 9
+  },
+  "10": {
+    "type": "Lehm",
+    "number": 2
+  },
+  "11": {
+    "type": "Wald",
+    "number": 5
+  },
+  "12": {
+    "type": "Wiese",
+    "number": 12
+  },
+  "13": {
+    "type": "Wiese",
+    "number": 4
+  },
+  "20": {
+    "type": "Wiese",
+    "number": 9
+  },
+  "21": {
+    "type": "Lehm",
+    "number": 8
+  },
+  "22": {
+    "type": "Wüste",
+    "number": null
+  },
+  "23": {
+    "type": "Berg",
+    "number": 8
+  },
+  "24": {
+    "type": "Wiese",
+    "number": 10
+  },
+  "30": {
+    "type": "Wald",
+    "number": 3
+  },
+  "31": {
+    "type": "Berg",
+    "number": 5
+  },
+  "32": {
+    "type": "Lehm",
+    "number": 10
+  },
+  "33": {
+    "type": "Wald",
+    "number": 11
+  },
+  "40": {
+    "type": "Weizen",
+    "number": 3
+  },
+  "41": {
+    "type": "Weizen",
+    "number": 6
+  },
+  "42": {
+    "type": "Berg",
+    "number": 11
+  }
+}

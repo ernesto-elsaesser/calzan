@@ -12,9 +12,9 @@
                 display: inline-block;
             }
             #board {
-                background-color: deepskyblue;
-                width: 640px;
-                height: 640px;
+                background-color: lightblue;
+                width: 900px;
+                height: 800px;
                 margin: 20px auto;
                 position: relative;
                 border-radius: 50px;
@@ -22,32 +22,27 @@
             .token {
                 position: absolute;
                 border-radius: 50%;
-            }
-            .token p {
-                text-align: center;
-                vertical-align: center;
-                height: 100%;
-                font-size: 32px;
+                border: 1px solid black;
             }
             .tile {
                 height: 100px;
                 width: 100px;
-                transform: translate(-50px, -50px);
-            }
-            .town {
-                height: 30px;
-                width: 30px;
-                transform: translate(-15px, -15px);
-            }
-            .city {
-                height: 60px;
-                width: 60px;
-                transform: translate(-30px, -30px);
+                transform: translate(-51px, -51px);
             }
             .road {
-                height: 10px;
-                width: 10px;
-                transform: translate(-5px, -5px);
+                height: 12px;
+                width: 12px;
+                transform: translate(-7px, -7px);
+            }
+            .town {
+                height: 32px;
+                width: 32px;
+                transform: translate(-17px, -17px);
+            }
+            .bandit {
+                height: 16px;
+                width: 16px;
+                transform: translate(-9px, -9px);
             }
         </style>
     </head>
@@ -56,7 +51,7 @@
             <h3>SPIELER</h3>
             <div id="players"></div>
             <div style="margin: 20px">
-                Holz: <span id="Holz">0</span> Lehm: <span id="Lehm">0</span> Stroh: <span id="Stroh">0</span> Schafe: <span id="Schafe">0</span> Granit: <span id="Granit">0</span> Siegpunkte: <span id="Siegpunkte">0</span>
+                Holz: <span id="Holz">0</span> Lehm: <span id="Lehm">0</span> Stroh: <span id="Stroh">0</span> Schafe: <span id="Schafe">0</span> Erz: <span id="Erz">0</span> Siegpunkte: <span id="Siegpunkte">0</span>
             </div>
             <div>Würfel: <span id="dice">-</span></div>
             <div id="board"></div>
@@ -72,28 +67,24 @@ const dice = document.getElementById("dice");
 const board = document.getElementById("board");
 
 var colorMap = {
+    'Meer': 'navy',
     'Sand': 'moccasin',
     'Holz': 'darkgreen',
     'Lehm': 'chocolate',
     'Stroh': 'gold',
     'Schafe': 'chartreuse',
-    'Granit': 'dimgray'
+    'Erz': 'dimgray'
 };
 
 var data = null;
 var chosenColor = null;
 
-function createToken(cls, top, left, color, text) {
+function createToken(cls, top, left, color) {
     var token = document.createElement('div');
     token.className = 'token ' + cls;
     token.style.top = top.toString() + 'px';
     token.style.left = left.toString() + 'px';
     token.style.backgroundColor = color;
-    if (text != null) {
-        const label = document.createElement('p');
-        label.innerHTML = text;
-        token.appendChild(label);
-    }
     return token;
 }
 
@@ -119,42 +110,61 @@ function update() {
 
     for (const tileData of Object.values(data.tiles)) {
         const tileColor = colorMap[tileData.type];
-        const top = 110 + (tileData.y * 100);
+        const top = 120 + (tileData.y * 100);
         const left = 80 + (tileData.x * 60);
-        const text = tileData.num > 0 ? tileData.num.toString(): null;
-        const tile = createToken('tile', top, left, tileColor, text);
+        const tile = createToken('tile', top, left, tileColor);
+
+        if (tileData.num > 0) {
+            const label = document.createElement('p');
+            label.innerHTML = tileData.num.toString();
+            label.style.fontSize = '32px';
+            label.style.textAlign = 'center';
+            label.style.verticalAlign = 'center';
+            label.style.heigth = '100%';
+            tile.appendChild(label);
+        }
+
         board.appendChild(tile);
 
         if (tileData.above.color) {
-            const aboveClass = tileData.above.city ? 'city' : 'town';
-            const above = createToken(aboveClass, top - 68, left,
-                                        tileData.above.color);
+            const above = createToken('town', top - 68, left, tileData.above.color);
+            if (tileData.above.city) {
+                above.innerHTML = 'x';
+                above.style.fontSize = '24px';
+            }
             board.appendChild(above);
         }
 
         if (tileData.below.color) {
-            const belowClass = tileData.below.city ? 'city' : 'town';
-            const below = createToken(belowClass, top + 68, left,
-                                        tileData.below.color);
+            const below = createToken('town', top + 68, left, tileData.below.color);
+            if (tileData.below.city) {
+                below.innerHTML = 'x';
+                below.style.fontSize = '24px';
+            }
             board.appendChild(below);
         }
 
         if (tileData.right.color) {
-            const right = createToken('road', top, left - 60,
+            const right = createToken('road', top, left + 60,
                                         tileData.right.color);
             board.appendChild(right);
         }
 
         if (tileData.upright.color) {
-            const upright = createToken('road', top - 50, left - 30,
+            const upright = createToken('road', top - 50, left + 30,
                                         tileData.upright.color);
             board.appendChild(upright);
         }
 
         if (tileData.lowright.color) {
-            const lowright = createToken('road', top + 50, left - 30,
+            const lowright = createToken('road', top + 50, left + 30,
                                         tileData.lowright.color);
             board.appendChild(lowright);
+        }
+
+        if (tileData.bandit) {
+            const bandit = createToken('bandit', top - 30, left, 'black');
+            board.appendChild(bandit);
         }
     }
 

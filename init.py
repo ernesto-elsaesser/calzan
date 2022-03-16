@@ -2,7 +2,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
 
-COLORS = ['red', 'blue', 'yellow', 'green']
+COLORS = ['red', 'blue', 'yellow', 'lime']
 
 cred = credentials.Certificate('serviceAccountKey.json')
 
@@ -22,25 +22,49 @@ for color in COLORS:
   }
 
 config = [
-  ("Stroh", 4, 0, 2),
-  ("Holz", 6, 0, 4),
-  ("Stroh", 9, 0, 6),
-  ("Lehm", 2, 1, 1),
-  ("Holz", 5, 1, 3),
-  ("Schafe", 12, 1, 5),
-  ("Schafe", 4, 1, 7),
-  ("Schafe", 9, 2, 0),
-  ("Lehm", 8, 2, 2),
-  ("Sand", 0, 2, 4),
-  ("Granit", 8, 2, 6),
-  ("Schafe", 10, 2, 8),
-  ("Holz", 3, 3, 1),
-  ("Granit", 5, 3, 3),
-  ("Lehm", 10, 3, 5),
-  ("Holz", 11, 3, 7),
-  ("Stroh", 3, 4, 2),
-  ("Stroh", 6, 4, 4),
-  ("Granit", 11, 4, 6),
+  ("Meer", 0, 0, 3),
+  ("Meer", 0, 0, 5),
+  ("Meer", 0, 0, 7),
+  ("Meer", 0, 0, 9),
+
+  ("Meer", 0, 1, 2),
+  ("Stroh", 4, 1, 4),
+  ("Holz", 6, 1, 6),
+  ("Stroh", 9, 1, 8),
+  ("Meer", 0, 1, 10),
+
+  ("Meer", 0, 2, 1),
+  ("Lehm", 2, 2, 3),
+  ("Holz", 5, 2, 5),
+  ("Schafe", 12, 2, 7),
+  ("Schafe", 4, 2, 9),
+  ("Meer", 0, 2, 11),
+
+  ("Meer", 0, 3, 0),
+  ("Schafe", 9, 3, 2),
+  ("Lehm", 8, 3, 4),
+  ("Sand", 0, 3, 6),
+  ("Erz", 8, 3, 8),
+  ("Schafe", 10, 3, 10),
+  ("Meer", 0, 3, 12),
+
+  ("Meer", 0, 4, 1),
+  ("Holz", 3, 4, 3),
+  ("Erz", 5, 4, 5),
+  ("Lehm", 10, 4, 7),
+  ("Holz", 11, 4, 9),
+  ("Meer", 0, 4, 11),
+
+  ("Meer", 0, 5, 2),
+  ("Stroh", 3, 5, 4),
+  ("Stroh", 6, 5, 6),
+  ("Erz", 11, 5, 8),
+  ("Meer", 0, 5, 10),
+
+  ("Meer", 0, 6, 3),
+  ("Meer", 0, 6, 5),
+  ("Meer", 0, 6, 7),
+  ("Meer", 0, 6, 9),
 ]
 
 tiles = []
@@ -56,6 +80,7 @@ for land, num, y, x in config:
         "upright": {"color": ""},
         "right": {"color": ""},
         "lowright": {"color": ""},
+        "bandit": land == 'Sand',
     })
 
 data = {

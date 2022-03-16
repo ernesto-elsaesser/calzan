@@ -19,31 +19,38 @@
                 position: relative;
                 border-radius: 50px;
             }
+            .token {
+                position: absolute;
+                border-radius: 50%;
+            }
+            .token p {
+                text-align: center;
+                vertical-align: center;
+                height: 100%;
+                font-size: 32px;
+            }
             .tile {
                 height: 100px;
                 width: 100px;
-                border-radius: 50%;
-                display: inline-block;
-                position: absolute;
             }
-            .tile p {
-                text-align: center;
-                margin-top: 35px;
-                font-size: 32px;
+            .city {
+                height: 50px;
+                width: 50px;
+            }
+            .road {
+                height: 25px;
+                width: 25px;
             }
         </style>
     </head>
     <body>
         <div style="text-align: center">
             <h3>SPIELER</h3>
-            <div>
-                <button class="player" style="background-color: red" onclick="choose('Rot')"></button>
-                <button class="player" style="background-color: blue" onclick="choose('Blau')"></button>
+            <div id="players"></div>
+            <div style="margin: 20px">
+                Holz: <span id="Holz">0</span> Lehm: <span id="Lehm">0</span> Stroh: <span id="Stroh">0</span> Schafe: <span id="Schafe">0</span> Granit: <span id="Granit">0</span> Siegpunkte: <span id="Siegpunkte">0</span>
             </div>
-            <h3>ROHSTOFFE</h3>
-            <div>
-                Holz: <span id="wood">0</span> Lehm: <span id="clay">0</span> Stroh: <span id="straw">0</span> Schafe: <span id="sheep">0</span> Granit: <span id="granite">0</span>
-            </div>
+            <div>Würfel: <span id="dice">-</span></div>
             <div id="board"></div>
         </div>
 
@@ -52,6 +59,8 @@
         <script src="/__/firebase/init.js"></script>
         <script>
 
+const players = document.getElementById("dice");
+const dice = document.getElementById("dice");
 const board = document.getElementById("board");
 
 var colorMap = {
@@ -63,16 +72,8 @@ var colorMap = {
     'Granit': 'dimgray'
 };
 
-var resourceLabels = {
-    'Holz': document.getElementById('wood'),
-    'Lehm': document.getElementById('clay'),
-    'Stroh': document.getElementById('straw'),
-    'Schafe': document.getElementById('sheep'),
-    'Granit': document.getElementById('granite')
-};
-
 var data = null;
-var chosenPlayer = null;
+var chosenColor = null;
 
 function update() {
 
@@ -80,11 +81,23 @@ function update() {
         return;
     }
 
+    players.innerHTML = "";
+
+    for (const color of Object.keys(data.players)) {
+        const button = document.createElement('button');
+        button.className = 'player';
+        button.style.backgroundColor = color;
+        button.onclick = function() { chosenColor = color; update(); };
+        players.appendChild(button);
+    }
+
+    dice.innerHTML = data.dice.toString();
+
     board.innerHTML = "";
 
-    for (const [key, tileData] of Object.entries(data.tiles)) {
+    for (const tileData of Object.values(data.tiles)) {
         var tile = document.createElement('div');
-        tile.className = 'tile';
+        tile.className = 'token tile';
         var top = 60 + (tileData.y * 100);
         var left = 30 + (tileData.x * 60);
         tile.style.top = top.toString() + 'px';
@@ -98,24 +111,18 @@ function update() {
         board.appendChild(tile);
     }
 
-    if (chosenPlayer == null) {
+    if (chosenColor == null) {
         return;
     }
 
-    for (const [type, amount] of Object.entries(data.players[chosenPlayer])) {
-        resourceLabels[type].innerHTML = amount.toString();
+    const playerData = data.players[chosenColor];
+
+    for (const [name, amount] of Object.entries(playerData.stats)) {
+        document.getElementById(name).innerHTML = amount.toString();
     }
 }
 
-
-function choose(player) {
-    chosenPlayer = player;
-    update();
-}
-
-const ref = firebase.database().ref('/');
-
-ref.on('value', (snapshot) => {
+firebase.database().ref('/').on('value', (snapshot) => {
   data = snapshot.val();
   update();
 });

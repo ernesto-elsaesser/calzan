@@ -9,6 +9,7 @@
             .player {
                 width: 100px;
                 height: 40px;
+                font-weight: bold;
                 display: inline-block;
             }
             #board {
@@ -44,6 +45,12 @@
                 width: 16px;
                 transform: translate(-9px, -9px);
             }
+            .port {
+                height: 10px;
+                width: 10px;
+                border: none;
+                transform: translate(-5px, -5px);
+            }
         </style>
     </head>
     <body>
@@ -72,8 +79,9 @@ var colorMap = {
     'Holz': 'darkgreen',
     'Lehm': 'chocolate',
     'Stroh': 'gold',
-    'Schafe': 'chartreuse',
-    'Erz': 'dimgray'
+    'Schafe': 'greenyellow',
+    'Erz': 'lightslategray',
+    'Alle': 'white'
 };
 
 var data = null;
@@ -101,6 +109,7 @@ function update() {
         button.className = 'player';
         button.style.backgroundColor = color;
         button.onclick = function() { chosenColor = color; update(); };
+        button.innerHTML = color == chosenColor ? '&horbar;&horbar;&horbar;&horbar;' : '&nbsp';
         players.appendChild(button);
     }
 
@@ -110,21 +119,51 @@ function update() {
 
     for (const tileData of Object.values(data.tiles)) {
         const tileColor = colorMap[tileData.type];
-        const top = 120 + (tileData.y * 100);
-        const left = 80 + (tileData.x * 60);
+        const top = 100 + (tileData.y * 100);
+        const left = 90 + (tileData.x * 60);
         const tile = createToken('tile', top, left, tileColor);
+        board.appendChild(tile);
 
-        if (tileData.num > 0) {
+        if (tileData.num) {
             const label = document.createElement('p');
             label.innerHTML = tileData.num.toString();
             label.style.fontSize = '32px';
-            label.style.textAlign = 'center';
-            label.style.verticalAlign = 'center';
-            label.style.heigth = '100%';
             tile.appendChild(label);
-        }
+        } else if (tileData.port.rate) {
+            const label = document.createElement('p');
+            label.innerHTML = tileData.port.rate;
+            label.style.fontSize = '24px';
+            label.style.lineHeight = '2';
+            label.style.color = 'white';
+            tile.appendChild(label);
 
-        board.appendChild(tile);
+            const portColor = colorMap[tileData.port.type];
+
+            if (tileData.port.top) {
+                const topPort = createToken('port', top - 35, left, portColor);
+                board.appendChild(topPort);
+            }
+            if (tileData.port.bottom) {
+                const bottomPort = createToken('port', top + 35, left, portColor);
+                board.appendChild(bottomPort);
+            }
+            if (tileData.port.upleft) {
+                const upleftPort = createToken('port', top - 18, left - 30, portColor);
+                board.appendChild(upleftPort);
+            }
+            if (tileData.port.downleft) {
+                const upleftPort = createToken('port', top + 18, left - 30, portColor);
+                board.appendChild(upleftPort);
+            }
+            if (tileData.port.upright) {
+                const uprightPort = createToken('port', top - 18, left + 30, portColor);
+                board.appendChild(uprightPort);
+            }
+            if (tileData.port.downright) {
+                const uprightPort = createToken('port', top + 18, left + 30, portColor);
+                board.appendChild(uprightPort);
+            }
+        }
 
         if (tileData.above.color) {
             const above = createToken('town', top - 68, left, tileData.above.color);

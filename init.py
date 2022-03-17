@@ -17,7 +17,7 @@ for color in COLORS:
     "Lehm": 0,
     "Stroh": 0,
     "Schafe": 0,
-    "Granit": 0,
+    "Erz": 0,
     "Siegpunkte": 0,
   }
 

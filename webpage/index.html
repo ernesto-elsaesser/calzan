@@ -94,12 +94,6 @@ function create(tag, cls, coords) {
     return element;
 }
 
-
-function parseRoll(line, pos) {
-    const roll = line.charCodeAt(pos) - 100;
-    return roll.toString();
-}
-
 function update() {
 
     if (game == null) {
@@ -112,7 +106,8 @@ function update() {
     var col = 0;
     var c = null;
     var p = null;
-    var r = null;
+    var r0 = null;
+    var r1 = null;
 
     for (row = 1; row < 26; row += 2) {
         for (col = 0; col < 26; col += 2) {
@@ -124,9 +119,10 @@ function update() {
                 tile.src = 'img/' + c + '.svg';
                 board.appendChild(tile);
 
-                if (game[row+1][col+1] != ' ') {
+                r = game[row+1].substring(col, col+2).trim();
+                if (r0 != ' ') {
                     const roll = create('p', 'roll', p);
-                    roll.innerHTML = parseRoll(game[row+1], col+1);
+                    roll.innerHTML = r1 == ' ' ? r0 : r1 + r0;
                     board.appendChild(roll);
                 }
 
@@ -166,7 +162,7 @@ function update() {
         */
     }
 
-    dice.innerHTML = parseRoll(game[row], 0);
+    dice.innerHTML = game[row].substring(0, 2).trim();
     row += 1;
 
     players.innerHTML = "";

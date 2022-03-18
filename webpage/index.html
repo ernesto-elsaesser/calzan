@@ -13,43 +13,35 @@
                 display: inline-block;
             }
             #board {
-                background-color: lightblue;
-                width: 900px;
+                background-color: navy;
+                width: 800px;
                 height: 800px;
                 margin: 20px auto;
                 position: relative;
-                border-radius: 50px;
+                border-radius: 400px;
             }
-            .token {
+            #board * {
                 position: absolute;
+                transform: translate(-50%, -50%);
+            }
+            .roll { font-size: 32px; }
+            .city {
+                height: 30px;
+                width: 30px;
                 border-radius: 50%;
-                border: 1px solid black;
-            }
-            .tile {
-                height: 100px;
-                width: 100px;
-                transform: translate(-51px, -51px);
-            }
-            .road {
-                height: 12px;
-                width: 12px;
-                transform: translate(-7px, -7px);
             }
             .town {
-                height: 32px;
-                width: 32px;
-                transform: translate(-17px, -17px);
+                height: 40px;
+                width: 40px;
+                border-radius: 50%;
             }
-            .bandit {
-                height: 16px;
-                width: 16px;
-                transform: translate(-9px, -9px);
+            .road {
+                height: 10px;
+                width: 50px;
             }
             .port {
-                height: 10px;
-                width: 10px;
-                border: none;
-                transform: translate(-5px, -5px);
+                font-size: 20px;
+                color: white;
             }
         </style>
     </head>
@@ -74,7 +66,6 @@ const dice = document.getElementById("dice");
 const board = document.getElementById("board");
 
 var colorMap = {
-    'Meer': 'navy',
     'Sand': 'moccasin',
     'Holz': 'darkgreen',
     'Lehm': 'chocolate',
@@ -84,16 +75,100 @@ var colorMap = {
     'Alle': 'white'
 };
 
+const angle = Math.pi / 6;
+const dirs = {
+    'n': 0 * angle,
+    'ne': 1 * angle,
+    'en': 2 * angle,
+    'e': 3 * angle,
+    'es': 4 * angle,
+    'se': 5 * angle,
+    's': 6 * angle,
+    'sw': 7 * angle,
+    'ws': 8 * angle,
+    'w': 9 * angle,
+    'wn': 10 * angle,
+    'nw': 11 * angle
+};
+
 var data = null;
 var chosenColor = null;
 
-function createToken(cls, top, left, color) {
-    var token = document.createElement('div');
-    token.className = 'token ' + cls;
-    token.style.top = top.toString() + 'px';
-    token.style.left = left.toString() + 'px';
-    token.style.backgroundColor = color;
-    return token;
+function shift(coords, dist, rads) {
+    const x = coords[0] + dist * Math.sin(rads);
+    const y = coords[1] + dist * Math.cos(rads);
+    return [x, y]
+}
+
+function create(tag, class, coords) {
+    const element = document.createElement('img');
+    element.className = class;
+    element.style.left = coords[0].toString() + 'px';
+    element.style.top = coords[1].toString() + 'px';
+    return element;
+}
+
+function drawTile(info, coords) {
+
+    const tile = create('img', 'tile', coords);
+    tile.src = 'img/' + info.type + '.svg';
+    board.appendChild(tile);
+
+    if (info.roll) {
+        const roll = create('p', 'roll', coords);
+        roll.innerHTML = info.roll.toString();
+        board.appendChild(roll);
+    }
+
+    if (info.bandit) {
+        const banditCoords = [coords[0], coords[1] - 30]
+        const bandit = create('bandit', 'bandit', banditCoords);
+        bandit.src = 'img/bandit.svg';
+        board.appendChild(bandit);
+    }
+
+    for (const [key, rads] of Object.entries(dirs)) {
+    
+        if (info.tiles[key]) {
+            drawTile(info.tiles[key], shift(cords, 100, rads));
+        }
+
+        if (info.towns[key]) {
+            drawTown(info.towns[key], shift(cords, 80, rads));
+        }
+
+        if (info.roads[key]) {
+            drawRoad(info.roads[key], shift(cords, 50, rads), rads);
+        }
+
+        if (info.ports[key]) {
+            drawPort(info.ports[key], shift(cords, 100, rads), rads);
+        }
+    }
+}
+
+function drawTown(info, coords) {
+
+    const className = info.city ? 'city' : 'town';
+    const town = create('div', className, coords);
+    town.style.backgroundColor = info.color;
+    board.appendChild(town);
+}
+
+function drawRoad(info, coords, rads) {
+
+    const road = create('div', 'road', coords);
+    road.style.backgroundColor = info.color;
+    road.style.transform = 'rotate(' + rads.toString() + 'rad)';
+    board.appendChild(road);
+}
+
+function drawPort(info, coords, rads) {
+
+    // TODO img
+    const port = create('p', 'port', coords);
+    port.innerHTML = info.trade;
+    board.appendChild(port);
 }
 
 function update() {
@@ -116,96 +191,7 @@ function update() {
     dice.innerHTML = data.dice.toString();
 
     board.innerHTML = "";
-
-    for (const tileData of Object.values(data.tiles)) {
-        const tileColor = colorMap[tileData.type];
-        const top = 100 + (tileData.y * 100);
-        const left = 90 + (tileData.x * 60);
-        const tile = createToken('tile', top, left, tileColor);
-        board.appendChild(tile);
-
-        if (tileData.num) {
-            const label = document.createElement('p');
-            label.innerHTML = tileData.num.toString();
-            label.style.fontSize = '32px';
-            tile.appendChild(label);
-        } else if (tileData.port.rate) {
-            const label = document.createElement('p');
-            label.innerHTML = tileData.port.rate;
-            label.style.fontSize = '24px';
-            label.style.lineHeight = '2';
-            label.style.color = 'white';
-            tile.appendChild(label);
-
-            const portColor = colorMap[tileData.port.type];
-
-            if (tileData.port.top) {
-                const topPort = createToken('port', top - 35, left, portColor);
-                board.appendChild(topPort);
-            }
-            if (tileData.port.bottom) {
-                const bottomPort = createToken('port', top + 35, left, portColor);
-                board.appendChild(bottomPort);
-            }
-            if (tileData.port.upleft) {
-                const upleftPort = createToken('port', top - 18, left - 30, portColor);
-                board.appendChild(upleftPort);
-            }
-            if (tileData.port.downleft) {
-                const upleftPort = createToken('port', top + 18, left - 30, portColor);
-                board.appendChild(upleftPort);
-            }
-            if (tileData.port.upright) {
-                const uprightPort = createToken('port', top - 18, left + 30, portColor);
-                board.appendChild(uprightPort);
-            }
-            if (tileData.port.downright) {
-                const uprightPort = createToken('port', top + 18, left + 30, portColor);
-                board.appendChild(uprightPort);
-            }
-        }
-
-        if (tileData.above.color) {
-            const above = createToken('town', top - 68, left, tileData.above.color);
-            if (tileData.above.city) {
-                above.innerHTML = 'x';
-                above.style.fontSize = '24px';
-            }
-            board.appendChild(above);
-        }
-
-        if (tileData.below.color) {
-            const below = createToken('town', top + 68, left, tileData.below.color);
-            if (tileData.below.city) {
-                below.innerHTML = 'x';
-                below.style.fontSize = '24px';
-            }
-            board.appendChild(below);
-        }
-
-        if (tileData.right.color) {
-            const right = createToken('road', top, left + 60,
-                                        tileData.right.color);
-            board.appendChild(right);
-        }
-
-        if (tileData.upright.color) {
-            const upright = createToken('road', top - 50, left + 30,
-                                        tileData.upright.color);
-            board.appendChild(upright);
-        }
-
-        if (tileData.lowright.color) {
-            const lowright = createToken('road', top + 50, left + 30,
-                                        tileData.lowright.color);
-            board.appendChild(lowright);
-        }
-
-        if (tileData.bandit) {
-            const bandit = createToken('bandit', top - 30, left, 'black');
-            board.appendChild(bandit);
-        }
-    }
+    drawTile(data.root, [400, 400]);
 
     if (chosenColor == null) {
         return;

@@ -24,6 +24,8 @@
                 position: absolute;
                 transform: translate(-50%, -50%);
             }
+            .tile { height: 150px; }
+            .bandit { height: 30px; }
             .roll { font-size: 32px; }
             .city {
                 height: 30px;
@@ -50,7 +52,7 @@
             <h3>SPIELER</h3>
             <div id="players"></div>
             <div style="margin: 20px">
-                Holz: <span id="Holz">0</span> Lehm: <span id="Lehm">0</span> Stroh: <span id="Stroh">0</span> Schafe: <span id="Schafe">0</span> Erz: <span id="Erz">0</span> Siegpunkte: <span id="Siegpunkte">0</span>
+                Holz: <span id="H">0</span> Lehm: <span id="L">0</span> Weizen: <span id="W">0</span> Schafe: <span id="S">0</span> Erz: <span id="E">0</span> Siegpunkte: <span id="P">0</span>
             </div>
             <div>Würfel: <span id="dice">-</span></div>
             <div id="board"></div>
@@ -65,147 +67,133 @@ const players = document.getElementById("players");
 const dice = document.getElementById("dice");
 const board = document.getElementById("board");
 
-var colorMap = {
-    'Sand': 'moccasin',
-    'Holz': 'darkgreen',
-    'Lehm': 'chocolate',
-    'Stroh': 'gold',
-    'Schafe': 'greenyellow',
-    'Erz': 'lightslategray',
-    'Alle': 'white'
+const resourceLabels = [
+    document.getElementById('H'),
+    document.getElementById('L'),
+    document.getElementById('W'),
+    document.getElementById('S'),
+    document.getElementById('E')
+];
+
+const portLabels = {
+    'h': 'Holz',
+    'l': 'Lehm',
+    'w': 'Weizen',
+    's': 'Schafe',
+    'e': 'Erz'
 };
 
-const angle = Math.pi / 6;
-const dirs = {
-    'n': 0 * angle,
-    'ne': 1 * angle,
-    'en': 2 * angle,
-    'e': 3 * angle,
-    'es': 4 * angle,
-    'se': 5 * angle,
-    's': 6 * angle,
-    'sw': 7 * angle,
-    'ws': 8 * angle,
-    'w': 9 * angle,
-    'wn': 10 * angle,
-    'nw': 11 * angle
-};
-
-var data = null;
+var game = null;
 var chosenColor = null;
 
-function shift(coords, dist, rads) {
-    const x = coords[0] + dist * Math.sin(rads);
-    const y = coords[1] + dist * Math.cos(rads);
-    return [x, y]
-}
-
-function create(tag, class, coords) {
+function create(tag, cls, coords) {
     const element = document.createElement('img');
-    element.className = class;
+    element.className = cls;
     element.style.left = coords[0].toString() + 'px';
     element.style.top = coords[1].toString() + 'px';
     return element;
 }
 
-function drawTile(info, coords) {
 
-    const tile = create('img', 'tile', coords);
-    tile.src = 'img/' + info.type + '.svg';
-    board.appendChild(tile);
-
-    if (info.roll) {
-        const roll = create('p', 'roll', coords);
-        roll.innerHTML = info.roll.toString();
-        board.appendChild(roll);
-    }
-
-    if (info.bandit) {
-        const banditCoords = [coords[0], coords[1] - 30]
-        const bandit = create('bandit', 'bandit', banditCoords);
-        bandit.src = 'img/bandit.svg';
-        board.appendChild(bandit);
-    }
-
-    for (const [key, rads] of Object.entries(dirs)) {
-    
-        if (info.tiles[key]) {
-            drawTile(info.tiles[key], shift(cords, 100, rads));
-        }
-
-        if (info.towns[key]) {
-            drawTown(info.towns[key], shift(cords, 80, rads));
-        }
-
-        if (info.roads[key]) {
-            drawRoad(info.roads[key], shift(cords, 50, rads), rads);
-        }
-
-        if (info.ports[key]) {
-            drawPort(info.ports[key], shift(cords, 100, rads), rads);
-        }
-    }
-}
-
-function drawTown(info, coords) {
-
-    const className = info.city ? 'city' : 'town';
-    const town = create('div', className, coords);
-    town.style.backgroundColor = info.color;
-    board.appendChild(town);
-}
-
-function drawRoad(info, coords, rads) {
-
-    const road = create('div', 'road', coords);
-    road.style.backgroundColor = info.color;
-    road.style.transform = 'rotate(' + rads.toString() + 'rad)';
-    board.appendChild(road);
-}
-
-function drawPort(info, coords, rads) {
-
-    // TODO img
-    const port = create('p', 'port', coords);
-    port.innerHTML = info.trade;
-    board.appendChild(port);
+function parseRoll(line, pos) {
+    const roll = line.charCodeAt(pos) - 100;
+    return roll.toString();
 }
 
 function update() {
 
-    if (data == null) {
+    if (game == null) {
         return;
     }
 
+    board.innerHTML = "";
+
+    var row = 0;
+    var col = 0;
+    var c = null;
+    var p = null;
+    var r = null;
+
+    for (row = 1; row < 26; row += 2) {
+        for (col = 0; col < 26; col += 2) {
+            p = [col * 50, row * 30];
+            c = game[row][col];
+
+            if ('HLWSEX'.includes(c)) {
+                const tile = create('img', 'tile', p);
+                tile.src = 'img/' + c + '.svg';
+                board.appendChild(tile);
+
+                if (game[row+1][col+1] != ' ') {
+                    const roll = create('p', 'roll', p);
+                    roll.innerHTML = parseRoll(game[row+1], col+1);
+                    board.appendChild(roll);
+                }
+
+                if (game[row-1][col-1] == '*') {
+                    const bandit = create('img', 'bandit', p);
+                    bandit.src = 'img/bandit.svg';
+                    board.appendChild(bandit);
+                }
+
+            } else if ('hlwsex'.includes(c)) {
+
+                // TODO img
+                const port = create('p', 'port', p);
+                if (c == 'x') {
+                    port.innerHTML = '3:1';
+                } else {
+                    port.innerHTML = portLabels[c] + ' 2:1';
+                }
+                board.appendChild(port);
+
+            }
+
+        }
+
+        /* TODO towns and roads!
+
+        const className = info.city ? 'city' : 'town';
+        const town = create('div', className, coords);
+        town.style.backgroundColor = info.color;
+        board.appendChild(town);
+
+        const road = create('div', 'road', coords);
+        road.style.backgroundColor = info.color;
+        road.style.transform = 'rotate(' + rads.toString() + 'rad)';
+        board.appendChild(road);
+
+        */
+    }
+
+    dice.innerHTML = parseRoll(game[row], 0);
+    row += 1;
+
     players.innerHTML = "";
 
-    for (const color of Object.keys(data.players)) {
+    while (game[row]) {
+        const color = game[row].substring(0, 16).trim();
         const button = document.createElement('button');
         button.className = 'player';
         button.style.backgroundColor = color;
         button.onclick = function() { chosenColor = color; update(); };
-        button.innerHTML = color == chosenColor ? '&horbar;&horbar;&horbar;&horbar;' : '&nbsp';
         players.appendChild(button);
-    }
 
-    dice.innerHTML = data.dice.toString();
+        if (color = chosenColor) {
+            button.innerHTML = '&horbar;&horbar;&horbar;&horbar;';
+            for (col = 0; col < 5; col += 1) {
+                resourceLabels[col].innerHTML = game[row][col + 16];
+            }
+        } else {
+            button.innerHTML = '&nbsp';
+        }
 
-    board.innerHTML = "";
-    drawTile(data.root, [400, 400]);
-
-    if (chosenColor == null) {
-        return;
-    }
-
-    const stats = data.players[chosenColor];
-
-    for (const [name, amount] of Object.entries(stats)) {
-        document.getElementById(name).innerHTML = amount.toString();
+        row += 1;
     }
 }
 
-firebase.database().ref('/').on('value', (snapshot) => {
-  data = snapshot.val();
+firebase.database().ref('/game').on('value', (snapshot) => {
+  game = snapshot.val().split(/\n/);
   update();
 });
         </script>

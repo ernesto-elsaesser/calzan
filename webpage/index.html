@@ -8,6 +8,7 @@
         <style>
             .player { width: 100px; height: 40px; font-weight: bold; display: inline-block; }
             #board { width: 800px; height: 800px; margin: 20px auto; }
+            .roll { font: bold 32px sans-serif; }
         </style>
     </head>
     <body>
@@ -18,9 +19,7 @@
                 Holz: <span id="H">0</span> Lehm: <span id="L">0</span> Weizen: <span id="W">0</span> Schafe: <span id="S">0</span> Erz: <span id="E">0</span> Siegpunkte: <span id="P">0</span>
             </div>
             <div>Würfel: <span id="dice">-</span></div>
-            <svg id="board" width="800", height="800">
-                <circle fill="#2D2F6C" r="400"></circle>
-            </svg>
+            <svg id="board" width="800" height="800" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
 
         <script src="/__/firebase/8.10.1/firebase-app.js"></script>
@@ -46,7 +45,7 @@ const playerColors = {
     '3': '#FBCD19',
     '4': '#8A58E8',
     '5': '#EB7EC5'
-]
+};
 
 const resNames = {
     'H': 'Holz',
@@ -63,7 +62,7 @@ const resColors = {
     'S': '#AEE670',
     'E': '#A4A296',
     'X': '#EBE3B0'
-]
+};
 
 const resStrokeColors = {
     'H': '#4F702A',
@@ -72,47 +71,66 @@ const resStrokeColors = {
     'S': '#89C852',
     'E': '#7F7E74',
     'X': '#D8CC8B'
-]
+};
 
 var state = null;
-var dice = null;
 var chosenPlayer = null;
 
-function shape(tag, coords) {
-    const shape = document.createElement(tag);
-    shape.x = coords[0];
-    shape.y = coords[1];
-    return shape;
+function shape(tag) {
+    return document.createElementNS("http://www.w3.org/2000/svg", tag);
 }
 
 function addOcean() {
-    const ocean = shape('circle', [400, 400]);
-    ocean.fill = '#2D2F6C';
-    ocean.r = "400";
+    const ocean = shape('circle');
+    ocean.setAttribute('fill', '#2D2F6C');
+    ocean.setAttribute('cx', '500');
+    ocean.setAttribute('cy', '500');
+    ocean.setAttribute('r', '500');
     board.appendChild(ocean);
 }
 
-function addTile(resCode, roll, hasBandit, coords) {
+function addTile(resCode, roll, hasBandit, x, y) {
 
     const color = resColors[resCode];
     const strokeColor = resStrokeColors[resCode];
-    const tile = shape('path', coords);
-    tile.d = "M300,17.2820323 C308.977786,17.2820323 317.955572,19.6042586 326,24.2487113 L326,24.2487113 L525.807621,139.607695 C533.852049,144.252148 540.352049,150.866025 544.840942,158.641016 C549.329835,166.416007 551.807621,175.352111 551.807621,184.641016 L551.807621,184.641016 L551.807621,415.358984 C551.807621,424.647889 549.329835,433.583993 544.840942,441.358984 C540.352049,449.133975 533.852049,455.747852 525.807621,460.392305 L525.807621,460.392305 L326,575.751289 C317.955572,580.395741 308.977786,582.717968 300,582.717968 C291.022214,582.717968 282.044428,580.395741 274,575.751289 L274,575.751289 L74.1923789,460.392305 C66.1479509,455.747852 59.6479509,449.133975 55.1590579,441.358984 C50.6701649,433.583993 48.1923789,424.647889 48.1923789,415.358984 L48.1923789,415.358984 L48.1923789,184.641016 C48.1923789,166.063205 58.1035229,148.8966 74.1923789,139.607695 L74.1923789,139.607695 L274,24.2487113 C282.044428,19.6042586 291.022214,17.2820323 300,17.2820323 Z";
-    tile.fill = color;
-    tile.stroke = strokeColor;
-    tile.strokeWidth = "16";
+
+    const tile = shape('path');
+    tile.setAttribute('d', 'M0,-80 L45,-80 L90,0 L45,80 L-45,80 L-90,0 L-45,-80 L0,-80');
+/*
+    M38,2
+    L82,2
+    A12,12 0 0,1 94,10
+    L112,44
+    A12,12 0 0,1 112,56
+    L94,90
+    A12,12 0 0,1 82,98
+    L38,98
+    A12,12 0 0,1 26,90
+    L8,56
+    A12,12 0 0,1 8,44
+    L26,10
+    A12,12 0 0,1 38,2
+    */
+    const xs = x.toString();
+    const ys = y.toString();
+    tile.setAttribute('transform', 'translate(' + xs + ',' + ys + ')');
+    tile.setAttribute('fill', color);
+    tile.setAttribute('stroke', strokeColor);
+    tile.setAttribute('stroke-width', '5');
     board.appendChild(tile);
 
     if (roll) {
-        const label = shape('text', coords);
+        const label = shape('text');
+        label.setAttribute('x', x);
+        label.setAttribute('y', y);
+        label.setAttribute('class', 'roll');
         label.innerHTML = roll;
         board.appendChild(label);
     }
 
     if (hasBandit) {
-        const banditCoords = [coords[0], coords[1] - 30];
-        const bandit = shape('g', banditCoords);
-        bandit.fill = 'black';
+        const bandit = shape('g', x, y - 30);
+        tile.setAttribute('fill', 'black');
         bandit.innerHTML = `
         <path d="M202.856445,187.635029 C210.703598,194.69253 223.801024,198.900418 237.046827,202.568567 L238.738194,203.034088 L238.738194,203.034088 L240.428814,203.494812 C252.255036,206.705587 263.853012,209.642337 271.582031,213.953388 C276.977539,216.956318 281.884766,220.813739 285.81543,225.989521 C296.655273,240.296161 297.363281,263.538349 300,281.3362 C299.121094,290.564716 293.896484,295.886982 283.569336,296.692646 L16.4306641,296.692646 C6.10351562,295.911396 0.87890625,290.58913 0,281.3362 C2.63671875,263.538349 3.36914062,240.296161 14.1845703,225.989521 C18.1152344,220.789325 22.9980469,216.956318 28.4179688,213.953388 C36.0898774,209.685136 46.8280588,206.766045 57.7404891,203.584057 L59.4203092,203.092229 C72.3034895,199.302312 85.2227573,195.031648 93.4326172,187.635029 C91.6259766,192.981708 150,242.176044 202.856445,187.635029 Z M77.1484375,64.2707707 C93.7988281,-20.8366512 209.155273,-22.0085262 224.829102,64.2707707 L224.829102,64.2707707 L229.56543,63.0012395 L229.56543,86.1457707 L223.339844,86.1457707 C219.897461,138.562763 201.098633,171.082294 178.076172,185.388935 C168.139648,191.565693 157.421875,194.37331 146.75293,193.958271 C136.108398,193.543232 125.585938,189.905536 116.015625,183.167255 C93.5546875,167.346943 76.3671875,134.363544 76.0498047,86.1457707 L76.0498047,86.1457707 L70.7275391,86.1457707 L70.4101563,64.2707707 Z M150.537109,157.459247 C137.426758,157.459247 126.782227,161.585224 126.782227,166.663349 C126.782227,171.741474 137.402344,175.86745 150.537109,175.86745 C163.647461,175.86745 174.291992,171.741474 174.291992,166.663349 C174.291992,161.585224 163.671875,157.459247 150.537109,157.459247 Z M82.8857422,106.507099 C84.0087891,115.833271 85.8154297,124.402607 88.2324219,132.215107 C93.9208984,133.948505 98.3154297,156.507099 116.430664,145.886982 C137.768555,139.295185 159.692383,139.173114 182.250977,145.886982 C198.31543,155.408466 202.392578,138.709247 207.763672,136.536396 C210.717773,128.552997 213.15918,119.593036 214.941406,109.656513 C193.945313,131.21413 171.630859,131.824482 150,107.410419 C126.489258,131.726825 103.710938,133.43581 82.8857422,106.507099 Z M206.542969,98.5481145 C205.615234,97.6203801 203.930664,98.1330754 202.807617,98.3039738 L202.807617,98.3039738 L163.598633,104.456318 C165.454102,107.849872 167.651367,110.608661 170.214844,112.781513 C184.375,124.793232 199.462891,115.100849 206.518555,100.74538 C206.982422,99.7688176 207.006836,99.0119817 206.542969,98.5481145 Z M96.9794419,98.2774271 C95.8617887,98.0875136 94.2917597,97.6645579 93.4082031,98.5481145 C92.9443359,99.0119817 92.96875,99.7688176 93.4326172,100.74538 C100.488281,115.100849 115.576172,124.793232 129.736328,112.781513 C132.299805,110.608661 134.49707,107.849872 136.352539,104.456318 L136.352539,104.456318 L97.1435547,98.3039738 Z M217.749023,86.1457707 L81.640625,86.1457707 C81.640625,87.3176457 81.6650391,88.4406926 81.6894531,89.5637395 L147.460938,96.4485051 L152.734375,96.4485051 L217.504883,89.4416692 C217.602539,88.3430363 217.675781,87.2688176 217.749023,86.1457707 Z" fill-rule="nonzero"></path>
         <circle cx="192.871094" cy="112.304688" r="7.32421875"></circle>
@@ -123,21 +141,21 @@ function addTile(resCode, roll, hasBandit, coords) {
     }
 }
 
-function addPort(resCode, coords, con1Coords, con2Coords) {
+function addPort(resCode, x, y) {
 
     // TODO draw connectors
 
     const color = resColors[resCode];
     const resName = resNames[resCode];
-    const port = shape('circle', coords);
+    const port = shape('circle', x, y);
 
-    const label = shape('text', coords);
+    const label = shape('text', x, y);
 
     if (resName) {
-        port.fill = color;
-        label.innerHTML = ' 2:1';
+        port.setAttribute('fill', color);
+        label.innerHTML = '2:1';
     } else {
-        port.fill = 'white';
+        port.setAttribute('fill', 'white');
         label.innerHTML = '3:1';
     }
 
@@ -145,34 +163,35 @@ function addPort(resCode, coords, con1Coords, con2Coords) {
     board.appendChild(label);
 }
 
-function addToken(tokenCode, playerNum, coords) {
+function addToken(tokenCode, playerNum, x, y) {
     const color = playerColors[playerNum];
     if (tokenCode == '+') {
-        const town = shape('circle', coords);
-        town.fill = color;
-        town.r = '35';
+        const town = shape('circle', x, y);
+        town.setAttribute('fill', color);
+        town.setAttribute('r', '35');
         board.appendChild(town);
     } else if (tokenCode == '#') {
-        const city = shape('circle', coords);
-        city.fill = color;
-        city.r = '45';
+        const city = shape('circle', x, y);
+        city.setAttribute('fill', color);
+        city.setAttribute('r', '45');
         board.appendChild(city);
-        const ring = shape('circle', coords);
-        ring.stroke = 'white';
-        ring.r = '35';
+        const ring = shape('circle', x, y);
+        town.setAttribute('stroke', 'white');
+        ring.setAttribute('r', '35');
         board.appendChild(ring);
     } else {
-        const road = shape('rect', coords);
+        const road = shape('rect', x, y);
         if (tokenCode == '|') {
-            road.transform = 'rotate(-45)';
+            town.setAttribute('transform', 'rotate(-45)');
         } else if (tokenCode == '-') {
-            road.transform = 'rotate(45)';
+            town.setAttribute('transform', 'rotate(45)');
         }
-        road.fill = color;
-        road.width = '40';
-        road.height = '160';
-        road.rx = '10';
+        road.setAttribute('fill', color);
+        road.setAttribute('width', '40');
+        road.setAttribute('height', '160');
+        road.setAttribute('rx', '10');
         board.appendChild(road);
+    }
 }
 
 function render() {
@@ -181,46 +200,46 @@ function render() {
         return;
     }
 
-    dice.innerHTML = dice;
-
     board.innerHTML = "";
 
     addOcean();
 
     var row = 0;
     var col = 0;
-    var coords = null;
+    var x = '';
+    var y = '';
     var code = '';
 
-    for (row = 1; row < 26; row += 2) {
-        for (col = 0; col < 26; col += 4) {
-            coords = [col * 50 - row * 10, row * 30];
+    for (row = 0; row <= 24; row += 2) {
+
+        ypos = row - 12;
+        y = 500 + ypos * 45;
+
+        for (col = 0; col <= 48; col += 2) {
             code = state[row][col];
+            xpos = (col - 24) / 2;
+            x = 500 + xpos * 50 + ypos * 25;
 
             if ('#+-/|'.includes(code)) {
 
                 const playerNum = state[row][col+1];
                 if (playerNum != ' ') {
-                    addToken(code, playerNum, coords);
+                    addToken(code, playerNum, x, y);
                 }
 
             } else if ('HLWSEX'.includes(code)) {
 
-                const roll = state[row+1].substring(col, col+2).trim();
+                const roll = state[row+1].substring(col-1, col+1).trim();
                 const hasBandit = state[row][col-1] == '*';
-                addTile(code, roll, hasBandit, coords);
+                addTile(code, roll, hasBandit, x, y);
 
             } else if ('hlwsex'.includes(code)) {
 
                 const resCode = code.toUpperCase();
-                addPort(resCode, coords, null, null);
+                addPort(resCode, x, y);
             }
-
-            tileRow = !tileRow;
         }
     }
-
-    row += 1;
 
     players.innerHTML = "";
 
@@ -232,7 +251,7 @@ function render() {
         button.onclick = function() { chosenPlayer = playerNum; render(); };
         players.appendChild(button);
 
-        if (playerNum = chosenPlayer) {
+        if (playerNum == chosenPlayer) {
             button.innerHTML = '&horbar;&horbar;&horbar;&horbar;';
             for (col = 0; col < 5; col += 1) {
                 resourceLabels[col].innerHTML = game[row][col + 2];
@@ -248,13 +267,12 @@ function render() {
 const db = firebase.database();
 
 db.ref('/state').on('value', (snapshot) => {
-  state = snapshot.val().split(/\n/);
-  render();
+    state = snapshot.val().split(/\n/);
+    render();
 });
 
 db.ref('/dice').on('value', (snapshot) => {
-  dice = snapshot.val();
-  render();
+    dice.innerHTML = snapshot.val().toString();
 });
 
         </script>

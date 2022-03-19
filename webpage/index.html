@@ -143,28 +143,51 @@ function addTile(resCode, roll, hasBandit, x, y) {
     }
 }
 
-function addPort(resCode, x, y) {
+function addPort(tokenCode, x, y, preRes, postRes) {
 
-    // TODO draw connectors
+    // TODO
+    var resCode = '';
+    var labelX = 0;
+    var labelY = 0;
 
-    const port = shape('circle');
-    port.setAttribute('cx', x);
-    port.setAttribute('cy', y);
-
-    const label = shape('text');
-    label.setAttribute('x', x);
-    label.setAttribute('y', y);
-    label.setAttribute('class', 'port');
-
-    if (resCode) {
-        port.setAttribute('fill', resColors[resCode]);
-        label.innerHTML = '2:1';
-    } else {
-        port.setAttribute('fill', 'white');
-        label.innerHTML = '3:1';
+    if ('hlwsex'.includes(preRes)) {
+        resCode = preRes;
+        if (tokenCode == '=') {
+            labelX = x + 0;
+            labelY = x + 0;
+        } else if (tokenCode == '%') {
+            labelX = x + 0;
+            labelY = x + 0;
+        } else if (tokenCode == '$') {
+            labelX = x + 0;
+            labelY = x + 0;
+        }
+    } else if ('hlwsex'.includes(postRes)) {
+        resCode = postRes;
+        if (tokenCode == '=') {
+            labelX = x + 0;
+            labelY = x + 0;
+        } else if (tokenCode == '%') {
+            labelX = x + 0;
+            labelY = x + 0;
+        } else if (tokenCode == '$') {
+            labelX = x + 0;
+            labelY = x + 0;
+        }
     }
 
-    board.appendChild(port);
+    const label = shape('text');
+    label.setAttribute('class', 'port');
+    label.setAttribute('x', x);
+    label.setAttribute('y', y);
+
+    if (resCode == 'x') {
+        label.innerHTML = '3:1';
+    } else {
+        const resName = resNames[resCode.toUpperCase()];
+        label.innerHTML = resName + ' 2:1';
+    }
+
     board.appendChild(label);
 }
 
@@ -228,15 +251,22 @@ function render() {
             if ('#+-=/%|$'.includes(code)) {
 
                 if (code == '=') {
-                    const upRes = state[row-1][col];
-                    const downRes = state[row-+][col]);
-                    addPort(code, x, y, upRes, downRes);
-                }
 
-                if ('%$'.includes(code)) {
-                    const leftRes = state[row][col-2];
-                    const rightRes = state[row][col+2];
-                    addPort(code, x, y, leftRes, rightRes);
+                    const preRes = state[row-1][col+1];
+                    const postRes = state[row+1][col-1];
+                    addPort(code, x, y, preRes, postRes);
+
+                } else if (code == '%') {
+
+                    const preRes = state[row-1][col-1];
+                    const postRes = state[row+1][col+1];
+                    addPort(code, x, y, preRes, postRes);
+
+                } else if (code == '$') {
+
+                    const preRes = state[row][col-2];
+                    const postRes = state[row][col+2];
+                    addPort(code, x, y, preRes, postRes);
                 }
 
                 const playerNum = state[row][col+1];
@@ -247,7 +277,7 @@ function render() {
             } else if ('HLWSEX'.includes(code)) {
 
                 const roll = state[row+1].substring(col-1, col+1).trim();
-                const hasBandit = state[row][col-1] == '*';
+                const hasBandit = state[row-1][col+1] == '*';
                 addTile(code, roll, hasBandit, x, y);
 
             }

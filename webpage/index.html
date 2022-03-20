@@ -23,9 +23,10 @@
             </svg>
             
             <div id="player">
-                Passwort: <input id="password" type="text" placeholder="Passwort" /> <button onclick="setPlayer()">OK</button>
+                Passwort: <input id="password" type="text" />
                 <p id="stats"></p>
                 <img src="img/costs.jpg" />
+                <img src="img/develop.jpg" />
             </div>
         </div>
 
@@ -38,6 +39,13 @@ const tiles = document.getElementById("tiles");
 const tokens = document.getElementById("tokens");
 const passwordInput = document.getElementById("password");
 const stats = document.getElementById("stats");
+    
+passwordInput.addEventListener("keyup", function(event) {
+    const password = passwordInput.value;
+    if (event.keyCode === 13 && password.length) {
+        setPlayer(password);
+    }
+});
 
 const playerColors = [
     "#E33E09",
@@ -72,8 +80,26 @@ const resStrokeColors = {
     'E': '#7F7E74',
     'X': '#D8CC8B'
 };
+    
+const cardNames = {
+    'R': "Ritter",
+    'M': "Monopol",
+    'S': "Strassenbau",
+    'E': "Erfindung",
+    'B': "Bibliothek",
+    'P': "Marktplatz",
+    'H': "Rathaus",
+    'K': "Kirche",
+    'U': "Universität",
+    'L': "Längste Handelsstraße",
+    'G': "Größte Rittermacht"
+};
+    
+const pointCards = 'BMHKU';
 
 var board = null;
+var player = null;
+var scoreboard = [0, 0, 0, 0, 0];
 
 function shape(tag) {
     return document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -248,6 +274,7 @@ function updateBoard() {
     
     tiles.innerHTML = "";
     tokens.innerHTML = "";
+    scoreboard = scoreboard.map(x => 0);
 
     var row = 0;
     var col = 0;
@@ -288,8 +315,13 @@ function updateBoard() {
 
                 const playerNum = board[row][col+1];
                 if (playerNum != ' ') {
-                    const playerColor = playerColors[parseInt(playerNum)];
-                    addToken(code, playerColor, x, y);
+                    const intNum = parseInt(playerNum);
+                    addToken(code, playerColors[intNum], x, y);
+                    if (code == '+') {
+                        scoreboard[intNum] += 1;
+                    } else if (code == '#') {
+                        scoreboard[intNum] += 2;
+                    }
                 }
 
             } else if ('HLWSEX'.includes(code)) {
@@ -300,6 +332,8 @@ function updateBoard() {
             }
         }
     }
+    
+    updatePlayer();
 }
 
 firebase.database().ref('/board').on('value', (snapshot) => {
@@ -309,29 +343,40 @@ firebase.database().ref('/board').on('value', (snapshot) => {
     
 function updatePlayer() {
     
+    stats.innerHTML = "";
+    
     if (player == null) {
         return;
     }
-    
-    stats.innerHTML = "";
     
     for (const [resCode, name] of Object.entries(resNames)) {
         const amount = player.resources[resCode].toString();
         stats.innerHTML += name + ": " + amount + "&nbsp;&nbsp;";
     }
     
-    stats.innerHTML += "<br/>Entwicklungskarten: -";
-    stats.innerHTML += "<br/>Siegpunkte: 0";
+    var points = scoreboard[player.number];
+    
+    var progressCards = '-';
+    if (player.progressCards) {
+        progressCards = player.progressCards.map(c => cardNames[c]).join(', ');
+        points += player.progressCards.filter(c => pointCards.includes(c)).length;
+    }
+    
+    var specialCards = '-';
+    if (player.specialCards) {
+        specialCards = player.specialCards.map(c => cardNames[c]).join(', ');
+        points += player.specialCards.length * 2;
+    }
+
+    stats.innerHTML += "<br/>Entwicklungskarten: " + progressCards;
+    stats.innerHTML += "<br/>Sonderkarten: " + specialCards;
+    stats.innerHTML += "<br/>Siegpunkte: " + points.toString();
 }
 
 
-function setPlayer() {
+function setPlayer(password) {
     
-    const password = passwordInput.value;
-    
-    if (password == '') {
-        return;
-    }
+    stats.innerHTML = "Lade ...";
     
     firebase.database().ref('/' + password).on('value', (snapshot) => {
         player = snapshot.val();

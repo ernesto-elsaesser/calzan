@@ -1,1 +1,1 @@
-firebase database:set --force /players players.json
+firebase database:set --force /hallo player.json

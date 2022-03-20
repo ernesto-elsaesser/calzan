@@ -6,8 +6,9 @@
         <meta charset="utf-8" />
 
         <style>
-            .player { width: 100px; height: 40px; font-weight: bold; display: inline-block; }
             #board { width: 800px; height: 800px; margin: 20px auto; }
+            #player { margin-top: 20px; text-align: center; }
+            #stats { margin: 20px 0; }
             .roll { font: bold 32px 'Brush Script MT', cursive; }
             .port { font: bold 20px 'Brush Script MT', cursive; }
             .portw { font: bold 20px 'Brush Script MT', cursive; fill: white; }
@@ -15,15 +16,17 @@
     </head>
     <body>
         <div style="text-align: center">
-            <h3>SPIELER</h3>
-            <div id="players"></div>
-            <div id="resources" style="margin: 20px"></div>
-            <div id="dice"></div>
             <svg id="board" width="800" height="800" viewBox="0 0 1100 1100" xmlns="http://www.w3.org/2000/svg">
                 <circle fill="#2D2F6C" cx="550" cy="550" r=550 />
                 <g id="tiles"></g>
                 <g id="tokens"></g>
             </svg>
+            
+            <div id="player">
+                Passwort: <input id="password" type="text" placeholder="Passwort" /> <button onclick="setPlayer()">OK</button>
+                <p id="stats"></p>
+                <img src="img/costs.jpg" />
+            </div>
         </div>
 
 <script src="/__/firebase/8.10.1/firebase-app.js"></script>
@@ -31,13 +34,18 @@
 <script src="/__/firebase/init.js"></script>
 <script>
 
-const players = document.getElementById("players");
-const resources = document.getElementById("resources");
-const dice = document.getElementById("dice");
 const tiles = document.getElementById("tiles");
 const tokens = document.getElementById("tokens");
+const passwordInput = document.getElementById("password");
+const stats = document.getElementById("stats");
 
-const oceanColor = '#2D2F6C';
+const playerColors = [
+    "#E33E09",
+    "#1C79D5",
+    "#FBCD19",
+    "#8A58E8",
+    "#EB7EC5"
+];
 
 const resNames = {
     'H': 'Holz',
@@ -65,8 +73,7 @@ const resStrokeColors = {
     'X': '#D8CC8B'
 };
 
-var data = null;
-var chosenPlayer = null;
+var board = null;
 
 function shape(tag) {
     return document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -80,21 +87,6 @@ function addTile(resCode, roll, hasBandit, x, y) {
     const xs = x.toString();
     const ys = y.toString();
     const hexaPath = 'M0,-80 L45,-80 L90,0 L45,80 L-45,80 L-90,0 L-45,-80 L0,-80';
-    /*
-    M38,2
-    L82,2
-    A12,12 0 0,1 94,10
-    L112,44
-    A12,12 0 0,1 112,56
-    L94,90
-    A12,12 0 0,1 82,98
-    L38,98
-    A12,12 0 0,1 26,90
-    L8,56
-    A12,12 0 0,1 8,44
-    L26,10
-    A12,12 0 0,1 38,2
-    */
     
     const bg = shape('path');
     bg.setAttribute('d', hexaPath);
@@ -248,34 +240,12 @@ function addToken(tokenCode, color, x, y) {
     }
 }
 
-function render() {
-
-    if (data == null) {
+function updateBoard() {
+    
+    if (board == null) {
         return;
     }
-
-    players.innerHTML = "";
-    resources.innerHTML = "";
-
-    for (const [playerNum, playerData] of Object.entries(data.players)) {
-        const button = document.createElement('button');
-        button.className = 'player';
-        button.style.backgroundColor = playerData.color;
-        button.onclick = function() { chosenPlayer = playerNum; render(); };
-        players.appendChild(button);
-
-        if (playerNum == chosenPlayer) {
-            button.innerHTML = "&horbar;&horbar;&horbar;&horbar;";
-            for (const [resCode, amount] of Object.entries(playerData.resources)) {
-                resources.innerHTML += resNames[resCode] + ": " + amount.toString() + "&nbsp;&nbsp;";
-            }
-        } else {
-            button.innerHTML = '&nbsp';
-        }
-    }
     
-    dice.innerHTML = "Würfel: " + data.dice.toString();
-
     tiles.innerHTML = "";
     tokens.innerHTML = "";
 
@@ -285,15 +255,13 @@ function render() {
     var y = '';
     var code = '';
     
-    const lines = data.board;
-    
     for (row = 0; row <= 22; row += 1) {
 
         ypos = row - 11;
         y = 550 + ypos * 45;
 
         for (col = 0; col <= 44; col += 2) {
-            code = lines[row][col];
+            code = board[row][col];
             xpos = (col - 22) / 2;
             x = 550 + xpos * 50 + ypos * 25;
 
@@ -301,43 +269,75 @@ function render() {
 
                 if (code == '=') {
 
-                    const preRes = lines[row-1][col+1];
-                    const postRes = lines[row+1][col-1];
+                    const preRes = board[row-1][col+1];
+                    const postRes = board[row+1][col-1];
                     addPort(code, x, y, preRes, postRes);
 
                 } else if (code == '%') {
 
-                    const preRes = lines[row-1][col-1];
-                    const postRes = lines[row+1][col+1];
+                    const preRes = board[row-1][col-1];
+                    const postRes = board[row+1][col+1];
                     addPort(code, x, y, preRes, postRes);
 
                 } else if (code == '$') {
 
-                    const preRes = lines[row][col-2];
-                    const postRes = lines[row][col+2];
+                    const preRes = board[row][col-2];
+                    const postRes = board[row][col+2];
                     addPort(code, x, y, preRes, postRes);
                 }
 
-                const playerNum = lines[row][col+1];
+                const playerNum = board[row][col+1];
                 if (playerNum != ' ') {
-                    const player = data.players[parseInt(playerNum)];
-                    addToken(code, player.color, x, y);
+                    const playerColor = playerColors[parseInt(playerNum)];
+                    addToken(code, playerColor, x, y);
                 }
 
             } else if ('HLWSEX'.includes(code)) {
 
-                const roll = lines[row+1].substring(col-1, col+1).trim();
-                const hasBandit = lines[row-1][col+1] == '*';
+                const roll = board[row+1].substring(col-1, col+1).trim();
+                const hasBandit = board[row-1][col+1] == '*';
                 addTile(code, roll, hasBandit, x, y);
             }
         }
     }
 }
 
-firebase.database().ref('/').on('value', (snapshot) => {
-    data = snapshot.val();
-    render();
+firebase.database().ref('/board').on('value', (snapshot) => {
+    board = snapshot.val();
+    updateBoard();
 });
+    
+function updatePlayer() {
+    
+    if (player == null) {
+        return;
+    }
+    
+    stats.innerHTML = "";
+    
+    for (const [resCode, name] of Object.entries(resNames)) {
+        const amount = player.resources[resCode].toString();
+        stats.innerHTML += name + ": " + amount + "&nbsp;&nbsp;";
+    }
+    
+    stats.innerHTML += "<br/>Entwicklungskarten: -";
+    stats.innerHTML += "<br/>Siegpunkte: 0";
+}
+
+
+function setPlayer() {
+    
+    const password = passwordInput.value;
+    
+    if (password == '') {
+        return;
+    }
+    
+    firebase.database().ref('/' + password).on('value', (snapshot) => {
+        player = snapshot.val();
+        updatePlayer();
+    });
+}
 
 </script>
     </body>

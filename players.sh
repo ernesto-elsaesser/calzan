@@ -1,0 +1,1 @@
+firebase database:set --force /players players.json

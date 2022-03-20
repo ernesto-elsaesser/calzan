@@ -1,0 +1,1 @@
+firebase database:set  --force --data "10" /dice

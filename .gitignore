@@ -1,4 +1,5 @@
 .DS_Store
 .firebase
+.ipynb_checkpoints
 serviceAccountKey.json
 firebase-debug.log

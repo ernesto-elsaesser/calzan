@@ -16,10 +16,8 @@
         <div style="text-align: center">
             <h3>SPIELER</h3>
             <div id="players"></div>
-            <div style="margin: 20px">
-                Holz: <span id="H">0</span> Lehm: <span id="L">0</span> Weizen: <span id="W">0</span> Schafe: <span id="S">0</span> Erz: <span id="E">0</span> Siegpunkte: <span id="P">0</span>
-            </div>
-            <div>Würfel: <span id="dice">-</span></div>
+            <div id="resources" style="margin: 20px"></div>
+            <div id="dice"></div>
             <svg id="board" width="800" height="800" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
 
@@ -29,24 +27,9 @@
         <script>
 
 const players = document.getElementById("players");
+const resources = document.getElementById("resources");
 const dice = document.getElementById("dice");
 const board = document.getElementById("board");
-
-const resourceLabels = [
-    document.getElementById('H'),
-    document.getElementById('L'),
-    document.getElementById('W'),
-    document.getElementById('S'),
-    document.getElementById('E')
-];
-
-const playerColors = {
-    '1': '#E33E09',
-    '2': '#1C79D5',
-    '3': '#FBCD19',
-    '4': '#8A58E8',
-    '5': '#EB7EC5'
-};
 
 const resNames = {
     'H': 'Holz',
@@ -54,7 +37,7 @@ const resNames = {
     'W': 'Weizen',
     'S': 'Schafe',
     'E': 'Erz',
-};   
+};
 
 const resColors = {
     'H': '#6E9B3C',
@@ -74,7 +57,7 @@ const resStrokeColors = {
     'X': '#D8CC8B'
 };
 
-var state = null;
+var data = null;
 var chosenPlayer = null;
 
 function shape(tag) {
@@ -191,8 +174,7 @@ function addPort(tokenCode, x, y, preRes, postRes) {
     board.appendChild(label);
 }
 
-function addToken(tokenCode, playerNum, x, y) {
-    const color = playerColors[playerNum];
+function addToken(tokenCode, color, x, y) {
     if (tokenCode == '+') {
         const town = shape('circle', x, y);
         town.setAttribute('fill', color);
@@ -224,9 +206,31 @@ function addToken(tokenCode, playerNum, x, y) {
 
 function render() {
 
-    if (state == null) {
+    if (data == null) {
         return;
     }
+
+    players.innerHTML = "";
+    resources.innerHTML = "";
+
+    for (const [playerNum, playerData] of Object.entries(data.players)) {
+        const button = document.createElement('button');
+        button.className = 'player';
+        button.style.backgroundColor = playerData.color;
+        button.onclick = function() { chosenPlayer = playerNum; render(); };
+        players.appendChild(button);
+
+        if (playerNum == chosenPlayer) {
+            button.innerHTML = "&horbar;&horbar;&horbar;&horbar;";
+            for (const [resCode, amount] of Object.entries(playerData.resources))
+                resources.innerHTML += resNames[resCode] + ": " + amount.toString() + "";
+            }
+        } else {
+            button.innerHTML = '&nbsp';
+        }
+    }
+    
+    dice.innerHTML = "Würfel: " + data.dice.toString();
 
     board.innerHTML = "";
 
@@ -237,85 +241,59 @@ function render() {
     var x = '';
     var y = '';
     var code = '';
+    
+    const lines = data.board.split(/\n/);
 
-    for (row = 0; row <= 24; row += 2) {
+    for (row = 0; row <= 22; row += 2) {
 
-        ypos = row - 12;
+        ypos = row - 11;
         y = 500 + ypos * 45;
 
-        for (col = 0; col <= 48; col += 2) {
-            code = state[row][col];
-            xpos = (col - 24) / 2;
+        for (col = 0; col <= 44; col += 2) {
+            code = lines[row][col];
+            xpos = (col - 22) / 2;
             x = 500 + xpos * 50 + ypos * 25;
 
             if ('#+-=/%|$'.includes(code)) {
 
                 if (code == '=') {
 
-                    const preRes = state[row-1][col+1];
-                    const postRes = state[row+1][col-1];
+                    const preRes = lines[row-1][col+1];
+                    const postRes = lines[row+1][col-1];
                     addPort(code, x, y, preRes, postRes);
 
                 } else if (code == '%') {
 
-                    const preRes = state[row-1][col-1];
-                    const postRes = state[row+1][col+1];
+                    const preRes = lines[row-1][col-1];
+                    const postRes = lines[row+1][col+1];
                     addPort(code, x, y, preRes, postRes);
 
                 } else if (code == '$') {
 
-                    const preRes = state[row][col-2];
-                    const postRes = state[row][col+2];
+                    const preRes = lines[row][col-2];
+                    const postRes = lines[row][col+2];
                     addPort(code, x, y, preRes, postRes);
                 }
 
-                const playerNum = state[row][col+1];
+                const playerNum = lines[row][col+1];
+                const playerColor = data.players[playerNum].color;
                 if (playerNum != ' ') {
-                    addToken(code, playerNum, x, y);
+                    addToken(code, playerColor, x, y);
                 }
 
             } else if ('HLWSEX'.includes(code)) {
 
-                const roll = state[row+1].substring(col-1, col+1).trim();
-                const hasBandit = state[row-1][col+1] == '*';
+                const roll = lines[row+1].substring(col-1, col+1).trim();
+                const hasBandit = lines[row-1][col+1] == '*';
                 addTile(code, roll, hasBandit, x, y);
-
             }
         }
-    }
-
-    players.innerHTML = "";
-
-    while (state[row]) {
-        const playerNum = state[row][0];
-        const button = document.createElement('button');
-        button.className = 'player';
-        button.style.backgroundColor = playerColors[playerNum];
-        button.onclick = function() { chosenPlayer = playerNum; render(); };
-        players.appendChild(button);
-
-        if (playerNum == chosenPlayer) {
-            button.innerHTML = '&horbar;&horbar;&horbar;&horbar;';
-            for (col = 0; col < 5; col += 1) {
-                resourceLabels[col].innerHTML = game[row][col + 2];
-            }
-        } else {
-            button.innerHTML = '&nbsp';
-        }
-
-        row += 1;
     }
 }
 
-const db = firebase.database();
-
-db.ref('/state').on('value', (snapshot) => {
-    state = snapshot.val().split(/\n/);
+firebase.database().ref('/').on('value', (snapshot) => {
+    data = snapshot.val();
     render();
-});
-
-db.ref('/dice').on('value', (snapshot) => {
-    dice.innerHTML = snapshot.val().toString();
 });
 
         </script>

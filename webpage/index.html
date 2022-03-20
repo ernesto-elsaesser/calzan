@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Die Baustelle von Calzan</title>
+        <title>Calzan</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="utf-8" />
 
@@ -36,6 +36,10 @@
 <script src="/__/firebase/8.10.1/firebase-database.js"></script>
 <script src="/__/firebase/init.js"></script>
 <script>
+
+const capitals = 'BCDEFGHJKLMNPQRSTVWXYZ';
+const idx = Math.trunc(Math.random() * capitals.length);
+document.title = "Die " + capitals[idx] + "eedler von Calzan";
 
 const tiles = document.getElementById("tiles");
 const tokens = document.getElementById("tokens");

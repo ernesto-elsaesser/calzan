@@ -8,7 +8,8 @@
         <style>
             #board { width: 800px; height: 800px; margin: 20px auto; }
             #player { margin-top: 20px; text-align: center; }
-            #stats { margin: 20px 0 40px; }
+            #stats { margin-top: 20px; }
+            #player img { margin: 30px; }
             .roll { font: bold 32px 'Brush Script MT', cursive; }
             .port { font: bold 20px 'Brush Script MT', cursive; }
             .portw { font: bold 20px 'Brush Script MT', cursive; fill: white; }
@@ -353,15 +354,28 @@ function updatePlayer() {
     
     stats.innerHTML += "<br/><br/><b>Entwicklungskarten</b><br/>";
     
-    const ks = player.cards.knights.toString();
-    const oks = player.cards.playedKnights.toString();
-    const hks = (player.cards.knights - player.cards.playedKnights).toString();
-    stats.innerHTML += ks + " Ritter (" + oks + " offen, " + hks + " verdeckt)";
+    var hasCards = false;
+    
+    if (player.cards.knights) {
+        const ks = player.cards.knights.toString();
+        const oks = player.cards.playedKnights.toString();
+        const hks = (player.cards.knights - player.cards.playedKnights).toString();
+        stats.innerHTML += ks + " Ritter (" + oks + " offen, " + hks + " verdeckt)";
+        hasCards = true;
+    }
     
     if (player.cards.actions) {
         for (const card of player.cards.actions) {
-            stats.innerHTML += ", " + card;
+            if (hasCards) {
+                stats.innerHTML += ", ";
+            }
+            stats.innerHTML += card;
+            hasCards = true;
         }
+    }
+    
+    if (hasCards == false) {
+        stats.innerHTML += 'keine Karten';
     }
     
     stats.innerHTML += "<br/><br/><b>Siegpunkte</b><br/>";
@@ -387,12 +401,12 @@ function updatePlayer() {
         }
     }
     
-    if (player.maxRoads) {
+    if (player.cards.maxRoads) {
         stats.innerHTML += " + Längste Handelsstraße (2P)";
         points += 2;
     }
     
-    if (player.maxKnights) {
+    if (player.cards.maxKnights) {
         stats.innerHTML += " + Größte Rittermacht (2P)";
         points += 2;
     }

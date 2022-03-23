@@ -1,5 +1,5 @@
 .DS_Store
 .firebase
 .ipynb_checkpoints
-serviceAccountKey.json
+creds.json
 *.log

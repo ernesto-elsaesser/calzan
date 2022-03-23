@@ -4,23 +4,29 @@
         <title>Calzan</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="utf-8" />
-
+        
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora">
         <style>
+            #turn { margin: 20px 0 10px; font: bold 20px 'Lora'; }
             #board { width: 800px; height: 800px; margin: 20px auto; }
             #player { margin-top: 20px; text-align: center; }
             #stats { margin-top: 20px; }
             #player img { margin: 30px; }
-            .roll { font: bold 32px 'Brush Script MT', cursive; }
-            .port { font: bold 20px 'Brush Script MT', cursive; }
-            .portw { font: bold 20px 'Brush Script MT', cursive; fill: white; }
+            .roll { font: bold 48px 'Lora'; }
+            .rollr { font: bold 60px 'Lora'; fill: firebrick; }
+            .port { font: bold 22px 'Lora'; letter-spacing: 2px; }
+            .portw { font: bold 22px 'Lora'; letter-spacing: 2px; fill: white; }
         </style>
     </head>
     <body>
         <div style="text-align: center">
+            <div id="turn"></div>
+            
             <svg id="board" width="800" height="800" viewBox="0 0 1100 1100" xmlns="http://www.w3.org/2000/svg">
                 <circle fill="#2D2F6C" cx="550" cy="550" r=550 />
                 <g id="tiles"></g>
                 <g id="tokens"></g>
+                <g id="bandits"></g>
             </svg>
             
             <div id="player">
@@ -41,8 +47,10 @@ const capitals = 'BCDEFGHJKLMNPQRSTVWXYZ';
 const idx = Math.trunc(Math.random() * capitals.length);
 document.title = "Die " + capitals[idx] + "eedler von Calzan";
 
+const turn = document.getElementById("turn");
 const tiles = document.getElementById("tiles");
 const tokens = document.getElementById("tokens");
+const bandits = document.getElementById("bandits");
 const login = document.getElementById("login");
 const passwordInput = document.getElementById("password");
 const stats = document.getElementById("stats");
@@ -122,15 +130,6 @@ function addTile(resCode, roll, hasBandit, x, y) {
     tile.setAttribute('stroke-width', 5);
     tiles.appendChild(tile);
 
-    if (roll) {
-        const label = shape('text');
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('x', x);
-        label.setAttribute('y', y + 10);
-        label.setAttribute('class', 'roll');
-        label.innerHTML = roll;
-        tiles.appendChild(label);
-    }
 
     if (hasBandit) {
         const bandit = shape('g');
@@ -143,7 +142,19 @@ function addTile(resCode, roll, hasBandit, x, y) {
         <circle cx="104.980469" cy="102.539062" r="7.32421875"></circle>
         <path d="M167.072526,163.201074 L168.356728,165.277438 C155.696726,173.107476 143.073559,173.270602 130.687635,165.760372 L129.897369,165.270574 L131.203504,163.207937 C142.791134,170.545638 154.417091,170.705153 166.281228,163.680057 L167.072526,163.201074 Z" fill-rule="nonzero"></path>
         `;
-        tiles.appendChild(bandit);
+        bandits.appendChild(bandit);
+    } else if (roll) {
+        const label = shape('text');
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('x', x);
+        label.setAttribute('y', y + 10);
+        if ('86'.includes(roll)) {
+            label.setAttribute('class', 'rollr');
+        } else { 
+            label.setAttribute('class', 'roll');
+        }
+        label.innerHTML = roll;
+        tiles.appendChild(label);
     }
 }
 
@@ -156,36 +167,36 @@ function addPort(tokenCode, x, y, preRes, postRes) {
     if ('hlwsex'.includes(preRes)) {
         resCode = preRes;
         if (tokenCode == '=') {
-            py -= 50;
+            py -= 45;
         } else if (tokenCode == '%') {
-            px -= 50;
-            py -= 25;
+            px -= 40;
+            py -= 20;
         } else if (tokenCode == '$') {
-            px -= 50;
-            py += 25;
+            px -= 40;
+            py += 20;
         }
     } else if ('hlwsex'.includes(postRes)) {
         resCode = postRes;
         if (tokenCode == '=') {
-            py += 50;
+            py += 45;
         } else if (tokenCode == '%') {
-            px += 50;
-            py += 25;
+            px += 40;
+            py += 20;
         } else if (tokenCode == '$') {
-            px += 50;
-            py -= 25;
+            px += 40;
+            py -= 20;
         }
     }
     
     const port = shape('circle');
     port.setAttribute('cx', px);
     port.setAttribute('cy', py);
-    port.setAttribute('r', 30);
+    port.setAttribute('r', 25);
 
     const label = shape('text');
     label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('x', px);
-    label.setAttribute('y', py + 7);
+    label.setAttribute('x', px + 0.5);
+    label.setAttribute('y', py + 7.5);
     
     if (resCode == 'x') {
         port.setAttribute('fill-opacity', 0);
@@ -336,6 +347,11 @@ firebase.database().ref('/board').on('value', (snapshot) => {
     updateBoard();
 });
     
+firebase.database().ref('/turn').on('value', (snapshot) => {
+    o = snapshot.val();
+    turn.innerHTML = "Spieler " + o.player + " hat eine " + o.roll + " gewürfelt.";
+});
+    
 function updatePlayer() {
     
     stats.innerHTML = "";
@@ -425,7 +441,9 @@ function setPlayer(password) {
     
     firebase.database().ref('/' + password).on('value', (snapshot) => {
         player = snapshot.val();
-        login.style.display = 'none';
+        if (player) {
+            login.style.display = 'none';
+        }
         updatePlayer();
     });
 }

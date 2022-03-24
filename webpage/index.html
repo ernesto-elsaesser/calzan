@@ -107,14 +107,24 @@ var townCounts = [0, 0, 0, 0, 0];
 var cityCounts = [0, 0, 0, 0, 0];
 
     
-firebase.database().ref('/turn').on('value', (snapshot) => {
-    turn = snapshot.val();
+function updateTurn() {
+    
+    if (turn == null) {
+        return;
+    }
+    
     const ps = (turn.player + 1).toString();
     if (turn.roll) {
         header.innerHTML = "Spieler " + ps + " hat eine " + turn.roll.toString() + " gewürfelt.";
     } else {
         header.innerHTML = "Spieler " + ps + " darf legen.";
     }
+}
+    
+    
+firebase.database().ref('/turn').on('value', (snapshot) => {
+    turn = snapshot.val();
+    updateTurn();
 });
 
 function shape(tag) {
@@ -373,7 +383,7 @@ function updatePlayer() {
     stats.innerHTML += '<h3 style="color: ' + color + '">SPIELER ' + ns + "</h3>";
     
     stats.innerHTML += "<b>Rohstoffe</b><br/>";
-    if (player.resources.length) {
+    if (player.resources) {
         // TODO: use icons, repeat icons
         stats.innerHTML += player.resources.join(', ');
         stats.innerHTML += " (" + player.resources.length.toString() + ")";
@@ -382,8 +392,11 @@ function updatePlayer() {
     }
     
     stats.innerHTML += "<br/><br/><b>Entwicklungskarten</b><br/>";
-    if (player.cards.length) {
+    
+    var victoryCards = [];
+    if (player.cards) {
         stats.innerHTML += player.cards.join(', ');
+        victoryCards = player.cards.filter(c => victoryCardNames.contains(c));
     } else {
         stats.innerHTML += 'keine Karten';
     }
@@ -404,23 +417,22 @@ function updatePlayer() {
         points += cityCount * 2;
     }
     
-    const victoryCards = player.cards.filter(c => victoryCardNames.contains(c));
     for (const card of victoryCards) {
         stats.innerHTML += " + " + card + " (1P)";
         points += 1;
     }
     
-    if (player.cards.maxRoads) {
+    if (turn.longestRoadPlayer == player.number) {
         stats.innerHTML += " + Längste Handelsstraße (2P)";
         points += 2;
     }
     
-    if (player.cards.maxKnights) {
+    if (turn.maxKnightsPlayer == player.number) {
         stats.innerHTML += " + Größte Rittermacht (2P)";
         points += 2;
     }
     
-    if (points) {
+    if (points > 0) {
         stats.innerHTML += " = " + points.toString();
     } else {
         stats.innerHTML += 'keine Punkte';
@@ -432,7 +444,7 @@ function setPlayer(nickname) {
     
     stats.innerHTML = "Lade ...";
     
-    firebase.database().ref('/player/' + nickname).on('value', (snapshot) => {
+    firebase.database().ref('/players/' + nickname).on('value', (snapshot) => {
         player = snapshot.val();
         if (player) {
             login.style.display = 'none';

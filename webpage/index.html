@@ -47,7 +47,7 @@ const capitals = 'BCDEFGHJKLMNPQRSTVWXYZ';
 const idx = Math.trunc(Math.random() * capitals.length);
 document.title = "Die " + capitals[idx] + "eedler von Calzan";
 
-const turn = document.getElementById("turn");
+const header = document.getElementById("turn");
 const tiles = document.getElementById("tiles");
 const tokens = document.getElementById("tokens");
 const bandits = document.getElementById("bandits");
@@ -96,12 +96,26 @@ const resStrokeColors = {
     'X': '#D8CC8B'
 };
     
-const pointCards = 'BMHKU';
+const victoryCardNames = [
+    "Bibliothek", "Marktplatz", "Rathaus", "Kirche", "Universität"
+];
 
+var turn = null;
 var board = null;
 var player = null;
 var townCounts = [0, 0, 0, 0, 0];
 var cityCounts = [0, 0, 0, 0, 0];
+
+    
+firebase.database().ref('/turn').on('value', (snapshot) => {
+    turn = snapshot.val();
+    const ps = (turn.player + 1).toString();
+    if (turn.roll) {
+        header.innerHTML = "Spieler " + ps + " hat eine " + turn.roll.toString() + " gewürfelt.";
+    } else {
+        header.innerHTML = "Spieler " + ps + " darf legen.";
+    }
+});
 
 function shape(tag) {
     return document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -147,10 +161,11 @@ function addTile(resCode, roll, hasBandit, x, y) {
         const label = shape('text');
         label.setAttribute('text-anchor', 'middle');
         label.setAttribute('x', x);
-        label.setAttribute('y', y + 10);
         if ('86'.includes(roll)) {
+            label.setAttribute('y', y + 16);
             label.setAttribute('class', 'rollr');
         } else { 
+            label.setAttribute('y', y + 11);
             label.setAttribute('class', 'roll');
         }
         label.innerHTML = roll;
@@ -196,17 +211,18 @@ function addPort(tokenCode, x, y, preRes, postRes) {
     const label = shape('text');
     label.setAttribute('text-anchor', 'middle');
     label.setAttribute('x', px + 0.5);
-    label.setAttribute('y', py + 7.5);
     
     if (resCode == 'x') {
         port.setAttribute('fill-opacity', 0);
         port.setAttribute('stroke', 'white');
         port.setAttribute('stroke-width', 2);
         label.setAttribute('class', 'portw');
+        label.setAttribute('y', py + 7);
         label.innerHTML = '3:1';
     } else {
         port.setAttribute('fill', resColors[resCode.toUpperCase()]);
         label.setAttribute('class', 'port');
+        label.setAttribute('y', py + 7.5);
         label.innerHTML = '2:1';
     }
     
@@ -233,14 +249,11 @@ function addToken(tokenCode, color, x, y) {
         city.setAttribute('fill', color);
         city.setAttribute('r', '25');
         tokens.appendChild(city);
-        const ring = shape('circle');
-        ring.setAttribute('cx', x);
-        ring.setAttribute('cy', y);
-        ring.setAttribute('fill-opacity', 0);
-        ring.setAttribute('stroke', 'white');
-        ring.setAttribute('stroke-width', 3);
-        ring.setAttribute('r', '20');
-        tokens.appendChild(ring);
+        const dot = shape('circle');
+        dot.setAttribute('cx', x);
+        dot.setAttribute('cy', y);
+        dot.setAttribute('r', '10');
+        tokens.appendChild(dot);
     } else {
         const road = shape('rect');
         road.setAttribute('stroke', 'black');
@@ -347,11 +360,6 @@ firebase.database().ref('/board').on('value', (snapshot) => {
     updateBoard();
 });
     
-firebase.database().ref('/turn').on('value', (snapshot) => {
-    o = snapshot.val();
-    turn.innerHTML = "Spieler " + o.player + " hat eine " + o.roll + " gewürfelt.";
-});
-    
 function updatePlayer() {
     
     stats.innerHTML = "";
@@ -365,36 +373,18 @@ function updatePlayer() {
     stats.innerHTML += '<h3 style="color: ' + color + '">SPIELER ' + ns + "</h3>";
     
     stats.innerHTML += "<b>Rohstoffe</b><br/>";
-    
-    for (const [resCode, name] of Object.entries(resNames)) {
-        const amount = player.resources[resCode].toString();
-        stats.innerHTML += name + ": " + amount + "&nbsp;&nbsp;";
+    if (player.resources.length) {
+        // TODO: use icons, repeat icons
+        stats.innerHTML += player.resources.join(', ');
+        stats.innerHTML += " (" + player.resources.length.toString() + ")";
+    } else {
+        stats.innerHTML += 'keine Rofstoffe';
     }
-    
     
     stats.innerHTML += "<br/><br/><b>Entwicklungskarten</b><br/>";
-    
-    var hasCards = false;
-    
-    if (player.cards.knights) {
-        const ks = player.cards.knights.toString();
-        const oks = player.cards.playedKnights.toString();
-        const hks = (player.cards.knights - player.cards.playedKnights).toString();
-        stats.innerHTML += ks + " Ritter (" + oks + " offen, " + hks + " verdeckt)";
-        hasCards = true;
-    }
-    
-    if (player.cards.actions) {
-        for (const card of player.cards.actions) {
-            if (hasCards) {
-                stats.innerHTML += ", ";
-            }
-            stats.innerHTML += card;
-            hasCards = true;
-        }
-    }
-    
-    if (hasCards == false) {
+    if (player.cards.length) {
+        stats.innerHTML += player.cards.join(', ');
+    } else {
         stats.innerHTML += 'keine Karten';
     }
     
@@ -414,11 +404,10 @@ function updatePlayer() {
         points += cityCount * 2;
     }
     
-    if (player.cards.victory) {
-        for (const card of player.cards.victory) {
-            stats.innerHTML += " + " + card + " (1P)";
-            points += 1;
-        }
+    const victoryCards = player.cards.filter(c => victoryCardNames.contains(c));
+    for (const card of victoryCards) {
+        stats.innerHTML += " + " + card + " (1P)";
+        points += 1;
     }
     
     if (player.cards.maxRoads) {
@@ -431,15 +420,19 @@ function updatePlayer() {
         points += 2;
     }
     
-    stats.innerHTML += " = " + points.toString();
+    if (points) {
+        stats.innerHTML += " = " + points.toString();
+    } else {
+        stats.innerHTML += 'keine Punkte';
+    }
 }
 
 
-function setPlayer(password) {
+function setPlayer(nickname) {
     
     stats.innerHTML = "Lade ...";
     
-    firebase.database().ref('/' + password).on('value', (snapshot) => {
+    firebase.database().ref('/player/' + nickname).on('value', (snapshot) => {
         player = snapshot.val();
         if (player) {
             login.style.display = 'none';

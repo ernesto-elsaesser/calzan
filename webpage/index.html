@@ -7,15 +7,18 @@
         
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora">
         <style>
-            #turn { margin: 20px 0 10px; font: bold 20px 'Lora'; }
+            body { font-family: Arial, sans; }
+            #turn { margin: 16px 0 8px; font-size: 24px; }
             #board { width: 800px; height: 800px; margin: 20px auto; }
             #player { margin-top: 20px; text-align: center; }
             #stats { margin-top: 20px; }
-            #player img { margin: 30px; }
+            #reference { margin-top: 20px; }
+            #reference img { margin: 30px; }
             .roll { font: bold 48px 'Lora'; }
             .rollr { font: bold 60px 'Lora'; fill: firebrick; }
             .port { font: bold 22px 'Lora'; letter-spacing: 2px; }
             .portw { font: bold 22px 'Lora'; letter-spacing: 2px; fill: white; }
+            .tag { font-weight: bold; }
         </style>
     </head>
     <body>
@@ -29,9 +32,17 @@
                 <g id="bandits"></g>
             </svg>
             
-            <div id="player">
-                <div id="login">Passwort: <input id="password" type="text" /></div>
-                <p id="stats"></p>
+            <div id="stats" style="display: none">
+                <h2 id="ident"></h2>
+                <h4>Rohstoffe</h4>
+                <div id="resources"></div>
+                <h4>Entwicklungskarten</h4>
+                <div id="cards"></div>
+                <h4>Siegpunkte</h4>
+                <div id="victory"></div>
+            </div>
+            
+            <div id="reference">
                 <img src="img/costs.jpg" />
                 <img src="img/develop.jpg" width="800"/>
                 <img src="img/special.jpg" width="500" />
@@ -51,16 +62,11 @@ const header = document.getElementById("turn");
 const tiles = document.getElementById("tiles");
 const tokens = document.getElementById("tokens");
 const bandits = document.getElementById("bandits");
-const login = document.getElementById("login");
-const passwordInput = document.getElementById("password");
 const stats = document.getElementById("stats");
-    
-passwordInput.addEventListener("keyup", function(event) {
-    const password = passwordInput.value;
-    if (event.keyCode === 13 && password.length) {
-        setPlayer(password);
-    }
-});
+const ident = document.getElementById("ident");
+const resources = document.getElementById("resources");
+const cards = document.getElementById("cards");
+const victory = document.getElementById("victory");
 
 const playerColors = [
     "#E33E09",
@@ -70,19 +76,11 @@ const playerColors = [
     "#EB7EC5"
 ];
 
-const resNames = {
-    'H': 'Holz',
-    'L': 'Lehm',
-    'W': 'Weizen',
-    'S': 'Schafe',
-    'E': 'Erz',
-};
-
 const resColors = {
     'H': '#6E9B3C',
     'L': '#DF9327',
-    'W': '#EFDA61',
-    'S': '#AEE670',
+    'G': '#EFDA61',
+    'W': '#AEE670',
     'E': '#A4A296',
     'X': '#EBE3B0'
 };
@@ -90,8 +88,8 @@ const resColors = {
 const resStrokeColors = {
     'H': '#4F702A',
     'L': '#A87325',
-    'W': '#CCB94C',
-    'S': '#89C852',
+    'G': '#CCB94C',
+    'W': '#89C852',
     'E': '#7F7E74',
     'X': '#D8CC8B'
 };
@@ -102,22 +100,27 @@ const victoryCardNames = [
 
 var turn = null;
 var board = null;
-var player = null;
+var me = null;
 var townCounts = [0, 0, 0, 0, 0];
 var cityCounts = [0, 0, 0, 0, 0];
 
     
 function updateTurn() {
     
+    header.innerHTML = "";
+    
     if (turn == null) {
         return;
     }
     
-    const ps = (turn.player + 1).toString();
+    const name = turn.names[turn.currentTurn];
+    const tag = createPlayerTag(turn.currentTurn, name);
+    header.appendChild(tag);
+    
     if (turn.roll) {
-        header.innerHTML = "Spieler " + ps + " hat eine " + turn.roll.toString() + " gewürfelt.";
+        header.innerHTML += " hat eine " + turn.roll.toString() + " gewürfelt.";
     } else {
-        header.innerHTML = "Spieler " + ps + " darf legen.";
+        header.innerHTML += " darf legen.";
     }
 }
     
@@ -189,7 +192,7 @@ function addPort(tokenCode, x, y, preRes, postRes) {
     var px = x;
     var py = y;
 
-    if ('hlwsex'.includes(preRes)) {
+    if ('hlgwex'.includes(preRes)) {
         resCode = preRes;
         if (tokenCode == '=') {
             py -= 45;
@@ -200,7 +203,7 @@ function addPort(tokenCode, x, y, preRes, postRes) {
             px -= 40;
             py += 20;
         }
-    } else if ('hlwsex'.includes(postRes)) {
+    } else if ('hlgwex'.includes(postRes)) {
         resCode = postRes;
         if (tokenCode == '=') {
             py += 45;
@@ -353,7 +356,7 @@ function updateBoard() {
                     }
                 }
 
-            } else if ('HLWSEX'.includes(code)) {
+            } else if ('HLGWEX'.includes(code)) {
 
                 const roll = board[row+1].substring(col-1, col+1).trim();
                 const hasBandit = board[row-1][col+1] == '*';
@@ -369,86 +372,99 @@ firebase.database().ref('/board').on('value', (snapshot) => {
     board = snapshot.val();
     updateBoard();
 });
+
+function createPlayerTag(playerNum, playerName) {
+    
+    const span = document.createElement('span');
+    span.className = "tag";
+    span.style.color = playerColors[playerNum];
+    span.innerHTML = playerName;
+    return span;
+}
+    
+function createResource(resCode) {
+    
+    const img = document.createElement('img');
+    img.src = "img/" + resCode + ".png";
+    img.width = "50";
+    return img;
+}
     
 function updatePlayer() {
     
-    stats.innerHTML = "";
+    ident.innerHTML = "";
+    resources.innerHTML = "";
+    cards.innerHTML = "";
+    victory.innerHTML = "";
     
-    if (player == null) {
+    if (me == null) {
         return;
     }
     
-    const ns = (player.number + 1).toString();
-    const color = playerColors[player.number];
-    stats.innerHTML += '<h3 style="color: ' + color + '">SPIELER ' + ns + "</h3>";
+    stats.style.display = 'block';
     
-    stats.innerHTML += "<b>Rohstoffe</b><br/>";
-    if (player.resources) {
-        // TODO: use icons, repeat icons
-        stats.innerHTML += player.resources.join(', ');
-        stats.innerHTML += " (" + player.resources.length.toString() + ")";
+    const tag = createPlayerTag(me.number, me.name);
+    ident.appendChild(tag);
+    
+    if (me.resources) {
+        for (const resCode of me.resources) {
+            const resource = createResource(resCode);
+            resources.appendChild(resource);
+        }
     } else {
-        stats.innerHTML += 'keine Rofstoffe';
+        resources.innerHTML += 'keine Rohstoffe';
     }
-    
-    stats.innerHTML += "<br/><br/><b>Entwicklungskarten</b><br/>";
     
     var victoryCards = [];
-    if (player.cards) {
-        stats.innerHTML += player.cards.join(', ');
-        victoryCards = player.cards.filter(c => victoryCardNames.contains(c));
+    if (me.cards) {
+        cards.innerHTML += me.cards.join(', ');
+        victoryCards = me.cards.filter(c => victoryCardNames.contains(c));
     } else {
-        stats.innerHTML += 'keine Karten';
+        cards.innerHTML += 'keine Karten';
     }
-    
-    stats.innerHTML += "<br/><br/><b>Siegpunkte</b><br/>";
     
     var points = 0;
     
-    const townCount = townCounts[player.number];
+    const townCount = townCounts[me.number];
     if (townCount) {
-        stats.innerHTML += townCount.toString() + " Siedlungen (1P)";
+        victory.innerHTML += townCount.toString() + " Siedlungen (1P)";
         points += townCount;
     }
     
-    const cityCount = cityCounts[player.number];
+    const cityCount = cityCounts[me.number];
     if (cityCount) {
-        stats.innerHTML += " + " + cityCount.toString() + " Städte (2P)";
+        victory.innerHTML += " + " + cityCount.toString() + " Städte (2P)";
         points += cityCount * 2;
     }
     
     for (const card of victoryCards) {
-        stats.innerHTML += " + " + card + " (1P)";
+        victory.innerHTML += " + " + card + " (1P)";
         points += 1;
     }
     
-    if (turn.longestRoadPlayer == player.number) {
-        stats.innerHTML += " + Längste Handelsstraße (2P)";
+    if (turn.longestRoadPlayer == me.number) {
+        victory.innerHTML += " + Längste Handelsstraße (2P)";
         points += 2;
     }
     
-    if (turn.maxKnightsPlayer == player.number) {
-        stats.innerHTML += " + Größte Rittermacht (2P)";
+    if (turn.maxKnightsPlayer == me.number) {
+        victory.innerHTML += " + Größte Rittermacht (2P)";
         points += 2;
     }
     
     if (points > 0) {
-        stats.innerHTML += " = " + points.toString();
+        victory.innerHTML += " = " + points.toString();
     } else {
-        stats.innerHTML += 'keine Punkte';
+        victory.innerHTML += 'keine Punkte';
     }
 }
 
+const secret = window.location.hash.substr(1);
 
-function setPlayer(nickname) {
+if (secret) {
     
-    stats.innerHTML = "Lade ...";
-    
-    firebase.database().ref('/players/' + nickname).on('value', (snapshot) => {
-        player = snapshot.val();
-        if (player) {
-            login.style.display = 'none';
-        }
+    firebase.database().ref('/players/' + secret).on('value', (snapshot) => {
+        me = snapshot.val();
         updatePlayer();
     });
 }

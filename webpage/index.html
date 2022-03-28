@@ -19,6 +19,7 @@
             .rollr { font: bold 60px 'Lora'; fill: firebrick; }
             .port { font: bold 22px 'Lora'; letter-spacing: 2px; }
             .portw { font: bold 22px 'Lora'; letter-spacing: 2px; fill: white; }
+            .bid { font: 12px 'Lora'; }
             .tag { font-weight: bold; }
         </style>
     </head>
@@ -103,6 +104,7 @@ const victoryCardNames = [
 var turn = null;
 var board = null;
 var me = null;
+var gm = false;
 var townCounts = playerColors.map(x => 0);
 var cityCounts = playerColors.map(x => 0);
 
@@ -339,13 +341,16 @@ function updateBoard() {
                 addRoad(playerColors[cell.road], angle, x, y);
             }
             
-            /*
-            const dot = shape('circle');
-            dot.setAttribute('cx', x);
-            dot.setAttribute('cy', y);
-            dot.setAttribute('r', 3);
-            bandits.appendChild(dot);
-            */
+            const bid = row * 100 + col;
+            if (gm) {
+                const label = shape('text');
+                label.setAttribute('text-anchor', 'middle');
+                label.setAttribute('class', 'bid');
+                label.setAttribute('x', x);
+                label.setAttribute('y', y + 4);
+                label.innerHTML = bid.toString();
+                bandits.appendChild(label);
+            }
         }
     }
     

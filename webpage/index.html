@@ -8,6 +8,7 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora">
         <style>
             body { font-family: Arial, sans; }
+            h4 { margin: 30px 0 15px; }
             #turn { margin: 16px 0 8px; font-size: 24px; }
             #board { width: 800px; height: 800px; margin: 20px auto; }
             #player { margin-top: 20px; text-align: center; }
@@ -69,6 +70,7 @@ const cards = document.getElementById("cards");
 const victory = document.getElementById("victory");
 
 const playerColors = [
+    "",
     "#E33E09",
     "#1C79D5",
     "#FBCD19",
@@ -101,8 +103,8 @@ const victoryCardNames = [
 var turn = null;
 var board = null;
 var me = null;
-var townCounts = [0, 0, 0, 0, 0];
-var cityCounts = [0, 0, 0, 0, 0];
+var townCounts = playerColors.map(x => 0);
+var cityCounts = playerColors.map(x => 0);
 
     
 function updateTurn() {
@@ -141,7 +143,7 @@ function addTile(resource, roll, hasBandit, x, y) {
     
     const xs = x.toString();
     const ys = y.toString();
-    const hexaPath = 'M-80,0 L-80,48 L0,96 L80,48 L80,-48 L0,-96 L-80,-48 L-80,0';
+    const hexaPath = 'M-81,0 L-81,48 L0,96 L81,48 L81,-48 L0,-96 L-81,-48 L-81,0';
     //const hexaPath = 'M0,-80 L45,-80 L90,0 L45,80 L-45,80 L-90,0 L-45,-80 L0,-80';
     
     const bg = shape('path');
@@ -270,12 +272,14 @@ function addRoad(color, angle, x, y) {
     road.setAttribute('stroke', 'black');
     road.setAttribute('stroke-width', 1);
     road.setAttribute('fill', color);
-    road.setAttribute('width', '30');
-    road.setAttribute('height', '40');
-    road.setAttribute('rx', '10');
+    road.setAttribute('x', x - 15);
+    road.setAttribute('y', y - 20);
+    road.setAttribute('width', 30);
+    road.setAttribute('height', 40);
+    road.setAttribute('rx', 10);
     const xs = x.toString();
     const ys = y.toString();
-    road.setAttribute('transform', 'translate(' + xs + ',' + ys + ') rotate(' + angle + ') ');
+    road.setAttribute('transform', 'rotate(' + angle + ',' + xs + ',' + ys + ')');
     tokens.appendChild(road);
 }
 
@@ -317,30 +321,31 @@ function updateBoard() {
             }
 
             if (cell.town) {
-                
                 const color = playerColors[cell.town];
-                addTown(color, cell.city, x, y);
+                const ty = board[row+1][col].tile ? y - 26 : y + 26;
+                addTown(color, cell.city, x, ty);
                 if (cell.city) {
-                    cityCounts[intNum] += 1;
+                    cityCounts[cell.town] += 1;
                 } else {
-                    townCounts[intNum] += 1;
+                    townCounts[cell.town] += 1;
                 }
             }
             
             if (cell.road) {
                 var angle = 0;
                 if (row % 2 == 0) {
-                    const neighbor = cell = board[row+1][col+1];
-                    angle = neighbor.tile ? -60 : 60;
+                    angle = board[row+1][col+1].tile ? 60 : -60;
                 }   
                 addRoad(playerColors[cell.road], angle, x, y);
             }
             
+            /*
             const dot = shape('circle');
             dot.setAttribute('cx', x);
             dot.setAttribute('cy', y);
-            dot.setAttribute('r', '5');
+            dot.setAttribute('r', 3);
             bandits.appendChild(dot);
+            */
         }
     }
     

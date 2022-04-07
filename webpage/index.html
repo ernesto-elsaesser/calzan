@@ -353,7 +353,7 @@ function updateBoard() {
                 addPort(cell.port, cell.face, x, y);
             }
 
-            if (cell.town) {
+            if (cell.town != undefined) {
                 const color = playerColors[cell.town];
                 const ty = normCol % 4 == 0 ? y - 26 : y + 26;
                 addTown(color, cell.city, x, ty);
@@ -364,7 +364,7 @@ function updateBoard() {
                 }
             }
             
-            if (cell.road) {
+            if (cell.road != undefined) {
                 var angle = 0;
                 if (row % 2 == 0) {
                     angle = normCol % 4 == 1 ? -60 : 60;

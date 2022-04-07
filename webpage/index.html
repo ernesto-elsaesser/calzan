@@ -9,23 +9,28 @@
         <style>
             body { font-family: Arial, sans; }
             h4 { margin: 30px 0 15px; }
-            #turn { margin: 16px 0 8px; font-size: 24px; }
+            #header { width: 400px; margin: 20px auto 5px; font-size: 20px; background-color: #b4cdd9; padding: 16px; border-radius: 22px; }
+            #roll { padding: 12px 0 5px; }
             #board { width: 800px; height: 800px; margin: 20px auto; }
-            #player { margin-top: 20px; text-align: center; }
             #stats { margin-top: 20px; }
             #reference { margin-top: 20px; }
             #reference img { margin: 30px; }
+            .player { display: inline-block; }
+            .tag { font-weight: bold; }
+            .turn { border: 2px solid black; border-radius: 9px; padding: 3px 6px; }
             .roll { font: bold 48px 'Lora'; }
             .rollr { font: bold 60px 'Lora'; fill: firebrick; }
             .port { font: bold 22px 'Lora'; letter-spacing: 2px; }
             .portw { font: bold 22px 'Lora'; letter-spacing: 2px; fill: white; }
-            .bid { font: 12px 'Lora'; }
-            .tag { font-weight: bold; }
+            .grid { font: 14px 'Lora'; }
         </style>
     </head>
     <body>
         <div style="text-align: center">
-            <div id="turn"></div>
+            <div id="header">
+                <div id="sequence"></div>
+                <div id="roll"></div>
+            </div>
             
             <svg id="board" width="800" height="800" viewBox="0 0 1100 1100" xmlns="http://www.w3.org/2000/svg">
                 <circle fill="#2D2F6C" cx="550" cy="550" r=550 />
@@ -35,7 +40,6 @@
             </svg>
             
             <div id="stats" style="display: none">
-                <h2 id="ident"></h2>
                 <h4>Rohstoffe</h4>
                 <div id="resources"></div>
                 <h4>Entwicklungskarten</h4>
@@ -49,6 +53,10 @@
                 <img src="img/develop.jpg" width="800"/>
                 <img src="img/special.jpg" width="500" />
             </div>
+            
+            <div id="settings">
+                <button onclick="toggleGrid()">Koordinaten</button>
+            </div>
         </div>
 
 <script src="/__/firebase/8.10.1/firebase-app.js"></script>
@@ -60,18 +68,17 @@ const capitals = 'BCDEFGHJKLMNPQRSTVWXYZ';
 const idx = Math.trunc(Math.random() * capitals.length);
 document.title = "Die " + capitals[idx] + "eedler von Calzan";
 
-const header = document.getElementById("turn");
+const sequence = document.getElementById("sequence");
+const roll = document.getElementById("roll");
 const tiles = document.getElementById("tiles");
 const tokens = document.getElementById("tokens");
 const bandits = document.getElementById("bandits");
 const stats = document.getElementById("stats");
-const ident = document.getElementById("ident");
 const resources = document.getElementById("resources");
 const cards = document.getElementById("cards");
 const victory = document.getElementById("victory");
 
 const playerColors = [
-    "",
     "#E33E09",
     "#1C79D5",
     "#FBCD19",
@@ -104,30 +111,57 @@ const victoryCardNames = [
 var turn = null;
 var board = null;
 var me = null;
-var gm = false;
+var showGrid = false;
 var townCounts = playerColors.map(x => 0);
 var cityCounts = playerColors.map(x => 0);
-
     
+    
+function toggleGrid() {
+    
+    showGrid = !showGrid;
+    updateBoard();
+}
+
 function updateTurn() {
     
-    header.innerHTML = "";
+    sequence.innerHTML = "";
+    roll.innerHTML = "";
     
     if (turn == null) {
         return;
     }
     
-    const name = turn.names[turn.currentTurn];
-    const tag = createPlayerTag(turn.currentTurn, name);
-    header.appendChild(tag);
+    for (var index = 0; index < turn.names.length; index++) {
+        const name = turn.names[index];
+        const color = playerColors[index];
+        
+        const playerItem = document.createElement('div');
+        playerItem.className = "player tag";
+        playerItem.style.color = color;
+        playerItem.innerHTML = name;
+        
+        if (index == turn.index) {
+            const nameTag = document.createElement('span');
+            nameTag.className = "tag";
+            nameTag.style.color = color;
+            nameTag.innerHTML = name;
+            roll.appendChild(nameTag);
+            
+            playerItem.className += " turn";
+        }
+        
+        if (index > 0) {
+            sequence.innerHTML += " &bull; ";
+        }
+        sequence.appendChild(playerItem);
+    }
     
     if (turn.roll) {
-        header.innerHTML += " hat eine " + turn.roll.toString() + " gewürfelt.";
+        roll.innerHTML += " hat eine " + turn.roll.toString() + " gewürfelt.";
     } else {
-        header.innerHTML += " darf legen.";
+        roll.innerHTML += " darf legen.";
     }
 }
-    
     
 firebase.database().ref('/turn').on('value', (snapshot) => {
     turn = snapshot.val();
@@ -146,7 +180,6 @@ function addTile(resource, roll, hasBandit, x, y) {
     const xs = x.toString();
     const ys = y.toString();
     const hexaPath = 'M-81,0 L-81,48 L0,96 L81,48 L81,-48 L0,-96 L-81,-48 L-81,0';
-    //const hexaPath = 'M0,-80 L45,-80 L90,0 L45,80 L-45,80 L-90,0 L-45,-80 L0,-80';
     
     const bg = shape('path');
     bg.setAttribute('d', hexaPath);
@@ -297,21 +330,18 @@ function updateBoard() {
     townCounts = townCounts.map(x => 0);
     cityCounts = cityCounts.map(x => 0);
 
-    var row = 0;
-    var col = 0;
-    var x = 0;
-    var y = 0;
+    var row = 0, col = 0, normCol = 0;
+    var x = 0, y = 0;
     var cell;
     
     for (row = 0; row < 11; row += 1) {
 
-        ypos = row - 5;
-        y = 550 + ypos * 80;
+        y = 150 + row * 80;
 
         for (col = 0; col < 21; col += 1) {
             
-            xpos = col - 10;
-            x = 550 + xpos * 45;
+            x = 100 + col * 45;
+            normCol = col + (row % 4 == 0 ? 2 : 0);
 
             cell = board[row][col];
             
@@ -325,7 +355,7 @@ function updateBoard() {
 
             if (cell.town) {
                 const color = playerColors[cell.town];
-                const ty = board[row+1][col].tile ? y - 26 : y + 26;
+                const ty = normCol % 4 == 0 ? y - 26 : y + 26;
                 addTown(color, cell.city, x, ty);
                 if (cell.city) {
                     cityCounts[cell.town] += 1;
@@ -337,19 +367,18 @@ function updateBoard() {
             if (cell.road) {
                 var angle = 0;
                 if (row % 2 == 0) {
-                    angle = board[row+1][col+1].tile ? 60 : -60;
+                    angle = normCol % 4 == 1 ? -60 : 60;
                 }   
                 addRoad(playerColors[cell.road], angle, x, y);
             }
             
-            const bid = row * 100 + col;
-            if (gm) {
+            if (showGrid) {
                 const label = shape('text');
                 label.setAttribute('text-anchor', 'middle');
-                label.setAttribute('class', 'bid');
+                label.setAttribute('class', 'grid');
                 label.setAttribute('x', x);
                 label.setAttribute('y', y + 4);
-                label.innerHTML = bid.toString();
+                label.innerHTML = row.toString() + '.' + col.toString();
                 bandits.appendChild(label);
             }
         }
@@ -362,15 +391,6 @@ firebase.database().ref('/board').on('value', (snapshot) => {
     board = snapshot.val();
     updateBoard();
 });
-
-function createPlayerTag(playerNum, playerName) {
-    
-    const span = document.createElement('span');
-    span.className = "tag";
-    span.style.color = playerColors[playerNum];
-    span.innerHTML = playerName;
-    return span;
-}
     
 function createResource(resource) {
     
@@ -382,7 +402,6 @@ function createResource(resource) {
     
 function updatePlayer() {
     
-    ident.innerHTML = "";
     resources.innerHTML = "";
     cards.innerHTML = "";
     victory.innerHTML = "";
@@ -392,9 +411,6 @@ function updatePlayer() {
     }
     
     stats.style.display = 'block';
-    
-    const tag = createPlayerTag(me.number, me.name);
-    ident.appendChild(tag);
     
     if (me.resources) {
         for (const resource of me.resources) {
@@ -415,13 +431,13 @@ function updatePlayer() {
     
     var points = 0;
     
-    const townCount = townCounts[me.number];
+    const townCount = townCounts[me.index];
     if (townCount) {
         victory.innerHTML += townCount.toString() + " Siedlungen (1P)";
         points += townCount;
     }
     
-    const cityCount = cityCounts[me.number];
+    const cityCount = cityCounts[me.index];
     if (cityCount) {
         victory.innerHTML += " + " + cityCount.toString() + " Städte (2P)";
         points += cityCount * 2;
@@ -432,12 +448,12 @@ function updatePlayer() {
         points += 1;
     }
     
-    if (turn.longestRoadPlayer == me.number) {
+    if (turn.longestRoadPlayer == me.index) {
         victory.innerHTML += " + Längste Handelsstraße (2P)";
         points += 2;
     }
     
-    if (turn.maxKnightsPlayer == me.number) {
+    if (turn.maxKnightsPlayer == me.index) {
         victory.innerHTML += " + Größte Rittermacht (2P)";
         points += 2;
     }

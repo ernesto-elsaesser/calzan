@@ -378,7 +378,7 @@ function updateBoard() {
                 label.setAttribute('class', 'grid');
                 label.setAttribute('x', x);
                 label.setAttribute('y', y + 4);
-                label.innerHTML = row.toString() + '.' + col.toString();
+                label.innerHTML = cell.id;
                 bandits.appendChild(label);
             }
         }
@@ -448,12 +448,12 @@ function updatePlayer() {
         points += 1;
     }
     
-    if (turn.longestRoadPlayer == me.index) {
+    if (turn.longestRoadIndex == me.index) {
         victory.innerHTML += " + Längste Handelsstraße (2P)";
         points += 2;
     }
     
-    if (turn.maxKnightsPlayer == me.index) {
+    if (turn.maxKnightIndex == me.index) {
         victory.innerHTML += " + Größte Rittermacht (2P)";
         points += 2;
     }

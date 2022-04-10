@@ -16,7 +16,7 @@ const actionCards = [
 const knightCard = "Ritter";
 
 const tiles = [
-    [-4, -4], [-4, 0], [-4, -4],
+    [-4, -4], [-4, 0], [-4, 4],
     [-2, -6], [-2, -2], [-2, 2], [-2, 6],
     [0, -8], [0, -4], [0, 0], [0, 4], [0, 8],
     [2, -6], [2, -2], [2, 2], [2, 6],
@@ -53,6 +53,12 @@ const fallingEdges = tiles.concat(oceans.slice(3, 8)).map(([y, x]) => [y+1, x-1]
 const verticalEdges = tiles.concat(oceans.slice(6, 11)).map(([y, x]) => [y, x-2]);
 const edges = risingEdges.concat(fallingEdges).concat(verticalEdges);
 
+const neighborOffsets = [
+    [-1, -1], [-1, 0], [-1, 1],
+    [0, -1], [0, 1],
+    [1, -1], [1, 0], [1, 1],
+];
+
 var actionsRef = null;
 var rng = null;
 
@@ -69,7 +75,7 @@ var stats = {
     points: 0,
 };
 
-var prevActionId = 0;
+var prevActionId = null;
 var current = null;
 var me = null;
 var phase = 'forward';
@@ -163,7 +169,7 @@ function initState(data, player) {
     const playersLine = "Spieler: " + players.join(', ');
     logLine(playersLine, players);
     
-    const fistLine = players[0] + " darf legen";
+    const fistLine = players[0] + " darf setzen";
     logLine(fistLine, players);
 }
 
@@ -187,6 +193,7 @@ function dispatchAction(action, prevId) {
     const actionFunctions = {
         'place-forward': forwardPlaced,
         'place-backward': backwardPlaced,
+        /*
         'move-bandit': banditMoved,
         'buy-town': townBought,
         'buy-road': roadBought,
@@ -198,6 +205,7 @@ function dispatchAction(action, prevId) {
         'play-monopoly': monopolyPlayed,
         'play-invention': inventionPlayed,
         'play-roadworks': roadworksPlayed,
+        */
         'end-turn': turnEnded,
     };
     
@@ -206,6 +214,8 @@ function dispatchAction(action, prevId) {
     const args = action.slice(2);
     
     actionFunctions[key](player, args);
+    
+    prevActionId += 1;
 }
 
 function commitAction(action) {
@@ -269,7 +279,7 @@ function backwardPlaced(player, args) {
 function placeTokes(player, args) {
     
     const townCell = getCell(args.slice(0, 2));
-    cell.town = player;
+    townCell.town = player;
     const roadCell = getCell(args.slice(2));
     roadCell.road = player;
     
@@ -342,7 +352,7 @@ function checkTurn(player) {
 function updateUI() {
     
     updateButtons();
-    updateBoard(board);
+    updateBoard(board, players);
     updateStats(stats);
 }
 
@@ -352,6 +362,7 @@ function updateButtons() {
         for (const cell of cells) {
             
             delete cell.action;
+            delete cell.actor;
             
             if (current != me) {
                 continue;
@@ -361,18 +372,20 @@ function updateButtons() {
                 // TODO
             } else {
                 if (townCoord) {
-                    const [ty, tx] = townCoord;
                     if (cell.edge) {
-                        for (const [dy, dx] of neighbors) {
-                            if (cell.y + dx == ty && cell.x + dx == tx) {
-                                const args = [ty, tx, cell.y, cell.x].join(',');
+                        const [v, h] = townCoord;
+                        getNeighbors(cell).forEach((neighbor) => {
+                            if (neighbor.v == v && neighbor.h == h) {
+                                const args = [v, h, cell.v, cell.h].join(',');
                                 cell.action = "place(" + args + ")";
+                                cell.actor = current;
                             }
-                        }
+                        })
                     }
                 } else {
                     if (cell.node) {
                         cell.action = "placeTown(" + cell.v + "," + cell.h + ")";
+                        cell.actor = current;
                     }
                 }
             }
@@ -388,14 +401,17 @@ function getCell(coord) {
 }
 
 function getNeighbors(cell) {
-    return [
-        getCell([cell.v-1, cell.h-1]),
-        getCell([cell.v-1, cell.h]),
-        getCell([cell.v-1, cell.h+1]),
-        getCell([cell.v+1, cell.h-1]),
-        getCell([cell.v+1, cell.h]),
-        getCell([cell.v+1, cell.h+1]),
-    ];
+    var neighbors = [];
+    for (const [dv, dh] of neighborOffsets) {
+        const nv = cell.v + dv;
+        const nh = cell.h + dh;
+        if (nv < -5 || nv > 5 || nh < -10 || nh > 10) {
+            continue;
+        }
+        const neighbor = getCell([nv, nh]);
+        neighbors.push(neighbor);
+    }
+    return neighbors;
 }
 
 

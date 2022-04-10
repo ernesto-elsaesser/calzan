@@ -29,7 +29,6 @@ const log = document.getElementById("log");
 const svgTiles = document.getElementById("tiles");
 const svgTokens = document.getElementById("tokens");
 const svgBandits = document.getElementById("bandits");
-const svgButtons = document.getElementById("buttons");
 const resources = document.getElementById("resources");
 const cards = document.getElementById("cards");
 const victory = document.getElementById("victory");
@@ -40,37 +39,40 @@ function logLine(line, players) {
     var html = line;
     for (var n = 0; n < players.length; n += 1) {
         const player = players[n];
-        const span = '<span class="player player' + (n + 1) + '">' + player + '</span>';
+        const span = '<span class="player player' + n + '">' + player + '</span>';
         html = html.replaceAll(player, span);
     }
     log.innerHTML += html + "<br>";
 }
 
-function updateBoard(board) {
+function updateBoard(board, players) {
     
     svgTiles.innerHTML = "";
     svgTokens.innerHTML = "";
     svgBandits.innerHTML = "";
-    svgButtons.innerHTML = "";
 
-    for (const cells in board) {
+    for (const cells of board) {
 
-        for (const cell in cells) {
+        for (const cell of cells) {
             
-            const cell = cells[col];
             const y = 550 + cell.v * 80;
             const x = 550 + cell.h * 45;
             
             if (cell.tile) {
                 addTile(cell.tile, cell.roll, cell.bandit, x, y);
             } else if (cell.town) {
-                addTown(cell.town, cell.city, cell.node, x, y);
+                addTown(players.indexOf(cell.town), cell.city, cell.node, null, x, y);
             } else if (cell.port) {
-                addPort(cell.port, cell.face, x, y);
+                addPort(players.indexOf(cell.port), cell.face, x, y);
             } else if (cell.road) {
-                addRoad(cell.road, cell.node, x, y);
+                addRoad(players.indexOf(cell.road), cell.edge, null, x, y);
             } else if (cell.action) {
-                addButton(cell.action, cell.shift, x, y);
+                const playerNum = players.indexOf(cell.actor);
+                if (cell.node) {
+                    addTown(playerNum, cell.city, cell.node, cell.action, x, y);
+                } else if (cell.edge) {
+                    addRoad(playerNum, cell.edge, cell.action, x, y);
+                }
             }
         }
     }
@@ -175,75 +177,61 @@ function addPort(resource, face, x, y) {
     svgTiles.appendChild(label);
 }
 
-function addTown(playerId, isCity, shift, x, y) {
+function addTown(playerNum, isCity, shift, action, x, y) {
     
     const ty = shift == 'up' ? y - 26 : y + 26;
     
+    const town = shape('circle');
+    town.setAttribute('cx', x);
+    town.setAttribute('cy', ty);
+    town.setAttribute('r', '25');
+    town.setAttribute('stroke', 'black');
+    town.setAttribute('stroke-width', 1);
+    //town.setAttribute('fill', color);
+    town.setAttribute('class', 'player' + playerNum);
+    
+    if (action) {
+        town.setAttribute('opacity', 0.5);
+        town.setAttribute('onclick', action);
+    }
+        
+    svgTokens.appendChild(town);
+    
     if (isCity) {
-        const city = shape('circle');
-        city.setAttribute('cx', x);
-        city.setAttribute('cy', ty);
-        city.setAttribute('stroke', 'black');
-        city.setAttribute('stroke-width', 1);
-        //city.setAttribute('fill', color);
-        city.setAttribute('class', 'player' + playerId);
-        city.setAttribute('r', '25');
-        svgTokens.appendChild(city);
         const dot = shape('circle');
         dot.setAttribute('cx', x);
         dot.setAttribute('cy', ty);
         dot.setAttribute('r', '10');
         svgTokens.appendChild(dot);
-    } else {
-        const town = shape('circle');
-        town.setAttribute('cx', x);
-        town.setAttribute('cy', ty);
-        town.setAttribute('stroke', 'black');
-        town.setAttribute('stroke-width', 1);
-        //town.setAttribute('fill', color);
-        town.setAttribute('class', 'player' + playerId);
-        town.setAttribute('r', '25');
-        svgTokens.appendChild(town);
     }
 }
 
-function addRoad(playerId, spin, x, y) {
-    
+function addRoad(playerNum, spin, action, x, y) {
     
     const road = shape('rect');
-    road.setAttribute('stroke', 'black');
-    road.setAttribute('stroke-width', 1);
-    road.setAttribute('class', 'player' + playerId);
     road.setAttribute('x', x - 15);
     road.setAttribute('y', y - 20);
     road.setAttribute('width', 30);
     road.setAttribute('height', 40);
     road.setAttribute('rx', 10);
+    road.setAttribute('stroke', 'black');
+    road.setAttribute('stroke-width', 1);
+    road.setAttribute('class', 'player' + playerNum);
     
     var angle = 0;
     if (spin == 'rise') {
-        angle = -60;
-    } else if (spin == 'fall') {
         angle = 60;
+    } else if (spin == 'fall') {
+        angle = -60;
     }
     road.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');
     
+    if (action) {
+        road.setAttribute('opacity', 0.5);
+        road.setAttribute('onclick', action);
+    }
+    
     svgTokens.appendChild(road);
-}
-    
-function addButton(action, shift, x, y) {
-    
-    const ty = shift == 'up' ? y - 26 : y + 26;
-    
-    const button = shape('circle');
-    button.setAttribute('cx', x);
-    button.setAttribute('cy', ty);
-    button.setAttribute('stroke', 'black');
-    button.setAttribute('stroke-width', 1);
-    button.setAttribute('fill', 'red');
-    button.setAttribute('r', '15');
-    button.onclick = action;
-    svgButtons.appendChild(button);
 }
 
 function shape(tag) {

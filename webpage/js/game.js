@@ -1,20 +1,9 @@
-const log = document.getElementById("log");
-
-H = "Holz";
-L = "Lehm";
-G = "Getreide";
-W = "Wolle";
-E = "Erz";
-X = "Wüste";
-
-
-const playerColors = [
-    '1': '#E33E09',
-    '2': '#1C79D5',
-    '3': '#FBCD19',
-    '4': '#8A58E8',
-    '5': '#EB7EC5'
-];
+const H = "Holz";
+const L = "Lehm";
+const G = "Getreide";
+const W = "Wolle";
+const E = "Erz";
+const X = "Wüste";
 
 const victoryCards = [
     "Bibliothek", "Marktplatz", "Rathaus", "Kirche", "Universität"
@@ -26,11 +15,13 @@ const actionCards = [
 
 const knightCard = "Ritter";
 
+const neighbors = [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 0], [1, 1]];
+
 
 var actionsRef = null;
 var rng = null;
 
-var players = {};
+var players = [];
 var board = [];
 var stats = {
     resources: [],
@@ -44,28 +35,24 @@ var stats = {
 };
 
 var prevActionId = 0;
-var playerIdSequence = {};
-var firstPlayerId = null;
-var currentPlayerId = null;
-var ownPlayerId = null;
+var current = null;
+var me = null;
 var phase = null;
 var longestRoad = 4;
 // on buy-road, trace extended road on all possible paths, compare if longer
-var longestRoadPlayerId = null;
 var mostKnights = 2;
 // check on playKnight
-var mostKnightsPlayerId = null;
 
 
-function initGame(gameId, playerId) {
+function initGame(game, player) {
 
-    const gameRef = firebase.database().ref('/' + gameId);
+    const gameRef = firebase.database().ref('/' + game);
     const initialRef = gameRef.child('/initial');
     actionsRef = gameRef.child('/actions');
     
     initialRef.get().then((initialSnap) => {
         const initialData = initialSnap.val();
-        initState(initialData, playerId);
+        initState(initialData, player);
         actionsRef.on('child_added', (actionSnap, prevId) => {
             const action = actionSnap.val();
             dispatchAction(action);
@@ -73,78 +60,123 @@ function initGame(gameId, playerId) {
     });
 }
 
-function initState(data, playerId) {
+function initState(data, player) {
     
     players = data.players;
-    ownPlayerId = playerId;
-    firstPlayerId = data.firstId;
-    currentPlayerId = data.firstId;
-    playerIdSequence = data.sequence;
+    me = player;
+    current = data.players[0];
     phase = 'forward';
     
     rng = createRNG(data.seed);
     
-    var allCards = victoryCards + actionCards + actionCards;
+    var allCards = victoryCards.concat(actionCards).concat(actionCards);
     for (var i = 0; i < 14; i += 1) {
         allCards.push(knightCard);
     }
     
-    stack = stackCards.map(v => ({ v, r: rng() }))
-        .sort((a, b) => a.r - b.r).map((d) => d.v)
+    stack = allCards.map(v => ({ v, r: rng() }))
+        .sort((a, b) => a.r - b.r).map((d) => d.v);
     
-    var tiles = [];
-    var rolls = [];
-    var colOffset = null;
-    
-    for (var row = 0; row < 11; row += 1) {
-        
-        if (row % 2 == 1) { // tile row
-            const rowIndex = (row - 1) / 2
-            tiles = data.tiles[rowIndex]
-            rolls = data.rolls[rowIndex]
-            colOffset = (1 + Math.abs(rowIndex - 2)) * 2;
-        } else {
-            colOffset = 21;
-        }
-        
+    for (var y = 0; y < 11; y += 1) {
         var cells = [];
-        for (var col = 0; col < 21; col += 1) {
-            var cell = {};
-            const relCol = col - colOffset;
-            if (relCol > 0 && relCol % 4 == 0) {
-                const colIndex = relCol / 4;
-                cell.tile = tiles[colIndex];
-                cell.roll = rolls[colIndex];
-                cell.bandit = !!cell.roll;
-            }
-            cells.push({});
+        for (var x = 0; x < 21; x += 1) {
+            cells.push({x, y});
         }
         board.push(cells);
     }
+    
+    initEdgeRow(board[0], true);
+    
+    board[1][6].tile = data.tiles[0][0];
+    board[1][6].roll = data.rolls[0][0];
+    board[1][10].tile = data.tiles[0][1];
+    board[1][10].roll = data.rolls[0][1];
+    board[1][14].tile = data.tiles[0][2];
+    board[1][14].roll = data.rolls[0][2];
+    
+    initEdgeRow(board[2], false);
+    
+    board[3][4].tile = data.tiles[1][0];
+    board[3][4].roll = data.rolls[1][0];
+    board[3][8].tile = data.tiles[1][1];
+    board[3][8].roll = data.rolls[1][1];
+    board[3][12].tile = data.tiles[1][2];
+    board[3][12].roll = data.rolls[1][2];
+    board[3][16].tile = data.tiles[1][3];
+    board[3][16].roll = data.rolls[1][3];
+    
+    initEdgeRow(board[4], true);
+    
+    board[5][2].tile = data.tiles[2][0];
+    board[5][2].roll = data.rolls[2][0];
+    board[5][6].tile = data.tiles[2][1];
+    board[5][6].roll = data.rolls[2][1];
+    board[5][10].tile = W;
+    board[5][10].bandit = true
+    board[5][14].tile = data.tiles[2][3];
+    board[5][14].roll = data.rolls[2][3];
+    board[5][18].tile = data.tiles[2][4];
+    board[5][18].roll = data.rolls[2][4];
+            
+    initEdgeRow(board[6], false);
+    
+    board[7][4].tile = data.tiles[3][0];
+    board[7][4].roll = data.rolls[3][0];
+    board[7][8].tile = data.tiles[3][1];
+    board[7][8].roll = data.rolls[3][1];
+    board[7][12].tile = data.tiles[3][2];
+    board[7][12].roll = data.rolls[3][2];
+    board[7][16].tile = data.tiles[3][3];
+    board[7][16].roll = data.rolls[3][3];
+    
+    initEdgeRow(board[8], true);
+    
+    board[9][6].tile = data.tiles[4][0];
+    board[9][6].roll = data.rolls[4][0];
+    board[9][10].tile = data.tiles[4][1];
+    board[9][10].roll = data.rolls[4][1];
+    board[9][14].tile = data.tiles[4][2];
+    board[9][14].roll = data.rolls[4][2];
+    
+    initEdgeRow(board[10], false);
 
-    board[0][5]['port'] = '*';
-    board[0][5]['face'] = 'NW'
-    board[0][11]['port'] = W;
-    board[0][11]['face'] = 'NE'
-    board[2][17]['port'] = '*';
-    board[2][17]['face'] = 'NE'
-    board[3][2]['port'] = E;
-    board[3][2]['face'] = 'W'
-    board[5][20]['port'] = '*';
-    board[5][20]['face'] = 'E'
-    board[7][2]['port'] = G;
-    board[7][2]['face'] = 'W'
-    board[8][17]['port'] = L;
-    board[8][17]['face'] = 'SE'
-    board[10][5]['port'] = '*';
-    board[10][5]['face'] = 'SW'
-    board[10][11]['port'] = H;
-    board[10][11]['face'] = 'SE'
+    board[0][5].port = '*';
+    board[0][5].face = 'NW';
+    board[0][11].port = W;
+    board[0][11].face = 'NE';
+    board[2][17].port = '*';
+    board[2][17].face = 'NE';
+    board[3][2].port = E;
+    board[3][2].face = 'W';
+    board[5][20].port = '*';
+    board[5][20].face = 'E';
+    board[7][2].port = G;
+    board[7][2].face = 'W';
+    board[8][17].port = L;
+    board[8][17].face = 'SE';
+    board[10][5].port = '*';
+    board[10][5].face = 'SW';
+    board[10][11].port = H;
+    board[10][11].face = 'SE';
     
-    initLog();
     updateBoard(board);
-    
     updateStats(stats);
+    
+    const playersLine = "Spieler: " + players.join(', ');
+    logLine(playersLine, players);
+    
+    const fistLine = players[0] + " darf legen";
+    logLine(fistLine, players);
+}
+
+function initEdgeRow(cells, even) {
+    
+    const values = ['down', 'rise', 'up', 'fall'];
+    const shift = even ? 0 : 2;
+    for (var col = 0; col < 21; col += 1) {
+        const key = col % 2 == 0 ? 'node' : 'edge';
+        cells[col][key] = values[(col % 4) + shift]; 
+    }
 }
 
 function createRNG(seed) {
@@ -156,42 +188,7 @@ function createRNG(seed) {
       return ((t ^ t >>> 14) >>> 0) / 4294967296;
     }
 }
-
-function initLog() {
     
-    var playersLine = "Spieler: ";
-    var fistLine;
-    
-    for (const playerId of Object.keys(players)) {
-        
-        const tag = createPlayerTag(playerId);
-        
-        if (i > 0) {
-            playersLine += ", ";
-        }
-        playersLine += tag;
-        
-        if (playerId == currentId) {
-            fistLine = tag + " beginnt";
-        }
-    }
-    
-    logLine(playersLine);
-    logLine(fistLine);
-}
-    
-function createPlayerTag(playerId) {
-    
-    const name = players[playerId];
-    const color = playerColors[playerId];
-    return '<span style="font-weight: bold; color: ' + color + ';">' + name + '</span>';
-}
-
-function logLine(line) {
-    
-    log.innerHTML += line + "<br>";
-}
-
 function dispatchAction(action, prevId) {
     
     if (prevId != prevActionId) {
@@ -218,11 +215,10 @@ function dispatchAction(action, prevId) {
     };
     
     const key = action[0];
-    const playerId = action[1];
+    const player = action[1];
     const args = action.slice(2);
     
-    // test args validity in functions!
-    actionFunctions[key](args);
+    actionFunctions[key](player, args);
 }
 
 function commitAction(action) {
@@ -233,66 +229,71 @@ function commitAction(action) {
 }
 
 endTurn = () => commitAction(['end-turn']);
-placeForward = (tc, rc) => commitAction(['place-forward', tc, rc]);
+placeForward = (tc, rc) => commitAction(['place-forward', tc.y, tc.x, rc.y, rc.x]);
+placeBackward = (tc, rc) => commitAction(['place-backward', tc.y, tc.x, rc.y, rc.x]);
 rollDice = () => commitAction(['roll-dice']);
 
-function turnEnded(playerId, args) {
+function turnEnded(player, args) {
     
-    checkTurn(playerId);
+    checkTurn(player);
     
-    if (phase == 'backward') {
-        for (const [prevId, nextId] of Object.entries(playerIdSequence)) {
-            if (nextId == currentPlayerId) {
-                currentPlayerId = prevId;
-                break;
-            }
-        }
-        if (currentPlayerId = firstPlayerId) {
-            phase = 'game';
-        }
-    } else {
-        currentPlayerId = playerIdSequence[currentPlayerId];
-        if (phase == 'forward' && currentPlayerId = firstPlayerId) {
+    const currentIndex = players.indexOf(current);
+    const step = phase == 'backward' ? -1 : 1;
+    const nextIndex = (currentIndex + step) % players.length;
+    current = players[nextIndex];
+    
+    if (current == players[0]) {
+        if (phase == 'forward') {
             phase = 'backward';
+        } else if (phase == 'backward') {
+            phase = 'game';
         }
     }
     
-    const tag = createPlayerTag(currentPlayerId);
-    
     if (phase == 'game') {
-        logLine(tag + " ist an der Reihe");
+        logLine(current + " ist an der Reihe", players);
     } else {
-        logLine(tag + " darf legen");
+        logLine(current + " darf setzen", players);
     }
 }
 
-const nodeNeighbors = [[], [, ], [, ]];
-
-function forwardPlaced(playerId, args) {
+function forwardPlaced(player, args) {
     
-    checkTurn(playerId);
-    
+    checkTurn(player);
     if (phase != 'forward') {
         throw "wrong phase: forward vs " + phase;
     }
+    place(player, args);
+    logLine(current + " hat seine erste Siedlung platziert", players);
+}
+
+function backwardPlaced(player, args) {
     
-    board[args[0]][args[1]].town = playerId;
-    board[args[2]][args[3]].road = playerId;
-    
-    for (const delta of nodeNeighbors) {
-        const resource = board[args[0]+delta[0]][args[1]+delta[1]].tile;
-        if (resource && resource != W) {
-            stats.resources.push(resource);
-        }
+    checkTurn(player);
+    if (phase != 'backward') {
+        throw "wrong phase: backward vs " + phase;
     }
+    place(player, args);
+    logLine(current + " hat seine zweite Siedlung platziert", players);
+}
     
-    stats.towns += 1;
+function place(player, args) {
+    
+    board[args[0]][args[1]].town = player;
+    board[args[2]][args[3]].road = player;
+    
+    if (player == current) {
+        for (const [dy, dx] of neighbors) {
+            const neigbor = board[args[0]+dy][args[1]+dx];
+            if (neighbor.tile && neighbor.tile != W) {
+                stats.resources.push(neighbor.tile);
+            }
+        }
+        stats.towns += 1;
+    }
     
     updateBoard(board);
     updateStats(stats);
-    
-    const tag = createPlayerTag(currentPlayerId);
-    logLine(tag + " hat die erste Siedlung platziert");
 }
 
 function dice(sides) {
@@ -300,24 +301,43 @@ function dice(sides) {
     return Math.floot((sides + 1) * rng())
 }
     
-function diceRolled(playerId, args) {
+function diceRolled(player, args) {
     
-    checkTurn(playerId);
+    checkTurn(player);
     
     if (phase != 'game') {
         throw "wrong phase: game vs " + phase;
     }
     
     const roll = dice(6) + dice(6);
-    const tag = createPlayerTag(currentPlayerId);
+    logLine(current + " würfelt eine " + roll.toString(), players);
     
-    logLine(tag + " würfelt eine " + roll.toString());
+    for (const cells of board) {
+        for (const cell of cells) {
+            if (cell.roll == roll) {
+                for (const [dy, dx] of neighbors) {
+                    const neighbor = board[cell.row+dy][cell.col+dx];
+                    if (neighbor.town) {
+                        logLine(neighbor.town + " erhält " + cell.tile, players);
+                        if (neighbor.town == me) {
+                            stats.resources.push(cell.tile);
+                            if (neighbor.city) {
+                                stats.resources.push(cell.tile);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    updateStats(stats);
 }
     
-function checkTurn(playerId) {
+function checkTurn(player) {
     
-    if (playerId != currentPlayerId) {
-        throw "wrong player: " + playerId + " != " + currentPlayerId;
+    if (player != current) {
+        throw "wrong player: " + player + " != " + current;
     }
 }
     

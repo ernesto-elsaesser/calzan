@@ -25,15 +25,26 @@ const resStrokeColors = {
 };
 
 
+const log = document.getElementById("log");
 const tiles = document.getElementById("tiles");
 const tokens = document.getElementById("tokens");
 const bandits = document.getElementById("bandits");
 const buttons = document.getElementById("buttons");
-const stats = document.getElementById("stats");
 const resources = document.getElementById("resources");
 const cards = document.getElementById("cards");
 const victory = document.getElementById("victory");
 
+
+function logLine(line, players) {
+    
+    var html = line;
+    for (var n = 0; n < players.length; n += 1) {
+        const player = players[n];
+        const span = '<span class="player player' + (n + 1) + '">' + player + '</span>';
+        html = html.replaceAll(player, span);
+    }
+    log.innerHTML += html + "<br>";
+}
 
 function updateBoard(board) {
     
@@ -42,40 +53,24 @@ function updateBoard(board) {
     bandits.innerHTML = "";
     buttons.innerHTML = "";
 
-    var row = 0, col = 0, normCol = 0;
-    var x = 0, y = 0;
-    var cell;
-    
-    for (row = 0; row < 11; row += 1) {
+    for (var row = 0; row < 11; row += 1) {
 
-        y = 150 + row * 80;
+        const cells = board[row];
+        const y = 150 + row * 80;
 
-        for (col = 0; col < 21; col += 1) {
+        for (var col = 0; col < 21; col += 1) {
             
-            x = 100 + col * 45;
-            normCol = col + (row % 4 == 0 ? 2 : 0);
-
-            cell = board[row][col];
+            const cell = cells[col];
+            const x = 100 + col * 45;
             
             if (cell.tile) {
                 addTile(cell.tile, cell.roll, cell.bandit, x, y);
-            }
-            
-            if (cell.port) {
+            } else if (cell.town) {
+                addTown(cell.town, cell.city, cell.node, x, y);
+            } else if (cell.port) {
                 addPort(cell.port, cell.face, x, y);
-            }
-
-            if (cell.town != undefined) {
-                const ty = normCol % 4 == 0 ? y - 26 : y + 26;
-                addTown(cell.town, cell.city, x, ty);
-            }
-            
-            if (cell.road != undefined) {
-                var angle = 0;
-                if (row % 2 == 0) {
-                    angle = normCol % 4 == 1 ? -60 : 60;
-                }   
-                addRoad(cell.road, angle, x, y);
+            } else if (cell.road) {
+                addRoad(cell.road, cell.node, x, y);
             }
         }
     }
@@ -86,19 +81,17 @@ function addTile(resource, roll, hasBandit, x, y) {
     const color = resColors[resource];
     const strokeColor = resStrokeColors[resource];
     
-    const xs = x.toString();
-    const ys = y.toString();
     const hexaPath = 'M-81,0 L-81,48 L0,96 L81,48 L81,-48 L0,-96 L-81,-48 L-81,0';
     
     const bg = shape('path');
     bg.setAttribute('d', hexaPath);
-    bg.setAttribute('transform', 'translate(' + xs + ',' + ys + ') scale(1.2)');
+    bg.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.2)');
     bg.setAttribute('fill', '#FFFFC0');
     tiles.appendChild(bg);
 
     const tile = shape('path');
     tile.setAttribute('d', hexaPath);
-    tile.setAttribute('transform', 'translate(' + xs + ',' + ys + ')');
+    tile.setAttribute('transform', 'translate(' + x + ',' + y + ')');
     tile.setAttribute('fill', color);
     tile.setAttribute('stroke', strokeColor);
     tile.setAttribute('stroke-width', 5);
@@ -106,9 +99,9 @@ function addTile(resource, roll, hasBandit, x, y) {
 
     if (hasBandit) {
         const bandit = shape('g');
-        const bxs = (x - 67).toString();
-        const bys = (y - 90).toString();
-        bandit.setAttribute('transform', 'translate(' + bxs + ',' + bys + ') scale(0.45)');
+        const bx = x - 67;
+        const by = y - 90;
+        bandit.setAttribute('transform', 'translate(' + bx + ',' + by + ') scale(0.45)');
         bandit.innerHTML = `
         <path d="M202.856445,187.635029 C210.703598,194.69253 223.801024,198.900418 237.046827,202.568567 L238.738194,203.034088 L238.738194,203.034088 L240.428814,203.494812 C252.255036,206.705587 263.853012,209.642337 271.582031,213.953388 C276.977539,216.956318 281.884766,220.813739 285.81543,225.989521 C296.655273,240.296161 297.363281,263.538349 300,281.3362 C299.121094,290.564716 293.896484,295.886982 283.569336,296.692646 L16.4306641,296.692646 C6.10351562,295.911396 0.87890625,290.58913 0,281.3362 C2.63671875,263.538349 3.36914062,240.296161 14.1845703,225.989521 C18.1152344,220.789325 22.9980469,216.956318 28.4179688,213.953388 C36.0898774,209.685136 46.8280588,206.766045 57.7404891,203.584057 L59.4203092,203.092229 C72.3034895,199.302312 85.2227573,195.031648 93.4326172,187.635029 C91.6259766,192.981708 150,242.176044 202.856445,187.635029 Z M77.1484375,64.2707707 C93.7988281,-20.8366512 209.155273,-22.0085262 224.829102,64.2707707 L224.829102,64.2707707 L229.56543,63.0012395 L229.56543,86.1457707 L223.339844,86.1457707 C219.897461,138.562763 201.098633,171.082294 178.076172,185.388935 C168.139648,191.565693 157.421875,194.37331 146.75293,193.958271 C136.108398,193.543232 125.585938,189.905536 116.015625,183.167255 C93.5546875,167.346943 76.3671875,134.363544 76.0498047,86.1457707 L76.0498047,86.1457707 L70.7275391,86.1457707 L70.4101563,64.2707707 Z M150.537109,157.459247 C137.426758,157.459247 126.782227,161.585224 126.782227,166.663349 C126.782227,171.741474 137.402344,175.86745 150.537109,175.86745 C163.647461,175.86745 174.291992,171.741474 174.291992,166.663349 C174.291992,161.585224 163.671875,157.459247 150.537109,157.459247 Z M82.8857422,106.507099 C84.0087891,115.833271 85.8154297,124.402607 88.2324219,132.215107 C93.9208984,133.948505 98.3154297,156.507099 116.430664,145.886982 C137.768555,139.295185 159.692383,139.173114 182.250977,145.886982 C198.31543,155.408466 202.392578,138.709247 207.763672,136.536396 C210.717773,128.552997 213.15918,119.593036 214.941406,109.656513 C193.945313,131.21413 171.630859,131.824482 150,107.410419 C126.489258,131.726825 103.710938,133.43581 82.8857422,106.507099 Z M206.542969,98.5481145 C205.615234,97.6203801 203.930664,98.1330754 202.807617,98.3039738 L202.807617,98.3039738 L163.598633,104.456318 C165.454102,107.849872 167.651367,110.608661 170.214844,112.781513 C184.375,124.793232 199.462891,115.100849 206.518555,100.74538 C206.982422,99.7688176 207.006836,99.0119817 206.542969,98.5481145 Z M96.9794419,98.2774271 C95.8617887,98.0875136 94.2917597,97.6645579 93.4082031,98.5481145 C92.9443359,99.0119817 92.96875,99.7688176 93.4326172,100.74538 C100.488281,115.100849 115.576172,124.793232 129.736328,112.781513 C132.299805,110.608661 134.49707,107.849872 136.352539,104.456318 L136.352539,104.456318 L97.1435547,98.3039738 Z M217.749023,86.1457707 L81.640625,86.1457707 C81.640625,87.3176457 81.6650391,88.4406926 81.6894531,89.5637395 L147.460938,96.4485051 L152.734375,96.4485051 L217.504883,89.4416692 C217.602539,88.3430363 217.675781,87.2688176 217.749023,86.1457707 Z" fill-rule="nonzero"></path>
         <circle cx="192.871094" cy="112.304688" r="7.32421875"></circle>
@@ -182,12 +175,14 @@ function addPort(resource, face, x, y) {
     tiles.appendChild(label);
 }
 
-function addTown(playerId, isCity, x, y) {
+function addTown(playerId, isCity, shift, x, y) {
+    
+    const ty = shift == 'up' ? y - 26 : y + 26;
     
     if (isCity) {
         const city = shape('circle');
         city.setAttribute('cx', x);
-        city.setAttribute('cy', y);
+        city.setAttribute('cy', ty);
         city.setAttribute('stroke', 'black');
         city.setAttribute('stroke-width', 1);
         //city.setAttribute('fill', color);
@@ -196,13 +191,13 @@ function addTown(playerId, isCity, x, y) {
         tokens.appendChild(city);
         const dot = shape('circle');
         dot.setAttribute('cx', x);
-        dot.setAttribute('cy', y);
+        dot.setAttribute('cy', ty);
         dot.setAttribute('r', '10');
         tokens.appendChild(dot);
     } else {
         const town = shape('circle');
         town.setAttribute('cx', x);
-        town.setAttribute('cy', y);
+        town.setAttribute('cy', ty);
         town.setAttribute('stroke', 'black');
         town.setAttribute('stroke-width', 1);
         //town.setAttribute('fill', color);
@@ -212,7 +207,8 @@ function addTown(playerId, isCity, x, y) {
     }
 }
 
-function addRoad(playerId, angle, x, y) {
+function addRoad(playerId, spin, x, y) {
+    
     
     const road = shape('rect');
     road.setAttribute('stroke', 'black');
@@ -223,9 +219,15 @@ function addRoad(playerId, angle, x, y) {
     road.setAttribute('width', 30);
     road.setAttribute('height', 40);
     road.setAttribute('rx', 10);
-    const xs = x.toString();
-    const ys = y.toString();
-    road.setAttribute('transform', 'rotate(' + angle + ',' + xs + ',' + ys + ')');
+    
+    var angle = 0;
+    if (spin == 'rise') {
+        angle = -60;
+    } else if (spin == 'fall') {
+        angle = 60;
+    }
+    road.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');
+    
     tokens.appendChild(road);
 }
     
@@ -235,7 +237,7 @@ function shape(tag) {
 
 function updateStats(stats) {
     
-    if (stats.resources) {
+    if (stats.resources.length) {
         resources.innerHTML = "";
         const sortedResources = stats.resources.sort((a, b) => resRanks[a] - resRanks[b]); 
         for (const resource of sortedResources) {
@@ -248,7 +250,7 @@ function updateStats(stats) {
         resources.innerHTML = "keine Rohstoffe";
     }
     
-    if (stats.cards) {
+    if (stats.cards.length) {
         cards.innerHTML = stats.cards.join(', ');
     } else {
         cards.innerHTML = "keine Karten";
@@ -257,10 +259,10 @@ function updateStats(stats) {
     if (stats.points) {
         victory.innerHTML = "";
         if (stats.towns) {
-            victory.innerHTML += stats.towns.toString() + " Siedlungen (1P)";
+            victory.innerHTML += stats.towns + " Siedlungen (1P)";
         }
         if (stats.cities) {
-            victory.innerHTML += " + " + stats.cities.toString() + " Städte (2P)";
+            victory.innerHTML += " + " + stats.cities + " Städte (2P)";
         }
         for (const card of stats.victoryCards) {
             victory.innerHTML += " + " + card + " (1P)";
@@ -271,10 +273,8 @@ function updateStats(stats) {
         if (stats.mostKnights) {
             victory.innerHTML += " + Größte Rittermacht (2P)";
         }
-        victory.innerHTML += " = " + stats.points.toString();
+        victory.innerHTML += " = " + stats.points;
     } else {
         victory.innerHTML = 'keine Punkte';
     }
-    
-    stats.style.display = 'block';
 }

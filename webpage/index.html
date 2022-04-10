@@ -9,7 +9,7 @@
         <style>
             body { font-family: Arial, sans; }
             h4 { margin: 30px 0 15px; }
-            #log { width: 280px; height: 100%; position: fixed; top: 0; left: 0; overflow: auto; padding: 20px; background-color: #222; }
+            #log { width: 280px; height: 100%; position: fixed; top: 0; left: 0; overflow: auto; padding: 20px; color: white; background-color: #313a35; line-height: 2; }
             #content { margin-left: 320px; padding: 20px; text-align: center; }
             #board { width: 800px; height: 800px; margin: 20px auto; }
             #spacer { height: 20px; }
@@ -18,6 +18,7 @@
             .rollr { font: bold 60px 'Lora'; fill: firebrick; }
             .port { font: bold 22px 'Lora'; letter-spacing: 2px; }
             .portw { font: bold 22px 'Lora'; letter-spacing: 2px; fill: white; }
+            .player { font-weight: bold; }
             .player1 { color: #E33E09; fill: #E33E09; }
             .player2 { color: #1C79D5; fill: #1C79D5; }
             .player3 { color: #FBCD19; fill: #FBCD19; }
@@ -39,7 +40,7 @@
             
             <div class="spacer"></div>
             
-            <div id="stats" style="display: none">
+            <div id="info">
                 <h4>Rohstoffe</h4>
                 <div id="resources"></div>
                 <h4>Entwicklungskarten</h4>
@@ -71,11 +72,11 @@
             document.title = "Die " + capitals[idx] + "eedler von Calzan";
 
             const urlParams = new URLSearchParams(window.location.search);
-            const gameId = urlParams.get('game');
-            const playerId = urlParams.get('player');
+            const game = urlParams.get('game');
+            const player = urlParams.get('player');
 
-            if (gameId != null && playerId != null) {
-                initGame(gameId, playerId);
+            if (game != null && player != null) {
+                initGame(game, player);
             }
 
         </script>

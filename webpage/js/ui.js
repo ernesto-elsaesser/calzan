@@ -26,10 +26,10 @@ const resStrokeColors = {
 
 
 const log = document.getElementById("log");
-const tiles = document.getElementById("tiles");
-const tokens = document.getElementById("tokens");
-const bandits = document.getElementById("bandits");
-const buttons = document.getElementById("buttons");
+const svgTiles = document.getElementById("tiles");
+const svgTokens = document.getElementById("tokens");
+const svgBandits = document.getElementById("bandits");
+const svgButtons = document.getElementById("buttons");
 const resources = document.getElementById("resources");
 const cards = document.getElementById("cards");
 const victory = document.getElementById("victory");
@@ -48,20 +48,18 @@ function logLine(line, players) {
 
 function updateBoard(board) {
     
-    tiles.innerHTML = "";
-    tokens.innerHTML = "";
-    bandits.innerHTML = "";
-    buttons.innerHTML = "";
+    svgTiles.innerHTML = "";
+    svgTokens.innerHTML = "";
+    svgBandits.innerHTML = "";
+    svgButtons.innerHTML = "";
 
-    for (var row = 0; row < 11; row += 1) {
+    for (const cells in board) {
 
-        const cells = board[row];
-        const y = 150 + row * 80;
-
-        for (var col = 0; col < 21; col += 1) {
+        for (const cell in cells) {
             
             const cell = cells[col];
-            const x = 100 + col * 45;
+            const y = 550 + cell.v * 80;
+            const x = 550 + cell.h * 45;
             
             if (cell.tile) {
                 addTile(cell.tile, cell.roll, cell.bandit, x, y);
@@ -71,6 +69,8 @@ function updateBoard(board) {
                 addPort(cell.port, cell.face, x, y);
             } else if (cell.road) {
                 addRoad(cell.road, cell.node, x, y);
+            } else if (cell.action) {
+                addButton(cell.action, cell.shift, x, y);
             }
         }
     }
@@ -87,7 +87,7 @@ function addTile(resource, roll, hasBandit, x, y) {
     bg.setAttribute('d', hexaPath);
     bg.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.2)');
     bg.setAttribute('fill', '#FFFFC0');
-    tiles.appendChild(bg);
+    svgTiles.appendChild(bg);
 
     const tile = shape('path');
     tile.setAttribute('d', hexaPath);
@@ -95,7 +95,7 @@ function addTile(resource, roll, hasBandit, x, y) {
     tile.setAttribute('fill', color);
     tile.setAttribute('stroke', strokeColor);
     tile.setAttribute('stroke-width', 5);
-    tiles.appendChild(tile);
+    svgTiles.appendChild(tile);
 
     if (hasBandit) {
         const bandit = shape('g');
@@ -108,7 +108,7 @@ function addTile(resource, roll, hasBandit, x, y) {
         <circle cx="104.980469" cy="102.539062" r="7.32421875"></circle>
         <path d="M167.072526,163.201074 L168.356728,165.277438 C155.696726,173.107476 143.073559,173.270602 130.687635,165.760372 L129.897369,165.270574 L131.203504,163.207937 C142.791134,170.545638 154.417091,170.705153 166.281228,163.680057 L167.072526,163.201074 Z" fill-rule="nonzero"></path>
         `;
-        bandits.appendChild(bandit);
+        svgBandits.appendChild(bandit);
     } else if (roll) {
         const label = shape('text');
         label.setAttribute('text-anchor', 'middle');
@@ -121,7 +121,7 @@ function addTile(resource, roll, hasBandit, x, y) {
             label.setAttribute('class', 'roll');
         }
         label.innerHTML = roll;
-        tiles.appendChild(label);
+        svgTiles.appendChild(label);
     }
 }
 
@@ -171,8 +171,8 @@ function addPort(resource, face, x, y) {
         label.innerHTML = '2:1';
     }
     
-    tiles.appendChild(port);
-    tiles.appendChild(label);
+    svgTiles.appendChild(port);
+    svgTiles.appendChild(label);
 }
 
 function addTown(playerId, isCity, shift, x, y) {
@@ -188,12 +188,12 @@ function addTown(playerId, isCity, shift, x, y) {
         //city.setAttribute('fill', color);
         city.setAttribute('class', 'player' + playerId);
         city.setAttribute('r', '25');
-        tokens.appendChild(city);
+        svgTokens.appendChild(city);
         const dot = shape('circle');
         dot.setAttribute('cx', x);
         dot.setAttribute('cy', ty);
         dot.setAttribute('r', '10');
-        tokens.appendChild(dot);
+        svgTokens.appendChild(dot);
     } else {
         const town = shape('circle');
         town.setAttribute('cx', x);
@@ -203,7 +203,7 @@ function addTown(playerId, isCity, shift, x, y) {
         //town.setAttribute('fill', color);
         town.setAttribute('class', 'player' + playerId);
         town.setAttribute('r', '25');
-        tokens.appendChild(town);
+        svgTokens.appendChild(town);
     }
 }
 
@@ -228,9 +228,24 @@ function addRoad(playerId, spin, x, y) {
     }
     road.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');
     
-    tokens.appendChild(road);
+    svgTokens.appendChild(road);
 }
     
+function addButton(action, shift, x, y) {
+    
+    const ty = shift == 'up' ? y - 26 : y + 26;
+    
+    const button = shape('circle');
+    button.setAttribute('cx', x);
+    button.setAttribute('cy', ty);
+    button.setAttribute('stroke', 'black');
+    button.setAttribute('stroke-width', 1);
+    button.setAttribute('fill', 'red');
+    button.setAttribute('r', '15');
+    button.onclick = action;
+    svgButtons.appendChild(button);
+}
+
 function shape(tag) {
     return document.createElementNS("http://www.w3.org/2000/svg", tag);
 }

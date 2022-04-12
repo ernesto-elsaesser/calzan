@@ -15,7 +15,7 @@ const actionCards = [
 
 const knightCard = "Ritter";
 
-const tiles = [
+const allTileIds = [
     [-4, -4], [-4, 0], [-4, 4],
     [-2, -6], [-2, -2], [-2, 2], [-2, 6],
     [0, -8], [0, -4], [0, 0], [0, 4], [0, 8],
@@ -23,67 +23,41 @@ const tiles = [
     [4, -4], [4, 0], [4, 4],
 ];
 
-const oceans = [
-    [-2, -10], //  0 left rising
-    [-4,  -8], //  1 left rising
-    [-6,  -6], //  2 left up
-    [-6,  -2], //  3 up
-    [-6,   2], //  4 up
-    [-6,   6], //  5 right up
-    [-4,   8], //  6 right falling
-    [-2,  10], //  7 right falling
-    [ 0,  12], //  8 right
-    [ 2,  10], //  9 right rising
-    [ 4,   8], // 10 right rising
-    [ 6,   6], // 11 right down
-    [ 6,  -2], // 12 down
-    [ 6,   2], // 13 down
-    [ 6,  -6], // 14 left down
-    [ 4,  -8], // 15 left falling
-    [ 2, -10], // 16 left falling
-    [ 0, -12], // 17 left
-];
+const upNodeIds = [];
+const downNodeIds = [];
+const allNodeIds = upNodeIds.concat(downNodeIds);
 
-const upNodes = tiles.concat(oceans.slice(9, 17)).map(([y, x]) => [y-1, x]);
-const downNodes = tiles.concat(oceans.slice(0, 8)).map(([y, x]) => [y+1, x]);
-const nodes = upNodes.concat(downNodes);
-
-const risingEdges = tiles.concat(oceans.slice(9, 14)).map(([y, x]) => [y-1, x-1]);
-const fallingEdges = tiles.concat(oceans.slice(3, 8)).map(([y, x]) => [y+1, x-1]);
-const verticalEdges = tiles.concat(oceans.slice(6, 11)).map(([y, x]) => [y, x-2]);
-const edges = risingEdges.concat(fallingEdges).concat(verticalEdges);
-
-const neighborOffsets = [
-    [-1, -1], [-1, 0], [-1, 1],
-    [0, -1], [0, 1],
-    [1, -1], [1, 0], [1, 1],
-];
+const risingEdgeIds = [];
+const fallingEdgeIds = [];
+const verticalEdgeIds = [];
+const allEdgeIds = risingEdgeIds.concat(fallingEdgeIds).concat(verticalEdgeIds);
 
 var actionsRef = null;
 var rng = null;
 
-var players = [];
-var board = [];
-var stats = {
+var state = {
+    players: [],
+    board: {},
+    stack: [],
+    me: null,
+    current: null,
+    phase: 'forward',
     resources: [],
     towns: 0,
     cities: 0,
     cards: [],
     victoryCards: [],
-    longestRoad: false,
-    mostKnights: false,
-    points: 0,
+    freeEdgeIds: allEdgeIds,
+    freeNodeIds: allNodeIds,
+    // per player
+    longestRoads: {},
+    playedKnights: {},
 };
+// on buy-road, trace extended road on all possible paths, compare if longer
+// check on playKnight
 
 var prevActionId = null;
-var current = null;
-var me = null;
-var phase = 'forward';
-var longestRoad = 4;
-// on buy-road, trace extended road on all possible paths, compare if longer
-var mostKnights = 2;
-// check on playKnight
-var townCoord = null;
+var selectedTownId = null;
 
 
 function initGame(game, player) {
@@ -97,80 +71,38 @@ function initGame(game, player) {
         initState(initialData, player);
         actionsRef.on('child_added', (actionSnap, prevId) => {
             const action = actionSnap.val();
-            dispatchAction(action);
+            dispatchAction(action, prevId);
         });
     });
 }
 
 function initState(data, player) {
     
-    players = data.players;
-    me = player;
-    current = data.players[0];
-    
     rng = createRNG(data.seed);
+    
+    state.board = data.board;
+    state.players = data.players;
+    state.me = player;
+    state.current = data.players[0];
+    
+    for (const player of data.players) {
+        state.longestRoads[player] = 0;
+        state.playedKnights[player] = 0;
+    }
     
     var allCards = victoryCards.concat(actionCards).concat(actionCards);
     for (var i = 0; i < 14; i += 1) {
         allCards.push(knightCard);
     }
     
-    stack = allCards.map(v => ({ v, r: rng() }))
+    state.stack = allCards.map(v => ({ v, r: rng() }))
         .sort((a, b) => a.r - b.r).map((d) => d.v);
     
-    for (var v = -5; v <= 5; v += 1) {
-        var cells = [];
-        for (var h = -10; h <= 10; h += 1) {
-            cells.push({v, h});
-        }
-        board.push(cells);
-    }
-    
-    for (var tileNum = 0; tileNum < tiles.length; tileNum += 1) {
-        const cell = getCell(tiles[tileNum]);
-        if (cell.v == 0 && cell.h == 0) {
-            cell.tile = W;
-            cell.bandit = true;
-        } else {
-            cell.tile = data.tiles[tileNum];
-            cell.roll = data.rolls[tileNum];
-        }
-    }
-    
-    upNodes.forEach((c) => getCell(c).node = 'up');
-    downNodes.forEach((c) => getCell(c).node = 'down');
-    verticalEdges.forEach((c) => getCell(c).edge = 'vert');
-    risingEdges.forEach((c) => getCell(c).edge = 'rise');
-    fallingEdges.forEach((c) => getCell(c).edge = 'fall');
-
-    /* TODO configurable?
-    board[-5][-5].port = '*';
-    board[-5][-5].face = 'NW';
-    board[-5][1].port = W;
-    board[-5][1].face = 'NE';
-    board[-3][7].port = '*';
-    board[-3][7].face = 'NE';
-    board[-2][-8].port = E;
-    board[-2][-8].face = 'W';
-    board[0][10].port = '*';
-    board[0][10].face = 'E';
-    board[2][-8].port = G;
-    board[2][-8].face = 'W';
-    board[3][7].port = L;
-    board[3][7].face = 'SE';
-    board[5][-5].port = '*';
-    board[5][-5].face = 'SW';
-    board[5][1].port = H;
-    board[5][1].face = 'SE';
-    */
-    
+    updateActions();
     updateUI();
     
-    const playersLine = "Spieler: " + players.join(', ');
-    logLine(playersLine, players);
-    
-    const fistLine = players[0] + " darf setzen";
-    logLine(fistLine, players);
+    logLine("Spieler: " + state.players.join(', '));
+    logLine(state.players[0] + " darf setzen";);
 }
 
 function createRNG(seed) {
@@ -226,197 +158,177 @@ function commitAction(action) {
     actionsRef.child(actionPath).set(action);
 }
 
-endTurn = () => commitAction(['end-turn']);
-place = (tv, th, rv, rh) => commitAction(['place-' + phase, tv, th, rv, rh]);
-rollDice = () => commitAction(['roll-dice']);
-
-function placeTown(v, h) {
-    
-    townCoord = [v, h];
-    updateUI();
-}
-
 function forwardPlaced(player, args) {
     
-    checkTurn(player);
-    if (phase != 'forward') {
-        throw "wrong phase: forward vs " + phase;
-    }
-    placeTokes(player, args);
-    logLine(current + " hat seine erste Siedlung platziert", players);
+    assert(player, 'forward');
+    placeInitial(player, args);
+    logLine(state.current + " hat seine erste Siedlung platziert");
     
-    const currentIndex = players.indexOf(current);
-    if (currentIndex == players.length - 1) {
-        phase = 'backward';
+    const currentIndex = state.players.indexOf(state.current);
+    if (currentIndex == state.players.length - 1) {
+        state.phase = 'backward';
     } else {
-        current = players[currentIndex + 1];
+        state.current = state.players[currentIndex + 1];
     }
-    logLine(current + " darf setzen", players);
+    logLine(state.current + " darf setzen");
     
+    updateActions();
     updateUI();
 }
 
 function backwardPlaced(player, args) {
     
-    checkTurn(player);
-    if (phase != 'backward') {
-        throw "wrong phase: backward vs " + phase;
-    }
-    placeTokes(player, args);
-    logLine(current + " hat seine zweite Siedlung platziert", players);
+    assert(player, 'backward');
+    placeInitial(player, args);
+    logLine(state.current + " hat seine zweite Siedlung platziert");
     
-    const currentIndex = players.indexOf(current);
+    const currentIndex = state.players.indexOf(state.current);
     if (currentIndex == 0) {
-        phase = 'game';
+        state.phase = 'game';
     } else {
-        current = players[currentIndex - 1];
-        logLine(current + " darf setzen", players);
+        state.current = state.players[currentIndex - 1];
+        logLine(state.current + " darf setzen");
     }
     
+    updateActions();
     updateUI();
 }
     
-function placeTokes(player, args) {
+function placeInitial(player, args) {
     
-    const townCell = getCell(args.slice(0, 2));
-    townCell.town = player;
-    const roadCell = getCell(args.slice(2));
-    roadCell.road = player;
+    const [nodeId, edgeId] = args;
+    placeTown(player, nodeId);
+    placeRoad(player, edgeId);
     
-    if (player == current) {
-        stats.towns += 1;
-        getNeighbors(townCell).forEach((neighbor) => {
-            if (neighbor.tile && neighbor.tile != W) {
-                stats.resources.push(neighbor.tile);
+    if (player == state.me) {
+        for (const tileId of state.board[nodeId].tiles) {
+            const resource = state.board[tileId].resource;
+            if (resource != W) {
+                state.resources.push(resource);
             }
         });
     }
 }
 
-function diceRolled(player, args) {
+function placeTown(player, nodeId) {
     
-    checkTurn(player);
+    const cell = state.board[nodeId];
+    cell.town = player;
     
-    if (phase != 'game') {
-        throw "wrong phase: game vs " + phase;
-    }
-    
-    const roll = dice(6) + dice(6);
-    logLine(current + " würfelt eine " + roll.toString(), players);
-    
-    for (const cells of board) {
-        for (const cell of cells) {
-            if (cell.roll == roll) {
-                getNeighbors(cell).forEach((neighbor) => {
-                    if (neighbor.town) {
-                        logLine(neighbor.town + " erhält " + cell.tile, players);
-                        if (neighbor.town == me) {
-                            stats.resources.push(cell.tile);
-                            if (neighbor.city) {
-                                stats.resources.push(cell.tile);
-                            }
-                        }
-                    }
-                });
-            }
-        }
-    }
-    
-    updateUI();
-}
-    
-function turnEnded(player, args) {
-    
-    checkTurn(player);
-    
-    if (phase != 'game') {
-        throw "wrong phase: game vs " + phase;
-    }
-    
-    const currentIndex = players.indexOf(current);
-    const nextIndex = (currentIndex + step) % players.length;
-    current = players[nextIndex];
-    
-    logLine(current + " ist an der Reihe", players);
-    
-    updateUI();
-}
-
-function checkTurn(player) {
-    
-    if (player != current) {
-        throw "wrong player: " + player + " != " + current;
-    }
-}
-    
-function updateUI() {
-    
-    updateButtons();
-    updateBoard(board, players);
-    updateStats(stats);
-}
-
-function updateButtons() {
-    
-    for (const cells of board) {
-        for (const cell of cells) {
-            
-            delete cell.action;
-            delete cell.actor;
-            
-            if (current != me) {
-                continue;
-            }
-            
-            if (phase == 'game') {
-                // TODO
-            } else {
-                if (townCoord) {
-                    if (cell.edge) {
-                        const [v, h] = townCoord;
-                        getNeighbors(cell).forEach((neighbor) => {
-                            if (neighbor.v == v && neighbor.h == h) {
-                                const args = [v, h, cell.v, cell.h].join(',');
-                                cell.action = "place(" + args + ")";
-                                cell.actor = current;
-                            }
-                        })
-                    }
-                } else {
-                    if (cell.node) {
-                        cell.action = "placeTown(" + cell.v + "," + cell.h + ")";
-                        cell.actor = current;
-                    }
+    state.freeNodeIds.remove(nodeId);
+    if (player == state.me) {
+        state.towns += 1;
+    } else {
+        for (const edgeId of cell.edges) {
+            state.freeEdgeIds.remove(edgeId);
+            for (const nextNodeId of state.board[edgeId].nodes) {
+                state.freeNodeIds.remove(nextNodeId);
+                for (const nextEdgeId of state.board[nextNodeId].edges) {
+                    state.freeEdgeIds.remove(nextEdgeId);
                 }
             }
-            
+        });
+    }
+}
+
+function placeRoad(player, edgeId) {
+    
+    const cell = state.board[edgeId];
+    cell.road = player;
+    
+    state.freeEdgeIds.remove(edgeId);
+    
+    // TODO update state.longestRoads[player]
+}
+
+function turnEnded(player, args) {
+    
+    assert(player, 'game');
+    
+    const currentIndex = state.players.indexOf(state.current);
+    const nextIndex = (currentIndex + 1) % state.players.length;
+    state.current = state.players[nextIndex];
+    
+    const roll = dice(6) + dice(6);
+    logLine(state.current + " würfelt eine " + roll.toString());
+    
+    for (const tileId of allTileIds) {
+        const tileCell = state.board[tileId];
+        if (tileCell.roll == roll) {
+            for (const nodeId of tileCell.nodes) {
+                const townCell = state.board[nodeId];
+                if (townCell.player) {
+                    logLine(townCell.player + " erhält " + tileCell.resource);
+                    if (townCell.player == state.me) {
+                        state.resources.push(tileCell.resource);
+                        if (townCell.city) {
+                            state.resources.push(tileCell.resource);
+                        }
+                    }
+                }
+                
+            }
         }
     }
     
+    updateActions();
+    updateUI();
 }
 
-function getCell(coord) {
-    const [v, h] = coord;
-    return board[v+5][h+10];
-}
-
-function getNeighbors(cell) {
-    var neighbors = [];
-    for (const [dv, dh] of neighborOffsets) {
-        const nv = cell.v + dv;
-        const nh = cell.h + dh;
-        if (nv < -5 || nv > 5 || nh < -10 || nh > 10) {
-            continue;
-        }
-        const neighbor = getCell([nv, nh]);
-        neighbors.push(neighbor);
+function assert(player, phase) {
+    
+    if (state.current != player || state.phase != phase) {
+        abort(player);
     }
-    return neighbors;
 }
 
+function updateActions() {
+    
+    for (const cell of Object.values(state.board)) {
+        delete cell.action;
+    }
+    
+    if (state.current != state.me) {
+        return;
+    }
+    
+    if (state.phase == 'game') {
+        // TODO
+    } else {
+        
+        // placement
+        if (selectedTownId) {
+            for (const edgeId of state.board[selectedTownId].edges) {
+                state.board[edgeId].action = "selectRoad(" + edgeId + ")";
+            }
+        } else {
+            for (const nodeId of state.freeNodeIds) {
+                state.board[nodeId].action = "selectTown(" + nodeId + ")";
+            }
+        }
+    }
+}
+
+function selectTown(nodeId) {
+    selectedTownId = nodeId;
+    state.board[nodeId].player = state.me;
+    updateControls();
+    updateUI();
+}
+
+function selectRoad(edgeId) {
+    commitAction(['place-' + state.phase, selectedTownId, edgeId]);
+    selectedTownId = null;
+}
+
+function endTurn() {
+    commitAction(['end-turn']);
+}
 
 function dice(sides) {
-    
     return Math.floot((sides + 1) * rng())
 }
-    
+
+function abort(player) {
+    window.alert("Ungültiger Zug von " + player + ". Spiel abgebrochen.");
+}

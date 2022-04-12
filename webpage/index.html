@@ -12,7 +12,9 @@
             #log { width: 280px; height: 100%; position: fixed; top: 0; left: 0; overflow: auto; padding: 20px; color: white; background-color: #313a35; line-height: 2; }
             #content { margin-left: 320px; padding: 20px; text-align: center; }
             #board { width: 800px; height: 800px; margin: 20px auto; }
-            #spacer { height: 20px; }
+            #actions { }
+            #actions button { margin: 10px; }
+            #info { }
             #reference img { margin: 30px; }
             .roll { font: bold 48px 'Lora'; }
             .rollr { font: bold 60px 'Lora'; fill: firebrick; }
@@ -24,6 +26,7 @@
             .player2 { color: #FBCD19; fill: #FBCD19; }
             .player3 { color: #8A58E8; fill: #8A58E8; }
             .player4 { color: #EB7EC5; fill: #EB7EC5; }
+            .card { margin-right: 5px; }
         </style>
     </head>
     <body>
@@ -37,7 +40,11 @@
                 <g id="bandits"></g>
             </svg>
             
-            <div class="spacer"></div>
+            <div id="actions">
+                <button id="card" onclick="buyCard()" disabled>Entwicklungskarte kaufen</button>
+                <button id="trade" onclick="trade()" disabled>Handeln</button>
+                <button id="end" onclick="endTurn()" disabled>Zug beenden</button>
+            </div>
             
             <div id="info">
                 <h4>Rohstoffe</h4>
@@ -47,8 +54,6 @@
                 <h4>Siegpunkte</h4>
                 <div id="victory"></div>
             </div>
-            
-            <div class="spacer"></div>
             
             <div id="reference">
                 <img src="img/costs.jpg" />

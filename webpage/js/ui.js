@@ -33,46 +33,58 @@ const resources = document.getElementById("resources");
 const cards = document.getElementById("cards");
 const victory = document.getElementById("victory");
 
+const cardButton = document.getElementById("card");
+const tradeButton = document.getElementById("trade");
+const endButton = document.getElementById("end");
 
-function logLine(line, players) {
+function logLine(line) {
     
     var html = line;
-    for (var n = 0; n < players.length; n += 1) {
-        const player = players[n];
+    for (var n = 0; n < state.players.length; n += 1) {
+        const player = state.players[n];
         const span = '<span class="player player' + n + '">' + player + '</span>';
         html = html.replaceAll(player, span);
     }
     log.innerHTML += html + "<br>";
 }
 
-function updateBoard(board, players) {
+function updateUI() {
+    
+    updateBoard();
+    updateControls();
+}
+
+function updateBoard() {
     
     svgTiles.innerHTML = "";
     svgTokens.innerHTML = "";
     svgBandits.innerHTML = "";
 
-    for (const cells of board) {
+    for (const cell of Object.values(state.board)) {
+            
+        const y = 550 + cell.coord[0] * 80;
+        const x = 550 + cell.coord[1] * 45;
 
-        for (const cell of cells) {
+        if (cell.tile) {
             
-            const y = 550 + cell.v * 80;
-            const x = 550 + cell.h * 45;
+            addTile(cell.resource, cell.roll, cell.bandit, x, y);
             
-            if (cell.tile) {
-                addTile(cell.tile, cell.roll, cell.bandit, x, y);
-            } else if (cell.town) {
-                addTown(players.indexOf(cell.town), cell.city, cell.node, null, x, y);
-            } else if (cell.port) {
-                addPort(players.indexOf(cell.port), cell.face, x, y);
-            } else if (cell.road) {
-                addRoad(players.indexOf(cell.road), cell.edge, null, x, y);
+        } else if (cell.node) {
+            
+            if (cell.player) {
+                addTown(cell.player, cell.city, cell.shift, null, x, y);
             } else if (cell.action) {
-                const playerNum = players.indexOf(cell.actor);
-                if (cell.node) {
-                    addTown(playerNum, cell.city, cell.node, cell.action, x, y);
-                } else if (cell.edge) {
-                    addRoad(playerNum, cell.edge, cell.action, x, y);
-                }
+                addTown(state.me, cell.city, cell.shift, cell.action, x, y);
+            }
+        } else if (cell.edge) {
+            
+            if (cell.player) {
+                addRoad(cell.road, cell.spin, null, x, y);
+            } else if (cell.action) {
+                addRoad(state.me, cell.spin, cell.action, x, y);
+            }
+            if (cell.port) {
+                addPort(cell.port, cell.face, x, y);
             }
         }
     }
@@ -177,18 +189,16 @@ function addPort(resource, face, x, y) {
     svgTiles.appendChild(label);
 }
 
-function addTown(playerNum, isCity, shift, action, x, y) {
+function addTown(player, isCity, shift, action, x, y) {
     
     const ty = shift == 'up' ? y - 26 : y + 26;
     
-    const town = shape('circle');
+    const town = shape('circle', player);
     town.setAttribute('cx', x);
     town.setAttribute('cy', ty);
     town.setAttribute('r', '25');
     town.setAttribute('stroke', 'black');
     town.setAttribute('stroke-width', 1);
-    //town.setAttribute('fill', color);
-    town.setAttribute('class', 'player' + playerNum);
     
     if (action) {
         town.setAttribute('opacity', 0.5);
@@ -205,10 +215,11 @@ function addTown(playerNum, isCity, shift, action, x, y) {
         svgTokens.appendChild(dot);
     }
 }
-
-function addRoad(playerNum, spin, action, x, y) {
     
-    const road = shape('rect');
+
+function addRoad(player, spin, action, x, y) {
+    
+    const road = shape('rect', player);
     road.setAttribute('x', x - 15);
     road.setAttribute('y', y - 20);
     road.setAttribute('width', 30);
@@ -216,7 +227,6 @@ function addRoad(playerNum, spin, action, x, y) {
     road.setAttribute('rx', 10);
     road.setAttribute('stroke', 'black');
     road.setAttribute('stroke-width', 1);
-    road.setAttribute('class', 'player' + playerNum);
     
     var angle = 0;
     if (spin == 'rise') {
@@ -234,15 +244,20 @@ function addRoad(playerNum, spin, action, x, y) {
     svgTokens.appendChild(road);
 }
 
-function shape(tag) {
-    return document.createElementNS("http://www.w3.org/2000/svg", tag);
+function shape(tag, player) {
+    const shape = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    if (player) {
+        const playerNum = state.players.indexOf(player);
+        shape.setAttribute('class', 'player' + playerNum);
+    }
+    return shape;
 }
 
-function updateStats(stats) {
+function updateControls() {
     
-    if (stats.resources.length) {
-        resources.innerHTML = "";
-        const sortedResources = stats.resources.sort((a, b) => resRanks[a] - resRanks[b]); 
+    resources.innerHTML = "";
+    if (state.resources.length) {
+        const sortedResources = state.resources.sort((a, b) => resRanks[a] - resRanks[b]); 
         for (const resource of sortedResources) {
             const resImg = document.createElement('img');
             resImg.src = "img/" + resource + ".png";
@@ -253,30 +268,64 @@ function updateStats(stats) {
         resources.innerHTML = "keine Rohstoffe";
     }
     
-    if (stats.cards.length) {
-        cards.innerHTML = stats.cards.join(', ');
+    cards.innerHTML = "";
+    if (state.cards.length) {
+        for (const card of state.cards) {
+            const cardButton = document.createElement('button');
+            cardButton.className = "card";
+            cardButton.onclick = card.action;
+            cardButton.innerHTML = card.title;
+            cards.appendChild(cardButton);
+        }
     } else {
         cards.innerHTML = "keine Karten";
     }
     
-    if (stats.points) {
-        victory.innerHTML = "";
-        if (stats.towns) {
-            victory.innerHTML += stats.towns + " Siedlungen (1P)";
+    var points = 0;
+    victory.innerHTML = "";
+    if (state.towns) {
+        victory.innerHTML += state.towns + " Siedlungen (1P)";
+        points += state.towns;
+    }
+    if (state.cities) {
+        victory.innerHTML += " + " + state.cities + " Städte (2P)";
+        points += 2 * state.cities;
+    }
+    for (const card of state.victoryCards) {
+        victory.innerHTML += " + " + card + " (1P)";
+        points += 1;
+    }
+    
+    var maxLength = 4;
+    var maxLengthPlayer = null;
+    for (const [player, length] of Object.entries(state.longestRoads)) {
+        if (length > maxLength) {
+            maxLength = length;
+            maxLengthPlayer = player;
         }
-        if (stats.cities) {
-            victory.innerHTML += " + " + stats.cities + " Städte (2P)";
+    }
+    
+    if (maxLengthPlayer == state.me) {
+        victory.innerHTML += " + Längste Handelsstraße (2P)";
+        points += 2;
+    }
+    
+    var maxKnights = 2;
+    var maxKnightPlayer = null;
+    for (const [player, knights] of Object.entries(state.playedKnights)) {
+        if (knights > maxKnights) {
+            maxKnights = knights;
+            maxKnightPlayer = player;
         }
-        for (const card of stats.victoryCards) {
-            victory.innerHTML += " + " + card + " (1P)";
-        }
-        if (stats.longestRoad) {
-            victory.innerHTML += " + Längste Handelsstraße (2P)";
-        }
-        if (stats.mostKnights) {
-            victory.innerHTML += " + Größte Rittermacht (2P)";
-        }
-        victory.innerHTML += " = " + stats.points;
+    }
+    
+    if (maxKnightPlayer == state.me) {
+        victory.innerHTML += " + Größte Rittermacht (2P)";
+        points += 2;
+    }
+    
+    if (points > 0) {
+        victory.innerHTML += " = " + points;
     } else {
         victory.innerHTML = 'keine Punkte';
     }

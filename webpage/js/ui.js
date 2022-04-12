@@ -191,7 +191,7 @@ function addPort(resource, face, x, y) {
 
 function addTown(player, isCity, shift, action, x, y) {
     
-    const ty = shift == 'up' ? y - 26 : y + 26;
+    const ty = shift == '+' ? y + 26 : y - 26;
     
     const town = shape('circle', player);
     town.setAttribute('cx', x);
@@ -217,7 +217,7 @@ function addTown(player, isCity, shift, action, x, y) {
 }
     
 
-function addRoad(player, spin, action, x, y) {
+function addRoad(player, dir, action, x, y) {
     
     const road = shape('rect', player);
     road.setAttribute('x', x - 15);
@@ -229,9 +229,9 @@ function addRoad(player, spin, action, x, y) {
     road.setAttribute('stroke-width', 1);
     
     var angle = 0;
-    if (spin == 'rise') {
+    if (dir == '/') {
         angle = 60;
-    } else if (spin == 'fall') {
+    } else if (spin == '\\') {
         angle = -60;
     }
     road.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');

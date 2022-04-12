@@ -62,12 +62,12 @@ function updateBoard() {
 
     for (const cell of Object.values(state.board)) {
             
-        const y = 550 + cell.coord[0] * 80;
-        const x = 550 + cell.coord[1] * 45;
+        const y = 550 + cell.v * 80;
+        const x = 550 + cell.h * 45;
 
         if (cell.tile) {
             
-            addTile(cell.resource, cell.roll, cell.bandit, x, y);
+            addTile(cell.res, cell.roll, cell.bandit, x, y);
             
         } else if (cell.node) {
             
@@ -79,12 +79,12 @@ function updateBoard() {
         } else if (cell.edge) {
             
             if (cell.player) {
-                addRoad(cell.road, cell.spin, null, x, y);
+                addRoad(cell.player, cell.dir, null, x, y);
             } else if (cell.action) {
-                addRoad(state.me, cell.spin, cell.action, x, y);
+                addRoad(state.me, cell.dir, cell.action, x, y);
             }
             if (cell.port) {
-                addPort(cell.port, cell.face, x, y);
+                addPort(cell.res, cell.port, x, y);
             }
         }
     }

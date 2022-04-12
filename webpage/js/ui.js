@@ -12,7 +12,7 @@ const resColors = {
     'Getreide': '#EFDA61',
     'Wolle': '#AEE670',
     'Erz': '#A4A296',
-    'Wüste': '#EBE3B0'
+    'Sand': '#EBE3B0'
 };
 
 const resStrokeColors = {
@@ -21,7 +21,7 @@ const resStrokeColors = {
     'Getreide': '#CCB94C',
     'Wolle': '#89C852',
     'Erz': '#7F7E74',
-    'Wüste': '#D8CC8B'
+    'Sand': '#D8CC8B'
 };
 
 

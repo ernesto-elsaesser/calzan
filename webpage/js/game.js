@@ -3,7 +3,7 @@ const L = "Lehm";
 const G = "Getreide";
 const W = "Wolle";
 const E = "Erz";
-const X = "Wüste";
+const S = "Sand";
 
 const victoryCards = [
     "Bibliothek", "Marktplatz", "Rathaus", "Kirche", "Universität"
@@ -109,7 +109,7 @@ function initState(data, player) {
     updateUI();
     
     logLine("Spieler: " + state.players.join(', '));
-    logLine(state.players[0] + " darf setzen";);
+    logLine(state.players[0] + " darf setzen");
 }
 
 function createRNG(seed) {
@@ -210,10 +210,10 @@ function placeInitial(player, args) {
     if (player == state.me) {
         for (const tileId of state.board[nodeId].tiles) {
             const resource = state.board[tileId].resource;
-            if (resource != W) {
+            if (resource != S) {
                 state.resources.push(resource);
             }
-        });
+        }
     }
 }
 
@@ -234,7 +234,7 @@ function placeTown(player, nodeId) {
                     state.freeEdgeIds.remove(nextEdgeId);
                 }
             }
-        });
+        }
     }
 }
 

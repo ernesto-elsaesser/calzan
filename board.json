@@ -76,7 +76,7 @@
     "C2a": {"v": 0, "h": -6, "edge": true, "dir": "|", "nodes": ["D1B", "C2A"]},
     "C2": {"v": 0, "h": -4, "tile": true, "res": "Lehm", "roll": 9, "nodes": ["C2A", "C2B", "C3A", "D2B", "D2A", "D1B"]},
     "C3a": {"v": 0, "h": -2, "edge": true, "dir": "|", "nodes": ["D2B", "C3A"]},
-    "C3": {"v": 0, "h": 0, "tile": true, "res": "Wüste", "bandit": true, "nodes": ["C3A", "C3B", "C4A", "D3B", "D3A", "D2B"]},
+    "C3": {"v": 0, "h": 0, "tile": true, "res": "Sand", "bandit": true, "nodes": ["C3A", "C3B", "C4A", "D3B", "D3A", "D2B"]},
     "C4a": {"v": 0, "h": 2, "edge": true, "dir": "|", "nodes": ["D3B", "C4A"]},
     "C4": {"v": 0, "h": 4, "tile": true, "res": "Erz", "roll": 6, "nodes": ["C4A", "C4B", "C5A", "D4B", "D4A", "D3B"]},
     "C5a": {"v": 0, "h": 6, "edge": true, "dir": "|", "nodes": ["D4B", "C5A"]},

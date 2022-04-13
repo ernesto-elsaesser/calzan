@@ -80,7 +80,7 @@
     "C4a": {"v": 0, "h": 2, "edge": true, "dir": 0, "nodes": ["D3B", "C4A"]},
     "C4": {"v": 0, "h": 4, "tile": true, "res": "Erz", "roll": 6, "nodes": ["C4A", "C4B", "C5A", "D4B", "D4A", "D3B"]},
     "C5a": {"v": 0, "h": 6, "edge": true, "dir": 0, "nodes": ["D4B", "C5A"]},
-    "C5": {"v": 0, "h": 8, "tile": true, "res": "Getreide", "roll": 9, "nodes": ["C5A", "C5B", "C5C", "C5D", "D4C", "D4B"]},
+    "C5": {"v": 0, "h": 8, "tile": true, "res": "Getreide", "roll": 9, "nodes": ["C5A", "C5B", "C5C", "C5F", "D4C", "D4B"]},
     "C5f": {"v": 0, "h": 10, "edge": true, "dir": 0, "nodes": ["C5F", "C5C"]},
     
     "C1D": {"v": 1, "h": 10, "node": true, "shift": "-", "port": 240, "res": "Getreide", "edges": ["C1a", "C1d"], "tiles": ["C1"]},

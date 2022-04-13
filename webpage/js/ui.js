@@ -1,10 +1,4 @@
-const resRanks = {
-    'Holz': 1,
-    'Lehm': 2,
-    'Getreide': 3,
-    'Wolle': 4,
-    'Erz': 5,
-};
+const resOrder = ['Holz', 'Lehm', 'Getreide', 'Wolle', 'Erz'];
 
 const resColors = {
     'Holz': '#6E9B3C',
@@ -67,7 +61,7 @@ function updateBoard() {
 
         if (cell.tile) {
             
-            addTile(cell.res, cell.roll, cell.bandit, x, y);
+            addTile(cell.res, cell.roll, cell.bandit, cell.action, x, y);
             
         } else if (cell.node) {
             
@@ -90,8 +84,10 @@ function updateBoard() {
     }
 }
 
-function addTile(resource, roll, hasBandit, x, y) {
+function addTile(resource, roll, hasBandit, action, x, y) {
 
+    // TODO render bandit move action!
+    
     const color = resColors[resource];
     const strokeColor = resStrokeColors[resource];
     
@@ -249,16 +245,27 @@ function shape(tag, player) {
 
 function updateControls() {
     
+    const myTurn = state.current != state.me;
+    
+    cardButton.disabled = !myTurn || state.resources[G] == 0 || state.resources[W] == 0 || state.resources[E] == 0;
+    tradeButton.disabled = !myTurn;
+    endButton.disabled = !myTurn || state.phase != 'game';
+    
     resources.innerHTML = "";
-    if (state.resources.length) {
-        const sortedResources = state.resources.sort((a, b) => resRanks[a] - resRanks[b]); 
-        for (const resource of sortedResources) {
+    
+    var total = 0;
+    for (const resource of resOrder) {
+        const count = state.resources[resource];
+        for (var i = 0; i < count; i += 1) {
             const resImg = document.createElement('img');
             resImg.src = "img/" + resource + ".png";
             resImg.width = "50";
             resources.appendChild(resImg);
         }
-    } else {
+        total += count;
+    }
+    
+    if (total == 0) {
         resources.innerHTML = "keine Rohstoffe";
     }
     
@@ -277,14 +284,19 @@ function updateControls() {
     
     var points = 0;
     victory.innerHTML = "";
-    if (state.towns) {
-        victory.innerHTML += state.towns + " Siedlungen (1P)";
-        points += state.towns;
+    
+    const townCount = state.townIds.length;
+    if (townCount) {
+        victory.innerHTML += townCount + " Siedlungen (1P)";
+        points += townCount;
     }
-    if (state.cities) {
-        victory.innerHTML += " + " + state.cities + " Städte (2P)";
-        points += 2 * state.cities;
+    
+    const cityCount = state.cityIds.length;
+    if (cityCount) {
+        victory.innerHTML += " + " + cityCount + " Städte (2P)";
+        points += 2 * cityCount;
     }
+    
     for (const card of state.victoryCards) {
         victory.innerHTML += " + " + card + " (1P)";
         points += 1;

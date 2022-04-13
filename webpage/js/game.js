@@ -73,6 +73,7 @@ var state = {
 var prevActionId = null;
 var selectedTownId = null;
 var selectedBanditTileId = null;
+var stealPending = null;
 var activeCard = null;
 var inventionResources = null;
 
@@ -420,7 +421,9 @@ function diceRolled(player, args) {
         logLine(state.current + " darf den Räuber bewegen");
         state.phase = 'bandit';
         if (state.resources.length > 7) {
-            triggerSteal();
+            state.context = "Rohstoffe abwerfen";
+            stolenIndices = []
+            stealPending = Math.floor(state.resources.length / 2);
         }
     } else {
         var yields = [];
@@ -490,6 +493,13 @@ function updateActions() {
                     const player = state.board[nodeId].player;
                     if (player && player != state.me) {
                         state.actions[player] = "moveBandit('" + player + "')";
+                    }
+                }
+            } else if (stealPending) {
+                for (var i = 0; i < state.resources.length; i += 1) {
+                    if (!stolenIndices.includes(i)) {
+                        const resource = state.resources[i];
+                        state.actions[resource] = "stealResource(" + i + ")";
                     }
                 }
             } else if (activeCard == ER) {
@@ -610,11 +620,18 @@ function moveBandit(targetPlayer) {
     selectedBanditTileId = null;
     state.context = null;
     commitAction(['move-bandit', tileId, targetPlayer]);
-    updateActions();
 }
 
-function triggerSteal() {
-    // TODO let player select resources to drop
+function stealResource(resIndex) {
+    stolenIndices.push(resIndex);
+    if (stolenIndices.length == stealPending) {
+        const resources = stolenIndices.map((i) => state.resources[i]);
+        stealPending = null;
+        stolenIndices = null;
+        dropResources(resources);
+    } else {
+        updateActions();
+    }
 }
 
 function activateCard(card) {
@@ -639,16 +656,16 @@ function activateCard(card) {
 }
 
 function monopolize(resource) {
-    commitAction(['play-card', MO, resource]);
     state.context = null;
     activeCard = null;
-    updateActions();
+    commitAction(['play-card', MO, resource]);
 }
 
 function selectInvention(resource) {
     inventionResources.push(resource);
     if (inventionResources.length == 1) {
         state.context = ER + " (2. Rohstoff)";
+        updateActions();
     } else {
         const resources = inventionResources;
         state.context = null;
@@ -657,7 +674,6 @@ function selectInvention(resource) {
         commitAction(['play-card', ER]);
         addResources(resources);
     }
-    updateActions();
 }
 
 function rollDice() {

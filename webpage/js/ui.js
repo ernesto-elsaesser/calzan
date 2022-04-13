@@ -61,9 +61,9 @@ function updateBoard() {
         } else if (cell.node) {
             
             if (cell.player) {
-                addTown(cell.player, cell.city, cell.shift, null, x, y);
+                addTown(cell.player, cell.city, cell.shift, null, cell.upgrade, x, y);
             } else if (cell.action) {
-                addTown(state.me, cell.city, cell.shift, cell.action, x, y);
+                addTown(state.me, cell.city, cell.shift, cell.action, null, x, y);
             }
         } else if (cell.edge) {
             
@@ -189,7 +189,7 @@ function addPort(resource, face, x, y) {
     svgTiles.appendChild(label);
 }
 
-function addTown(player, isCity, shift, action, x, y) {
+function addTown(player, isCity, shift, action, upgrade, x, y) {
     
     const ty = shift == '+' ? y + 26 : y - 26;
     
@@ -213,6 +213,12 @@ function addTown(player, isCity, shift, action, x, y) {
         dot.setAttribute('cy', ty);
         dot.setAttribute('r', '10');
         svgTokens.appendChild(dot);
+    } else if (upgrade) {
+        const arrow = shape('polygon');
+        arrow.setAttribute('points', "0,-5 5,5 -5,5");
+        arrow.setAttribute('transform', 'translate(' + x + ',' + y + ')');
+        arrow.setAttribute('onclick', upgrade);
+        svgTokens.appendChild(arrow);
     }
 }
     

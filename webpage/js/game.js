@@ -222,12 +222,14 @@ function placeInitial(player, args) {
     placeRoad(player, edgeId);
     
     if (player == state.me) {
+        var yields = [];
         for (const tileId of state.board[nodeId].tiles) {
             const resource = state.board[tileId].res;
             if (resource != S) {
-                addResource(resource);
+                yields.push(resource);
             }
         }
+        addResources(yields);
     }
 }
 
@@ -361,7 +363,7 @@ function cardPlayed(player, args) {
 
 function resourcesAdded(player, args) {
     
-    const resoruces = args;
+    const resources = args;
     if (player == state.me) {
         add(resources);
         logLine(player + " erhält: " + format(resources));
@@ -372,7 +374,7 @@ function resourcesAdded(player, args) {
 
 function resourcesDropped(player, args) {
     
-    const resoruces = args;
+    const resources = args;
     if (player == state.me) {
         remove(resources);
         logLine(player + " zahlt: " + format(resources));
@@ -478,96 +480,91 @@ function assert(player, phase) {
 function updateActions() {
     
     state.actions = {};
-    
     for (const cell of Object.values(state.board)) {
         delete cell.action;
     }
     
-    if (state.current != state.me) {
-        return;
-    }
-    
-    if (state.context) {
-        if (selectedBanditTileId) {
-            for (const nodeId of state.board[selectedBanditTileId].nodes) {
-                const player = state.board[nodeId].player;
-                if (player && player != state.me) {
-                    state.actions[player] = "moveBandit('" + player + "')";
+    if (state.current == state.me) {
+        
+        if (state.context) {
+            if (selectedBanditTileId) {
+                for (const nodeId of state.board[selectedBanditTileId].nodes) {
+                    const player = state.board[nodeId].player;
+                    if (player && player != state.me) {
+                        state.actions[player] = "moveBandit('" + player + "')";
+                    }
+                }
+            } else if (activeCard == ER) {
+                for (const resource of Object.keys(resRanks)) {
+                    state.actions[resource] = "selectInvention('" + resource + "')";
+                }
+            } else if (activeCard == MO) {
+                for (const resource of Object.keys(resRanks)) {
+                    state.actions[resource] = "monoploize('" + resource + "')";
                 }
             }
-        } else if (activeCard == ER) {
-            for (const resource of Object.keys(resRanks)) {
-                state.actions[resource] = "selectInvention('" + resource + "')";
-            }
-        } else if (activeCard == MO) {
-            for (const resource of Object.keys(resRanks)) {
-                state.actions[resource] = "monoploize('" + resource + "')";
-            }
-        }
-        return;
-    }
+        } else if (state.phase == 'game') {
 
-    if (state.phase == 'game') {
-        
-        #state.actions["Handel"] = "trade()";
-        
-        var stats = {};
-        for (const resource of state.resources) {
-            if (resource in stats) {
-                stats[resource] += 1;
-            } else {
-                state[resource] = 1;
-            }
-        }
-        
-        const canRoad = stats[H] > 1 && stats[L] > 1;
-        const canTown = canRoad && stats[G] > 1 && stats[W] > 1;
-        const canCity = stats[G] > 2 && stats[E] > 3;
-        const canCard = stats[G] > 1 && stats[W] > 1 && stats[E] > 1;
-            
-        if (canCard) {
-            state.actions["Entwicklungskarte kaufen"] = "buyCard()";
-        }
-        
-        state.actions["Zug beenden"] = "endTurn()";
-            
-        for (const edgeId of state.roadIds) {
-            for (const nodeId of state.board[edgeId].nodes) {
-                if (canTown && state.freeNodeIds.includes(nextEdgeId)) {
-                    state.board[nodeId].action = "buyTown('" + nodeId + "')";
+            //state.actions["Handel"] = "trade()";
+
+            var stats = {};
+            for (const resource of state.resources) {
+                if (resource in stats) {
+                    stats[resource] += 1;
+                } else {
+                    state[resource] = 1;
                 }
-                for (const nextEdgeId of state.board[nodeId].edges) {
-                    if (canRoad && state.freeEdgeIds.includes(nextEdgeId)) {
-                        state.board[nextEdgeId].action = "buyRoad('" + nextEdgeId + "')";
+            }
+
+            const canRoad = stats[H] > 1 && stats[L] > 1;
+            const canTown = canRoad && stats[G] > 1 && stats[W] > 1;
+            const canCity = stats[G] > 2 && stats[E] > 3;
+            const canCard = stats[G] > 1 && stats[W] > 1 && stats[E] > 1;
+
+            if (canCard) {
+                state.actions["Entwicklungskarte kaufen"] = "buyCard()";
+            }
+
+            state.actions["Zug beenden"] = "endTurn()";
+
+            for (const edgeId of state.roadIds) {
+                for (const nodeId of state.board[edgeId].nodes) {
+                    if (canTown && state.freeNodeIds.includes(nextEdgeId)) {
+                        state.board[nodeId].action = "buyTown('" + nodeId + "')";
+                    }
+                    for (const nextEdgeId of state.board[nodeId].edges) {
+                        if (canRoad && state.freeEdgeIds.includes(nextEdgeId)) {
+                            state.board[nextEdgeId].action = "buyRoad('" + nextEdgeId + "')";
+                        }
                     }
                 }
             }
-        }
-        
-        if (canCity) {
-            for (const nodeId of state.townIds) {
-                state.board[nodeId].upgrade = "buyCity('" + nodeId + "')";
+
+            if (canCity) {
+                for (const nodeId of state.townIds) {
+                    state.board[nodeId].upgrade = "buyCity('" + nodeId + "')";
+                }
             }
-        }
-        
-    } else if (state.phase == 'bandit') {
-        
-        for (const tileId of allTileIds) {
-            if (state.board[tileId].bandit) {
-                continue;
+
+        } else if (state.phase == 'bandit') {
+
+            for (const tileId of allTileIds) {
+                if (state.board[tileId].bandit) {
+                    continue;
+                }
+                state.board[tileId].action = "selectTile('" + tileId + "')";
             }
-            state.board[tileId].action = "selectTile('" + tileId + "')";
-        }
-        
-    } else if (state.phase == 'forward' || state.phase == 'backward') {
-        
-        if (selectedTownId) {
-            for (const edgeId of state.board[selectedTownId].edges) {
-                state.board[edgeId].action = "selectRoad('" + edgeId + "')";
-            }
-        } else {
-            for (const nodeId of state.freeNodeIds) {
-                state.board[nodeId].action = "selectTown('" + nodeId + "')";
+
+        } else if (state.phase == 'forward' || state.phase == 'backward') {
+
+            if (selectedTownId) {
+                for (const edgeId of state.board[selectedTownId].edges) {
+                    state.board[edgeId].action = "selectRoad('" + edgeId + "')";
+                }
+            } else {
+                for (const nodeId of state.freeNodeIds) {
+                    state.board[nodeId].action = "selectTown('" + nodeId + "')";
+                }
             }
         }
     }
@@ -692,16 +689,16 @@ function dice(sides) {
 }
 
 function add(resources) {
-    state.resources = state.resources.concat(args).sort((a, b) => resRank[a] - resRank[b]);
+    state.resources = state.resources.concat(resources).sort((a, b) => resRanks[a] - resRanks[b]);
 }
 
 function remove(resources) {
-    for (const resource of args) {
+    for (const resource of resources) {
         const resIndex = state.resources.indexOf(resource);
         state.resources.splice(resIndex, 1);
     }
 }
 
 function format(resources) {
-    return resources.sort((a, b) => resRank[a] - resRank[b]).join(', ')   
+    return resources.sort((a, b) => resRanks[a] - resRanks[b]).join(', ')   
 }

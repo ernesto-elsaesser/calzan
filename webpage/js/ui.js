@@ -131,9 +131,9 @@ function addTile(resource, roll, hasBandit, action, x, y) {
         const banditButton = shape('circle');
         banditButton.setAttribute('cx', x);
         banditButton.setAttribute('cy', y);
-        banditButton.setAttribute('r', '40');
+        banditButton.setAttribute('r', '50');
         banditButton.setAttribute('fill', 'black');
-        banditButton.setAttribute('opacity', 0.5);
+        banditButton.setAttribute('opacity', 0.3);
         banditButton.setAttribute('onclick', action);
         svgTokens.appendChild(banditButton);
     }

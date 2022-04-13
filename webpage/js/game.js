@@ -190,14 +190,12 @@ function commitAction(action) {
 
 function forwardPlaced(player, args) {
     
-    assert(player, 'forward');
     placeInitial(player, args);
     logLine(state.current + " hat seine erste Siedlung platziert");
 }
 
 function backwardPlaced(player, args) {
     
-    assert(player, 'backward');
     placeInitial(player, args);
     logLine(state.current + " hat seine zweite Siedlung platziert");
 }
@@ -260,7 +258,6 @@ function placeTown(player, nodeId) {
 
 function roadBought(player, args) {
     
-    assert(player, 'game');
     const edgeId = args[0];
     placeRoad(player, edgeId);
     logLine(state.current + " baut eine Strasse");
@@ -268,7 +265,6 @@ function roadBought(player, args) {
 
 function townBought(player, args) {
     
-    assert(player, 'game');
     const nodeId = args[0];
     placeTown(player, nodeId);
     logLine(state.current + " baut eine Siedlung");
@@ -276,7 +272,6 @@ function townBought(player, args) {
 
 function cityBought(player, args) {
     
-    assert(player, 'game');
     const nodeId = args[0];
     state.board[nodeId].city = true;
     if (player == state.me) {
@@ -288,7 +283,6 @@ function cityBought(player, args) {
 
 function cardBought(player, args) {
     
-    assert(player, 'game');
     const card = state.stack.shift();
     if (player == state.me) {
         if (victoryCards.includes(card)) {
@@ -302,7 +296,6 @@ function cardBought(player, args) {
 
 function cardPlayed(player, args) {
     
-    assert(player, 'game');
     
     const card = args[0];
     
@@ -317,7 +310,7 @@ function cardPlayed(player, args) {
         state.playedKnights[player] += 1;
     } else if (card == SB) {
         logLine(player + " spielt Strassenbau und erhält 2 kostenlose Strassen");
-    } else if (card == MO) {
+    } else if (card == MP) {
         const chosenResource = args[1];
         logLine(player + " spielt Monopol und erhält: " + chosenResource);
         if (player != state.me) {
@@ -412,8 +405,6 @@ function turnEnded(player, args) {
     
 function diceRolled(player, args) {
     
-    assert(player, 'game');
-    
     const roll = dice(6) + dice(6);
     logLine(player + " würfelt eine " + roll.toString());
     
@@ -421,9 +412,9 @@ function diceRolled(player, args) {
         logLine(state.current + " darf den Räuber bewegen");
         state.phase = 'bandit';
         if (state.resources.length > 7) {
-            state.context = "Rohstoffe abwerfen";
-            stolenIndices = []
             stealPending = Math.floor(state.resources.length / 2);
+            state.context = "Rohstoffe abwerfen (noch " + stealPending + ")";
+            stolenIndices = []
         }
     } else {
         var yields = [];
@@ -451,8 +442,6 @@ function diceRolled(player, args) {
     
 function banditMoved(player, args) {
     
-    assert(player, 'bandit');
-    
     const [tileId, targetPlayer] = args;
     
     for (const otherTileId of allTileIds) {
@@ -471,13 +460,6 @@ function banditMoved(player, args) {
     state.phase = 'game';
 }
 
-function assert(player, phase) {
-    
-    if (state.current != player || state.phase != phase) {
-        window.alert("Ungültiger Zug von " + player + ". Spiel abgebrochen.");
-    }
-}
-
 function updateActions() {
     
     state.actions = {};
@@ -485,31 +467,29 @@ function updateActions() {
         delete cell.action;
     }
     
-    if (state.current == state.me) {
+    if (stealPending) {
+        for (var i = 0; i < state.resources.length; i += 1) {
+            if (!stolenIndices.includes(i)) {
+                const resource = state.resources[i];
+                state.actions[resource] = "stealResource(" + i + ")";
+            }
+        }
+    } else if (state.current == state.me) {
         
-        if (state.context) {
-            if (selectedBanditTileId) {
-                for (const nodeId of state.board[selectedBanditTileId].nodes) {
-                    const player = state.board[nodeId].player;
-                    if (player && player != state.me) {
-                        state.actions[player] = "moveBandit('" + player + "')";
-                    }
+        if (selectedBanditTileId) {
+            for (const nodeId of state.board[selectedBanditTileId].nodes) {
+                const player = state.board[nodeId].player;
+                if (player && player != state.me) {
+                    state.actions[player] = "moveBandit('" + player + "')";
                 }
-            } else if (stealPending) {
-                for (var i = 0; i < state.resources.length; i += 1) {
-                    if (!stolenIndices.includes(i)) {
-                        const resource = state.resources[i];
-                        state.actions[resource] = "stealResource(" + i + ")";
-                    }
-                }
-            } else if (activeCard == ER) {
-                for (const resource of Object.keys(resRanks)) {
-                    state.actions[resource] = "selectInvention('" + resource + "')";
-                }
-            } else if (activeCard == MO) {
-                for (const resource of Object.keys(resRanks)) {
-                    state.actions[resource] = "monoploize('" + resource + "')";
-                }
+            }
+        } else if (activeCard == ER) {
+            for (const resource of Object.keys(resRanks)) {
+                state.actions[resource] = "selectInvention('" + resource + "')";
+            }
+        } else if (activeCard == MP) {
+            for (const resource of Object.keys(resRanks)) {
+                state.actions[resource] = "monoploize('" + resource + "')";
             }
         } else if (state.phase == 'game') {
 
@@ -610,9 +590,25 @@ function selectRoad(edgeId) {
 }
 
 function selectTile(tileId) {
-    selectedBanditTileId = tileId;
-    state.context = "Raubzug";
-    updateActions();
+    
+    var options = [];
+    for (const nodeId of state.board[tileId].nodes) {
+        const player = state.board[nodeId].player;
+        if (player && player != state.me && !options.includes(player)) {
+            options.push(player);
+        }
+    }
+    
+    if (options.length == 0) {
+        commitAction(['move-bandit', tileId, null]);
+    } else if (options.length == 1) {
+        commitAction(['move-bandit', tileId, options[0]]);
+    } else {
+        selectedBanditTileId = tileId;
+        state.context = "Wen berauben?";
+        updateActions();
+    }
+    
 }
 
 function moveBandit(targetPlayer) {
@@ -624,12 +620,15 @@ function moveBandit(targetPlayer) {
 
 function stealResource(resIndex) {
     stolenIndices.push(resIndex);
-    if (stolenIndices.length == stealPending) {
-        const resources = stolenIndices.map((i) => state.resources[i]);
+    stealPending -= 1;
+    if (stealPending == 0) {
+        state.context = null;
         stealPending = null;
         stolenIndices = null;
+        const resources = stolenIndices.map((i) => state.resources[i]);
         dropResources(resources);
     } else {
+        state.context = "Rohstoffe abwerfen (noch " + stealPending + ")";
         updateActions();
     }
 }
@@ -643,9 +642,9 @@ function activateCard(card) {
         activeCard = ER;
         inventionResources = []
         updateActions();
-    } else if (card == MO) {
-        state.context = MO;
-        activeCard = MO;
+    } else if (card == MP) {
+        state.context = MP;
+        activeCard = MP;
         updateActions();
     } else if (card == SB) {
         commitAction(['play-card', SB]);
@@ -658,7 +657,7 @@ function activateCard(card) {
 function monopolize(resource) {
     state.context = null;
     activeCard = null;
-    commitAction(['play-card', MO, resource]);
+    commitAction(['play-card', MP, resource]);
 }
 
 function selectInvention(resource) {

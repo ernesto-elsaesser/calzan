@@ -56,6 +56,7 @@ var state = {
     me: null,
     current: null,
     phase: 'forward',
+    context: null,
     resources: [],
     roadIds: [],
     townIds: [],
@@ -527,7 +528,7 @@ function updateActions() {
             state.actions["Zug beenden"] = "endTurn()";
 
             for (const nodeId of state.townIds.concat(state.cityIds)) {
-                for (const edgeId of state.board[nodeId].nodes) {
+                for (const edgeId of state.board[nodeId].edges) {
                     if (canRoad && state.freeEdgeIds.includes(edgeId)) {
                         state.board[edgeId].action = "buyRoad('" + edgeId + "')";
                     }
@@ -609,6 +610,7 @@ function selectTile(tileId) {
 function moveBandit(targetPlayer) {
     const tileId = selectedBanditTileId;
     selectedBanditTileId = null;
+    state.context = null;
     commitAction(['move-bandit', tileId, targetPlayer]);
     updateActions();
 }
@@ -640,6 +642,7 @@ function activateCard(card) {
 
 function monopolize(resource) {
     commitAction(['play-card', MO, resource]);
+    state.context = null;
     activeCard = null;
     updateActions();
 }
@@ -650,6 +653,7 @@ function selectInvention(resource) {
         state.context = ER + " (2. Rohstoff)";
     } else {
         const resources = inventionResources;
+        state.context = null;
         activeCard = null;
         inventionResources = null;
         commitAction(['play-card', ER]);

@@ -287,6 +287,7 @@ function updateControls() {
         for (const card of state.cards) {
             const cardButton = document.createElement('button');
             cardButton.className = "card";
+            cardButton.disabled = state.current != state.me;
             cardButton.setAttribute('onclick', "activateCard('" + card + "')");
             cardButton.innerHTML = card;
             cards.appendChild(cardButton);

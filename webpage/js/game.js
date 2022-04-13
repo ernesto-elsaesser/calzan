@@ -61,6 +61,7 @@ var state = {
     roadIds: [],
     townIds: [],
     cityIds: [],
+    newCards: [],
     cards: [],
     victoryCards: [],
     freeEdgeIds: allEdgeIds,
@@ -288,7 +289,7 @@ function cardBought(player, args) {
         if (victoryCards.includes(card)) {
             state.vicotryCards.push(card);
         } else {
-            state.cards.push(card);
+            state.newCards.push(card);
         }
     }
     logLine(state.current + " kauft eine Entwicklungskarte");
@@ -402,6 +403,8 @@ function turnEnded(player, args) {
         logLine(state.current + " ist am Zug");
         
         if (state.current == state.me) {
+            state.cards = state.cards.concat(state.newCards);
+            state.newCards = [];
             rollDice();
         }
     }

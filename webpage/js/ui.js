@@ -34,7 +34,7 @@ function logLine(line) {
         const span = '<span class="player player' + n + '">' + player + '</span>';
         html = html.replaceAll(player, span);
     }
-    log.innerHTML += html + "<br>";
+    log.innerHTML = html + "<br>" + log.innerHTML;
 }
 
 function updateUI() {

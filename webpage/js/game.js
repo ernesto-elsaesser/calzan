@@ -140,6 +140,8 @@ function createRNG(seed) {
     
 function dispatchAction(action, prevId) {
     
+    console.log("action after", prevId);
+    
     if (prevId != prevActionId) {
         console.log("Invalid action id", prevId);
         return;
@@ -189,14 +191,6 @@ function forwardPlaced(player, args) {
     assert(player, 'forward');
     placeInitial(player, args);
     logLine(state.current + " hat seine erste Siedlung platziert");
-    
-    const currentIndex = state.players.indexOf(state.current);
-    if (currentIndex == state.players.length - 1) {
-        state.phase = 'backward';
-    } else {
-        nextTurn(1);
-    }
-    logLine(state.current + " darf setzen");
 }
 
 function backwardPlaced(player, args) {
@@ -204,15 +198,6 @@ function backwardPlaced(player, args) {
     assert(player, 'backward');
     placeInitial(player, args);
     logLine(state.current + " hat seine zweite Siedlung platziert");
-    
-    const currentIndex = state.players.indexOf(state.current);
-    if (currentIndex == 0) {
-        state.phase = 'game';
-        roll();
-    } else {
-        nextTurn(-1);
-        logLine(state.current + " darf setzen");
-    }
 }
     
 function placeInitial(player, args) {
@@ -220,17 +205,6 @@ function placeInitial(player, args) {
     const [nodeId, edgeId] = args;
     placeTown(player, nodeId);
     placeRoad(player, edgeId);
-    
-    if (player == state.me) {
-        var yields = [];
-        for (const tileId of state.board[nodeId].tiles) {
-            const resource = state.board[tileId].res;
-            if (resource != S) {
-                yields.push(resource);
-            }
-        }
-        addResources(yields);
-    }
 }
 
 function placeRoad(player, edgeId) {
@@ -252,31 +226,34 @@ function placeTown(player, nodeId) {
     const cell = state.board[nodeId];
     cell.player = player;
     
-    var blockedNodeIds = [nodeId];
-    var blockedEdgeIds = [];
     if (player == state.me) {
         state.townIds.push(nodeId);
-    } else {
-        for (const edgeId of cell.edges) {
+    }
+    
+    var blockedNodeIds = [nodeId];
+    var blockedEdgeIds = [];
+    
+    for (const edgeId of cell.edges) {
+        
+        if (player != state.me) {
             blockedEdgeIds.push(edgeId);
-            for (const nextNodeId of state.board[edgeId].nodes) {
-                blockedNodeIds.push(nextNodeId);
+        }
+        
+        for (const nextNodeId of state.board[edgeId].nodes) {
+            blockedNodeIds.push(nextNodeId);
+            
+            /*
+            if (player != state.me) {
                 for (const nextEdgeId of state.board[nextNodeId].edges) {
                     blockedEdgeIds.push(nextEdgeId);
                 }
             }
+            */
         }
     }
     
     state.freeNodeIds = state.freeNodeIds.filter((i) => !blockedNodeIds.includes(i));
     state.freeEdgeIds = state.freeEdgeIds.filter((i) => !blockedEdgeIds.includes(i));
-}
-
-function nextTurn(step) {
-    
-    const currentIndex = state.players.indexOf(state.current);
-    const nextIndex = (currentIndex + step) % state.players.length;
-    state.current = state.players[nextIndex];
 }
 
 function roadBought(player, args) {
@@ -400,11 +377,33 @@ function resourcesSent(player, args) {
 
 function turnEnded(player, args) {
     
-    assert(player, 'game');
-    logLine(state.current + " beendet seinen Zug");
-    nextTurn(1);
-    if (state.current == state.me) {
-        rollDice();
+    const currentIndex = state.players.indexOf(state.current);
+    
+    if (state.phase == 'forward') {
+        if (currentIndex == state.players.length - 1) {
+            state.phase = 'backward';
+            logLine(state.current + " darf erneut setzen");
+        } else {
+            state.current = state.players[currentIndex + 1];
+            logLine(state.current + " darf setzen");
+        }
+    } else if (state.phase == 'backward') {
+        if (currentIndex == 0) {
+            state.phase = 'game';
+            logLine(state.current + " ist am Zug");
+        } else {
+            state.current = state.players[currentIndex - 1];
+            logLine(state.current + " darf setzen");
+        }
+    } else if (state.phase == 'game') {
+        const nextIndex = (currentIndex + 1) % state.players.length;
+        state.current = state.players[nextIndex];
+        
+        logLine(state.current + " ist am Zug");
+        
+        if (state.current == state.me) {
+            rollDice();
+        }
     }
 }
     
@@ -527,9 +526,17 @@ function updateActions() {
 
             state.actions["Zug beenden"] = "endTurn()";
 
+            for (const nodeId of state.townIds.concat(state.cityIds)) {
+                for (const edgeId of state.board[nodeId].nodes) {
+                    if (canRoad && state.freeEdgeIds.includes(edgeId)) {
+                        state.board[edgeId].action = "buyRoad('" + edgeId + "')";
+                    }
+                }
+            }
+                
             for (const edgeId of state.roadIds) {
                 for (const nodeId of state.board[edgeId].nodes) {
-                    if (canTown && state.freeNodeIds.includes(nextEdgeId)) {
+                    if (canTown && state.freeNodeIds.includes(nodeId)) {
                         state.board[nodeId].action = "buyTown('" + nodeId + "')";
                     }
                     for (const nextEdgeId of state.board[nodeId].edges) {
@@ -580,8 +587,17 @@ function selectTown(nodeId) {
 
 function selectRoad(edgeId) {
     const nodeId = selectedTownId;
+    var yields = [];
+    for (const tileId of state.board[nodeId].tiles) {
+        const resource = state.board[tileId].res;
+        if (resource != S) {
+            yields.push(resource);
+        }
+    }
     selectedTownId = null;
     commitAction(['place-' + state.phase, nodeId, edgeId]);
+    addResources(yields);
+    endTurn();
 }
 
 function selectTile(tileId) {
@@ -618,6 +634,8 @@ function activateCard(card) {
         commitAction(['play-card', SB]);
         addResources([H, H, L, L]);
     }
+    
+    // TODO end turn afterwards?
 }
 
 function monopolize(resource) {

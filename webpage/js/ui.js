@@ -283,7 +283,7 @@ function updateControls() {
     }
     
     cards.innerHTML = "";
-    if (state.cards.length) {
+    if (state.newCards.length + state.cards.length) {
         for (const card of state.cards) {
             const cardButton = document.createElement('button');
             cardButton.className = "card";
@@ -291,6 +291,13 @@ function updateControls() {
             cardButton.setAttribute('onclick', "activateCard('" + card + "')");
             cardButton.innerHTML = card;
             cards.appendChild(cardButton);
+        }
+        for (const card of state.newCards) {
+            const newCardButton = document.createElement('button');
+            newCardButton.className = "card";
+            newCardButton.disabled = true;
+            newCardButton.innerHTML = card;
+            cards.appendChild(newCardButton);
         }
     } else {
         cards.innerHTML = "keine Karten";

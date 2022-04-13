@@ -444,8 +444,6 @@ function diceRolled(player, args) {
             addResources(yields);
         }
     }
-    
-    logLine(state.current + " ist am Zug");
 }
     
 function banditMoved(player, args) {
@@ -512,14 +510,14 @@ function updateActions() {
                 if (resource in stats) {
                     stats[resource] += 1;
                 } else {
-                    state[resource] = 1;
+                    stats[resource] = 1;
                 }
             }
 
-            const canRoad = stats[H] > 1 && stats[L] > 1;
-            const canTown = canRoad && stats[G] > 1 && stats[W] > 1;
-            const canCity = stats[G] > 2 && stats[E] > 3;
-            const canCard = stats[G] > 1 && stats[W] > 1 && stats[E] > 1;
+            const canRoad = stats[H] > 0 && stats[L] > 0;
+            const canTown = canRoad && stats[G] > 0 && stats[W] > 0;
+            const canCity = stats[G] > 1 && stats[E] > 2;
+            const canCard = stats[G] > 0 && stats[W] > 0 && stats[E] > 0;
 
             if (canCard) {
                 state.actions["Entwicklungskarte kaufen"] = "buyCard()";

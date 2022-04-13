@@ -9,7 +9,8 @@
         <style>
             body { font-family: Arial, sans; }
             h4 { margin: 30px 0 15px; }
-            #log { width: 280px; height: 100%; position: fixed; top: 0; left: 0; overflow: auto; padding: 20px; color: white; background-color: #313a35; line-height: 2; }
+            #sidebar { width: 320px; height: 100%; position: fixed; top: 0; left: 0; overflow: auto; background-color: #313a35; }
+            #log { margin: 20px; color: white; line-height: 2; }
             #content { margin-left: 320px; padding: 20px; text-align: center; }
             #board { width: 800px; height: 800px; margin: 20px auto; }
             #actions { }
@@ -30,8 +31,10 @@
         </style>
     </head>
     <body>
-        <div id="log"></div>
-
+        <div id="sidebar">
+            <div id="log"></div>
+        </div>
+        
         <div id="content">
             <svg id="board" width="800" height="800" viewBox="0 0 1100 1100" xmlns="http://www.w3.org/2000/svg">
                 <circle fill="#2D2F6C" cx="550" cy="550" r=550 />

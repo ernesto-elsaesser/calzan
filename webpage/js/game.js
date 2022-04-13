@@ -48,7 +48,7 @@ var state = {
     me: null,
     current: null,
     phase: 'forward',
-    resources: {H: 0, L: 0, G: 0, W: 0, E: 0 },
+    resources: {},
     roadIds: [],
     townIds: [],
     cityIds: [],
@@ -93,6 +93,10 @@ function initState(data, player) {
     state.players = data.players;
     state.me = player;
     state.current = data.players[0];
+    
+    for (const resource of [H, L, G, W, E]) {
+        state.resources[resource] = 0;
+    }
     
     for (const player of data.players) {
         state.longestRoads[player] = 0;
@@ -157,8 +161,8 @@ function dispatchAction(action, prevId) {
         'end-turn': turnEnded,
     };
     
-    const player = action[0];
-    const key = action[1];
+    const key = action[0];
+    const player = action[1];
     const args = action.slice(2);
     
     actionFunctions[key](player, args);
@@ -173,7 +177,6 @@ function commitAction(action) {
        
     const actionId = prevActionId + 1;
     const actionPath = '/' + actionId.toString();
-    action.unshift(state.me);
     actionsRef.child(actionPath).set(action);
 }
 

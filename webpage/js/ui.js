@@ -1,5 +1,3 @@
-const resOrder = ['Holz', 'Lehm', 'Getreide', 'Wolle', 'Erz'];
-
 const resColors = {
     'Holz': '#6E9B3C',
     'Lehm': '#DF9327',
@@ -252,20 +250,14 @@ function updateControls() {
     endButton.disabled = !myTurn || state.phase != 'game';
     
     resources.innerHTML = "";
-    
-    var total = 0;
-    for (const resource of resOrder) {
-        const count = state.resources[resource];
-        for (var i = 0; i < count; i += 1) {
+    if (state.resources.length) {
+        for (const resource of state.resources) {
             const resImg = document.createElement('img');
             resImg.src = "img/" + resource + ".png";
             resImg.width = "50";
             resources.appendChild(resImg);
         }
-        total += count;
-    }
-    
-    if (total == 0) {
+    } else {
         resources.innerHTML = "keine Rohstoffe";
     }
     

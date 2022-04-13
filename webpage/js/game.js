@@ -191,13 +191,13 @@ function commitAction(action) {
 function forwardPlaced(player, args) {
     
     placeInitial(player, args);
-    logLine(state.current + " hat seine erste Siedlung platziert");
+    logLine(state.current + " setzt seine erste Siedlung");
 }
 
 function backwardPlaced(player, args) {
     
     placeInitial(player, args);
-    logLine(state.current + " hat seine zweite Siedlung platziert");
+    logLine(state.current + " setzt seine zweite Siedlung");
 }
     
 function placeInitial(player, args) {
@@ -372,8 +372,6 @@ function resourcesSent(player, args) {
     } else if (recipient == state.me) {
         add(resources);
         logLine(recipient + " erhält von " + player + ": " + format(resources));
-    } else {
-        logLine(recipient + " erhält von " + player + " Rohstoffe");
     }
 }
 
@@ -457,6 +455,13 @@ function banditMoved(player, args) {
         state.board[otherTileId].bandit = false;
     }
     state.board[tileId].bandit = true;
+    
+    const resource = state.board[tileId].res;
+    if (targetPlayer) {
+        logLine(state.current + " setzt den Räuber auf " + resource + " und raubt von " + targetPlayer);
+    } else {
+        logLine(state.current + " setzt den Räuber auf " + resource);
+    }
     
     if (targetPlayer == state.me) {
         const resIndex = Math.floor(state.resources.length * rng())

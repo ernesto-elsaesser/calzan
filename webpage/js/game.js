@@ -71,7 +71,8 @@ var state = {
 
 var prevActionId = null;
 var selectedTownId = null;
-var selectedTileId = null;
+var selectedBanditTileId = null;
+var activeCard = null;
 var inventionResources = null;
 
 
@@ -423,7 +424,7 @@ function diceRolled(player, args) {
         var yields = [];
         for (const tileId of allTileIds) {
             const tileCell = state.board[tileId];
-            if (tileCell.roll == roll) {
+            if (tileCell.roll == roll && tileCell.bandit != true) {
                 for (const nodeId of tileCell.nodes) {
                     const townCell = state.board[nodeId];
                     if (townCell.player) {
@@ -476,6 +477,8 @@ function assert(player, phase) {
 
 function updateActions() {
     
+    state.actions = {};
+    
     for (const cell of Object.values(state.board)) {
         delete cell.action;
     }
@@ -484,15 +487,49 @@ function updateActions() {
         return;
     }
     
-    if (state.contextActions) {
+    if (state.context) {
+        if (selectedBanditTileId) {
+            for (const nodeId of state.board[selectedBanditTileId].nodes) {
+                const player = state.board[nodeId].player;
+                if (player && player != state.me) {
+                    state.actions[player] = "moveBandit('" + player + "')";
+                }
+            }
+        } else if (activeCard == ER) {
+            for (const resource of Object.keys(resRanks)) {
+                state.actions[resource] = "selectInvention('" + resource + "')";
+            }
+        } else if (activeCard == MO) {
+            for (const resource of Object.keys(resRanks)) {
+                state.actions[resource] = "monoploize('" + resource + "')";
+            }
+        }
         return;
     }
-    
+
     if (state.phase == 'game') {
         
-        const canRoad = state.resources[H] > 1 && state.resources[L] > 1;
-        const canTown = canRoad && state.resources[G] > 1 && state.resources[W] > 1;
-        const canCity = state.resources[G] > 2 && state.resources[E] > 3;
+        #state.actions["Handel"] = "trade()";
+        
+        var stats = {};
+        for (const resource of state.resources) {
+            if (resource in stats) {
+                stats[resource] += 1;
+            } else {
+                state[resource] = 1;
+            }
+        }
+        
+        const canRoad = stats[H] > 1 && stats[L] > 1;
+        const canTown = canRoad && stats[G] > 1 && stats[W] > 1;
+        const canCity = stats[G] > 2 && stats[E] > 3;
+        const canCard = stats[G] > 1 && stats[W] > 1 && stats[E] > 1;
+            
+        if (canCard) {
+            state.actions["Entwicklungskarte kaufen"] = "buyCard()";
+        }
+        
+        state.actions["Zug beenden"] = "endTurn()";
             
         for (const edgeId of state.roadIds) {
             for (const nodeId of state.board[edgeId].nodes) {
@@ -551,22 +588,15 @@ function selectRoad(edgeId) {
 }
 
 function selectTile(tileId) {
-    selectedTileId = tileId;
-    state.contextActions = {};
-    for (const nodeId of state.board[tileId].nodes) {
-        const player = state.board[nodeId].player;
-        if (player && player != state.me) {
-            state.contextActions[player] = "moveBandit('" + player + "')";
-        }
-    }
+    selectedBanditTileId = tileId;
+    state.context = "Raubzug";
     updateActions();
 }
 
 function moveBandit(targetPlayer) {
-    const tileId = selectedTileId;
-    selectedTileId = null;
+    const tileId = selectedBanditTileId;
+    selectedBanditTileId = null;
     commitAction(['move-bandit', tileId, targetPlayer]);
-    state.contextActions = null;
     updateActions();
 }
 
@@ -579,17 +609,13 @@ function activateCard(card) {
     if (card == RI) {
         commitAction(['play-card', RI]);
     } else if (card == ER) {
-        inventionResources = [];
-        state.contextActions = {};
-        for (const resource of Object.keys(resRanks)) {
-            state.contextActions["1: " + resource] = "selectInvention('" + resource + "')";
-        }
+        state.context = ER + " (1. Rohstoff)";
+        activeCard = ER;
+        inventionResources = []
         updateActions();
     } else if (card == MO) {
-        state.contextActions = {};
-        for (const resource of Object.keys(resRanks)) {
-            state.contextActions[resource] = "monoploize('" + resource + "')";
-        }
+        state.context = MO;
+        activeCard = MO;
         updateActions();
     } else if (card == SB) {
         commitAction(['play-card', SB]);
@@ -599,22 +625,20 @@ function activateCard(card) {
 
 function monopolize(resource) {
     commitAction(['play-card', MO, resource]);
-    state.contextActions = null;
+    activeCard = null;
     updateActions();
 }
 
 function selectInvention(resource) {
     inventionResources.push(resource);
     if (inventionResources.length == 1) {
-        state.contextActions = {};
-        for (const resource of Object.keys(resRanks)) {
-            state.contextActions["2: " + resource] = "selectInvention('" + resource + "')";
-        }
+        state.context = ER + " (2. Rohstoff)";
     } else {
-        commitAction(['play-card', ER]);
-        addResources(inventionResources);
+        const resources = inventionResources;
+        activeCard = null;
         inventionResources = null;
-        state.contextActions = null;
+        commitAction(['play-card', ER]);
+        addResources(resources);
     }
     updateActions();
 }

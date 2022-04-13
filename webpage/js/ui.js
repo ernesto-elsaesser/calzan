@@ -24,10 +24,7 @@ const svgBandits = document.getElementById("bandits");
 const resources = document.getElementById("resources");
 const cards = document.getElementById("cards");
 const victory = document.getElementById("victory");
-
-const cardButton = document.getElementById("card");
-const tradeButton = document.getElementById("trade");
-const endButton = document.getElementById("end");
+const actions = document.getElementById("actions");
 
 function logLine(line) {
     
@@ -252,11 +249,20 @@ function shape(tag, player) {
 
 function updateControls() {
     
-    const myTurn = state.current == state.me;
+    actions.innerHTML = "";
     
-    cardButton.disabled = !myTurn || state.resources[G] == 0 || state.resources[W] == 0 || state.resources[E] == 0;
-    tradeButton.disabled = !myTurn;
-    endButton.disabled = !myTurn || state.phase != 'game';
+    if (state.context) {
+        const title = document.createElement('h4');
+        title.innerHTML = state.context;
+        actions.appendChild(title);
+    }
+        
+    for (const [text, action] of Object.entries(state.actions)) {
+        const actionButton = document.createElement('button');
+        actionButton.innerHTML = text;
+        actionButton.setAttribute('onclick', action);
+        actions.appendChild(actionButton);
+    }
     
     resources.innerHTML = "";
     if (state.resources.length) {

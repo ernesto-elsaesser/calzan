@@ -163,13 +163,8 @@ function dispatchAction(action, prevId) {
         'buy-city': cityBought,
         'buy-card': cardBought,
         'play-card': cardPlayed,
-        'add-res': resourcesAdded,
-        'drop-res': resourcesDropped,
+        'modify-res': resourcesModified,
         'send-res': resourcesSent,
-        /*
-        'offer-trade': tradeOffered,
-        'accept-trade': tradeAccepted,
-        */
         'end-turn': turnEnded,
     };
     
@@ -334,28 +329,22 @@ function cardPlayed(player, args) {
     }
 }
 
-function resourcesAdded(player, args) {
+function resourcesModified(player, args) {
     
-    const resources = args;
-    if (player == state.me) {
-        add(resources);
-        logLine(player + " erhält: " + format(resources));
-    } else {
-        logLine(player + " erhält Rohstoffe");
-    }
-}
-
-function resourcesDropped(player, args) {
+    const [cause, gains, losses] = args;
     
-    const resources = args;
     if (player == state.me) {
-        remove(resources);
-        if (stealTarget) {
-            if (state.resources.length <= stealTarget) {
+        if (gains) {
+            add(gains);
+            logLine(player + " erhält: " + format(gains));
+        }
+        if (losses) {
+            remove(losses);
+            logLine(player + " zahlt: " + format(losses));
+            
+            if (stealTarget && state.resources.length <= stealTarget) {
                 stealTarget = null;
             }
-        } else {
-            logLine(player + " zahlt: " + format(resources));
         }
     }
 }
@@ -409,9 +398,7 @@ function turnEnded(player, args) {
     
 function diceRolled(player, args) {
     
-    const roll1 = 1 + Math.floor(6 * rng())
-    const roll2 = 1 + Math.floor(6 * rng())
-    const roll = roll1 + roll2;
+    const roll = 2 + Math.floor(6 * rng()) + Math.floor(6 * rng())
     
     logLine(player + " würfelt eine " + roll.toString());
     
@@ -441,7 +428,7 @@ function diceRolled(player, args) {
             }
         }
         if (yields.length > 0) {
-            addResources(yields);
+            modifyResources("Erträge", yields, null);
         }
     }
 }
@@ -485,7 +472,7 @@ function updateActions() {
         const count = state.resources.length;
         state.context = "Rohstoffe abwerfen (" + count + " &rarr; " + stealTarget + ")";
         for (const resource of state.resources) {
-            state.actions[resource] = "dropResources(['" + resource + "'])";
+            state.actions[resource] = "modifyResources('TODO', null, ['" + resource + "'])";
         }
     } else if (state.current == state.me) {
         
@@ -501,8 +488,9 @@ function updateActions() {
             state.context = "Tauschen gegen";
             for (const resource of Object.keys(resRanks)) {
                 if (resource != trade4Resource) {
-                    state.actions[resource] = "selectInvention('" + resource + "')";
+                    state.actions[resource] = "trade4('" + resource + "')";
                 }
+            }
         } else if (activeCard == ER) {
             const count = inventionResources.length + 1;
             state.context = "Wähle deinen " + count + ". Rohstoff";
@@ -516,7 +504,6 @@ function updateActions() {
             }
         } else if (state.phase == 'game') {
 
-            state.actions["4:1 Handeln"] = "trade4()";
             //state.actions["Handel"] = "trade()";
 
             var stats = {};
@@ -528,9 +515,9 @@ function updateActions() {
                 }
             }
             
-            for (const resource of Object.keys(resRanks) {
+            for (const resource of Object.keys(resRanks)) {
                 if (stats[resource] > 3) {
-                    state.actions["4 " + resource + " umtauschen"] = "trade4('" + resource + "')";
+                    state.actions["4 " + resource + " umtauschen"] = "initTrade4('" + resource + "')";
                 }
             }
 
@@ -615,7 +602,7 @@ function selectRoad(edgeId) {
     }
     selectedTownId = null;
     commitAction(['place-' + state.phase, nodeId, edgeId]);
-    addResources(yields);
+    modifyResources("Start-Rohstoffe", yields, null);
     endTurn();
 }
 
@@ -659,7 +646,7 @@ function activateCard(card) {
         updateActions();
     } else if (card == SB) {
         commitAction(['play-card', SB]);
-        addResources([H, H, L, L]);
+        modifyResources(SB, [H, H, L, L], null);
     }
     
     // TODO end turn afterwards?
@@ -679,7 +666,7 @@ function selectInvention(resource) {
         activeCard = null;
         inventionResources = null;
         commitAction(['play-card', ER]);
-        addResources(resources);
+        modifyResources(ER, resources, null);
     }
 }
 
@@ -687,12 +674,8 @@ function rollDice() {
     commitAction(['roll-dice']);
 }
 
-function addResources(resources) {
-    commitAction(['add-res'].concat(resources));
-}
-
-function dropResources(resources) {
-    commitAction(['drop-res'].concat(resources));
+function modifyResources(cause, gains, losses) {
+    commitAction(['modify-res', cause, gains, losses]);
 }
 
 function sendResources(player, resources) {
@@ -700,28 +683,34 @@ function sendResources(player, resources) {
 }
 
 function buyRoad(edgeId) {
-    dropResources([H, L]);
+    modifyResources("Strasse", null, [H, L]);
     commitAction(['buy-road', edgeId]);
 }
 
 function buyTown(nodeId) {
-    dropResources([H, L, G, W]);
+    modifyResources("Siedlung", null, [H, L, G, W]);
     commitAction(['buy-town', nodeId]);
 }
 
 function buyCity(nodeId) {
-    dropResources([G, G, E, E, E]);
+    modifyResources("Stadt", null, [G, G, E, E, E]);
     commitAction(['buy-city', nodeId]);
 }
 
 function buyCard() {
-    dropResources([G, W, E]);
+    modifyResources("Entwicklungskarte", null, [G, W, E]);
     commitAction(['buy-card']);
 }
 
-function trade4(resource) {
+function initTrade4(resource) {
     trade4Resource = resource;
     updateActions();
+}
+
+function trade4(resource) {
+    const price = trade4Resource;
+    trade4Resource = null;
+    modifyResources("Seehandel", [resource], [price, price, price, price]);
 }
 
 function endTurn() {

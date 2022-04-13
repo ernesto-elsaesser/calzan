@@ -77,6 +77,7 @@ var selectedBanditTileId = null;
 var stealTarget = null;
 var activeCard = null;
 var inventionResources = null;
+var trade4Resource = null;
 
 
 function initGame(game, player) {
@@ -297,7 +298,6 @@ function cardBought(player, args) {
 
 function cardPlayed(player, args) {
     
-    
     const card = args[0];
     
     if (player == state.me) {
@@ -352,14 +352,11 @@ function resourcesDropped(player, args) {
         remove(resources);
         if (stealTarget) {
             if (state.resources.length <= stealTarget) {
-                state.context = null;
                 stealTarget = null;
             }
         } else {
             logLine(player + " zahlt: " + format(resources));
         }
-    } else {
-        logLine(player + " zahlt Rohstoffe");
     }
 }
 
@@ -424,7 +421,6 @@ function diceRolled(player, args) {
         const count = state.resources.length;
         if (count > 7) {
             stealTarget = Math.ceil(count / 2);
-            state.context = "Rohstoffe abwerfen (" + count + " &rarr; " + stealTarget + ")";
         }
     } else {
         var yields = [];
@@ -479,34 +475,48 @@ function banditMoved(player, args) {
 
 function updateActions() {
     
+    state.context = null;
     state.actions = {};
     for (const cell of Object.values(state.board)) {
         delete cell.action;
     }
     
     if (stealTarget) {
+        const count = state.resources.length;
+        state.context = "Rohstoffe abwerfen (" + count + " &rarr; " + stealTarget + ")";
         for (const resource of state.resources) {
             state.actions[resource] = "dropResources(['" + resource + "'])";
         }
     } else if (state.current == state.me) {
         
         if (selectedBanditTileId) {
+            state.context = "Wen berauben?";
             for (const nodeId of state.board[selectedBanditTileId].nodes) {
                 const player = state.board[nodeId].player;
                 if (player && player != state.me) {
                     state.actions[player] = "moveBandit('" + player + "')";
                 }
             }
+        } else if (trade4Resource) {
+            state.context = "Tauschen gegen";
+            for (const resource of Object.keys(resRanks)) {
+                if (resource != trade4Resource) {
+                    state.actions[resource] = "selectInvention('" + resource + "')";
+                }
         } else if (activeCard == ER) {
+            const count = inventionResources.length + 1;
+            state.context = "Wähle deinen " + count + ". Rohstoff";
             for (const resource of Object.keys(resRanks)) {
                 state.actions[resource] = "selectInvention('" + resource + "')";
             }
         } else if (activeCard == MP) {
+            state.context = "Monopol auf welchen Rohstoff?";
             for (const resource of Object.keys(resRanks)) {
                 state.actions[resource] = "monoploize('" + resource + "')";
             }
         } else if (state.phase == 'game') {
 
+            state.actions["4:1 Handeln"] = "trade4()";
             //state.actions["Handel"] = "trade()";
 
             var stats = {};
@@ -515,6 +525,12 @@ function updateActions() {
                     stats[resource] += 1;
                 } else {
                     stats[resource] = 1;
+                }
+            }
+            
+            for (const resource of Object.keys(resRanks) {
+                if (stats[resource] > 3) {
+                    state.actions["4 " + resource + " umtauschen"] = "trade4('" + resource + "')";
                 }
             }
 
@@ -619,7 +635,6 @@ function selectTile(tileId) {
         commitAction(['move-bandit', tileId, options[0]]);
     } else {
         selectedBanditTileId = tileId;
-        state.context = "Wen berauben?";
         updateActions();
     }
     
@@ -628,7 +643,6 @@ function selectTile(tileId) {
 function moveBandit(targetPlayer) {
     const tileId = selectedBanditTileId;
     selectedBanditTileId = null;
-    state.context = null;
     commitAction(['move-bandit', tileId, targetPlayer]);
 }
 
@@ -637,12 +651,10 @@ function activateCard(card) {
     if (card == RI) {
         commitAction(['play-card', RI]);
     } else if (card == ER) {
-        state.context = ER + " (1. Rohstoff)";
         activeCard = ER;
         inventionResources = []
         updateActions();
     } else if (card == MP) {
-        state.context = MP;
         activeCard = MP;
         updateActions();
     } else if (card == SB) {
@@ -654,7 +666,6 @@ function activateCard(card) {
 }
 
 function monopolize(resource) {
-    state.context = null;
     activeCard = null;
     commitAction(['play-card', MP, resource]);
 }
@@ -662,11 +673,9 @@ function monopolize(resource) {
 function selectInvention(resource) {
     inventionResources.push(resource);
     if (inventionResources.length == 1) {
-        state.context = ER + " (2. Rohstoff)";
         updateActions();
     } else {
         const resources = inventionResources;
-        state.context = null;
         activeCard = null;
         inventionResources = null;
         commitAction(['play-card', ER]);
@@ -710,8 +719,9 @@ function buyCard() {
     commitAction(['buy-card']);
 }
 
-function trade() {
-    window.alert("Handeln funktioniert aktuell leider nur per Spracheingabe.");
+function trade4(resource) {
+    trade4Resource = resource;
+    updateActions();
 }
 
 function endTurn() {

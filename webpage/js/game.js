@@ -72,6 +72,7 @@ var state = {
 var prevActionId = null;
 var selectedTownId = null;
 var selectedTileId = null;
+var inventionResources = null;
 
 
 function initGame(game, player) {
@@ -121,7 +122,6 @@ function initState(data, player) {
         .sort((a, b) => a.r - b.r).map((d) => d.v);
     
     updateActions();
-    updateUI();
     
     logLine("Spieler: " + state.players.join(', '));
     logLine(state.players[0] + " darf setzen");
@@ -173,7 +173,6 @@ function dispatchAction(action, prevId) {
     actionFunctions[key](player, args);
     
     updateActions();
-    updateUI();
 }
 
 function commitAction(action) {
@@ -485,6 +484,10 @@ function updateActions() {
         return;
     }
     
+    if (state.contextActions) {
+        return;
+    }
+    
     if (state.phase == 'game') {
         
         const canRoad = state.resources[H] > 1 && state.resources[L] > 1;
@@ -531,13 +534,14 @@ function updateActions() {
             }
         }
     }
+    
+    updateUI();
 }
 
 function selectTown(nodeId) {
     selectedTownId = nodeId;
     state.board[nodeId].player = state.me;
     updateActions();
-    updateUI();
 }
 
 function selectRoad(edgeId) {
@@ -548,21 +552,71 @@ function selectRoad(edgeId) {
 
 function selectTile(tileId) {
     selectedTileId = tileId;
-    // TODO choose targetPlayer, then call moveBandit
+    state.contextActions = {};
+    for (const nodeId of state.board[tileId].nodes) {
+        const player = state.board[nodeId].player;
+        if (player && player != state.me) {
+            state.contextActions[player] = "moveBandit('" + player + "')";
+        }
+    }
+    updateActions();
+}
+
+function moveBandit(targetPlayer) {
+    const tileId = selectedTileId;
+    selectedTileId = null;
+    commitAction(['move-bandit', tileId, targetPlayer]);
+    state.contextActions = null;
+    updateActions();
 }
 
 function triggerSteal() {
     // TODO let player select resources to drop
 }
 
-function chooseInvention() {
-    // TODO resource selection buttons
-    updateUI();
+function activateCard(card) {
+    
+    if (card == RI) {
+        commitAction(['play-card', RI]);
+    } else if (card == ER) {
+        inventionResources = [];
+        state.contextActions = {};
+        for (const resource of Object.keys(resRanks)) {
+            state.contextActions["1: " + resource] = "selectInvention('" + resource + "')";
+        }
+        updateActions();
+    } else if (card == MO) {
+        state.contextActions = {};
+        for (const resource of Object.keys(resRanks)) {
+            state.contextActions[resource] = "monoploize('" + resource + "')";
+        }
+        updateActions();
+    } else if (card == SB) {
+        commitAction(['play-card', SB]);
+        addResources([H, H, L, L]);
+    }
 }
 
-function moveBandit(targetPlayer) {
-    const tileId = selectedTileId;
-    commitAction(['move-bandit', tileId, targetPlayer]);
+function monopolize(resource) {
+    commitAction(['play-card', MO, resource]);
+    state.contextActions = null;
+    updateActions();
+}
+
+function selectInvention(resource) {
+    inventionResources.push(resource);
+    if (inventionResources.length == 1) {
+        state.contextActions = {};
+        for (const resource of Object.keys(resRanks)) {
+            state.contextActions["2: " + resource] = "selectInvention('" + resource + "')";
+        }
+    } else {
+        commitAction(['play-card', ER]);
+        addResources(inventionResources);
+        inventionResources = null;
+        state.contextActions = null;
+    }
+    updateActions();
 }
 
 function rollDice() {
@@ -599,26 +653,6 @@ function buyCity(nodeId) {
 function buyCard() {
     dropResources([G, W, E]);
     commitAction(['buy-card']);
-}
-
-function playKnight() {
-    commitAction(['play-card', RI]);
-}
-
-function playInvention(resources) {
-    commitAction(['play-card', ER]);
-    addResources(resources);
-    //endTurn();
-}
-
-function playMonopoly(resource) {
-    commitAction(['play-card', MO, resource]);
-    //endTurn();
-}
-
-function playRoadworks() {
-    commitAction(['play-card', SB]);
-    addResources([H, H, L, L]);
 }
 
 function trade() {

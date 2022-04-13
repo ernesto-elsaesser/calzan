@@ -84,8 +84,6 @@ function updateBoard() {
 
 function addTile(resource, roll, hasBandit, action, x, y) {
 
-    // TODO render bandit move action!
-    
     const color = resColors[resource];
     const strokeColor = resStrokeColors[resource];
     
@@ -130,6 +128,17 @@ function addTile(resource, roll, hasBandit, action, x, y) {
         }
         label.innerHTML = roll;
         svgTiles.appendChild(label);
+    }
+    
+    if (action) {
+        const banditButton = shape('circle');
+        banditButton.setAttribute('cx', x);
+        banditButton.setAttribute('cy', y);
+        banditButton.setAttribute('r', '40');
+        banditButton.setAttribute('fill', 'black');
+        banditButton.setAttribute('opacity', 0.5);
+        banditButton.setAttribute('onclick', action);
+        svgTokens.appendChild(banditButton);
     }
 }
 
@@ -266,7 +275,7 @@ function updateControls() {
         for (const card of state.cards) {
             const cardButton = document.createElement('button');
             cardButton.className = "card";
-            cardButton.setAttribute('onclick', "playCard('" + card + "')");
+            cardButton.setAttribute('onclick', "activateCard('" + card + "')");
             cardButton.innerHTML = card;
             cards.appendChild(cardButton);
         }

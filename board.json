@@ -72,7 +72,7 @@
     "C5C": {"v": -1, "h": 10, "node": true, "shift": "+", "port": 120, "edges": ["C5c", "C5f"], "tiles": ["C5"]},
     
     "C1a": {"v": 0, "h": -10, "edge": true, "dir": 0, "nodes": ["C1D", "C1A"]},
-    "C1": {"v": 0, "h": -8, "tile": true, "res": "Holz", "roll": 5, "nodes": ["C1A", "C1B", "C2A", "D1B", "D1A", "D1F"]},
+    "C1": {"v": 0, "h": -8, "tile": true, "res": "Holz", "roll": 5, "nodes": ["C1A", "C1B", "C2A", "D1B", "D1A", "C1D"]},
     "C2a": {"v": 0, "h": -6, "edge": true, "dir": 0, "nodes": ["D1B", "C2A"]},
     "C2": {"v": 0, "h": -4, "tile": true, "res": "Lehm", "roll": 9, "nodes": ["C2A", "C2B", "C3A", "D2B", "D2A", "D1B"]},
     "C3a": {"v": 0, "h": -2, "edge": true, "dir": 0, "nodes": ["D2B", "C3A"]},

@@ -73,7 +73,7 @@ var state = {
 var prevActionId = null;
 var selectedTownId = null;
 var selectedBanditTileId = null;
-var stealPending = null;
+var stealTarget = null;
 var activeCard = null;
 var inventionResources = null;
 
@@ -349,7 +349,14 @@ function resourcesDropped(player, args) {
     const resources = args;
     if (player == state.me) {
         remove(resources);
-        logLine(player + " zahlt: " + format(resources));
+        if (stealTarget) {
+            if (state.resources.length <= stealTarget) {
+                state.context = null;
+                stealTarget == null;
+            }
+        } else {
+            logLine(player + " zahlt: " + format(resources));
+        }
     } else {
         logLine(player + " zahlt Rohstoffe");
     }
@@ -402,19 +409,21 @@ function turnEnded(player, args) {
     }
 }
     
-    
 function diceRolled(player, args) {
     
-    const roll = dice(6) + dice(6);
+    const roll1 = 1 + Math.floor(6 * rng())
+    const roll2 = 1 + Math.floor(6 * rng())
+    const roll = roll1 + roll2;
+    
     logLine(player + " würfelt eine " + roll.toString());
     
     if (roll == 7) {
         logLine(state.current + " darf den Räuber bewegen");
         state.phase = 'bandit';
-        if (state.resources.length > 7) {
-            stealPending = Math.floor(state.resources.length / 2);
-            state.context = "Rohstoffe abwerfen (noch " + stealPending + ")";
-            stolenIndices = []
+        const count = state.resources.length;
+        if (count > 7) {
+            stealTarget = Math.ceil(count / 2);
+            state.context = "Rohstoffe abwerfen (" + count + " -> " + stealTarget + ")";
         }
     } else {
         var yields = [];
@@ -450,11 +459,11 @@ function banditMoved(player, args) {
     state.board[tileId].bandit = true;
     
     if (targetPlayer == state.me) {
-        const resIndex = dice(state.resources.length - 1);
+        const resIndex = Math.floor(state.resources.length * rng())
         const resources = state.resources.splice(resIndex, 1);
         sendResources(player, resources);
     } else {
-        dice(0); // keep RNG in sync
+        rng(); // keep RNG in sync
     }
     
     state.phase = 'game';
@@ -467,12 +476,9 @@ function updateActions() {
         delete cell.action;
     }
     
-    if (stealPending) {
-        for (var i = 0; i < state.resources.length; i += 1) {
-            if (!stolenIndices.includes(i)) {
-                const resource = state.resources[i];
-                state.actions[resource] = "stealResource(" + i + ")";
-            }
+    if (stealTarget) {
+        for (const resource of state.resources) {
+            state.actions[resource] = "dropResources(['" + resource + "'])";
         }
     } else if (state.current == state.me) {
         
@@ -618,21 +624,6 @@ function moveBandit(targetPlayer) {
     commitAction(['move-bandit', tileId, targetPlayer]);
 }
 
-function stealResource(resIndex) {
-    stolenIndices.push(resIndex);
-    stealPending -= 1;
-    if (stealPending == 0) {
-        state.context = null;
-        stealPending = null;
-        stolenIndices = null;
-        const resources = stolenIndices.map((i) => state.resources[i]);
-        dropResources(resources);
-    } else {
-        state.context = "Rohstoffe abwerfen (noch " + stealPending + ")";
-        updateActions();
-    }
-}
-
 function activateCard(card) {
     
     if (card == RI) {
@@ -717,10 +708,6 @@ function trade() {
 
 function endTurn() {
     commitAction(['end-turn']);
-}
-
-function dice(sides) {
-    return Math.floor((sides + 1) * rng())
 }
 
 function add(resources) {

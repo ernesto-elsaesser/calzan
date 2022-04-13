@@ -245,7 +245,7 @@ function shape(tag, player) {
 
 function updateControls() {
     
-    const myTurn = state.current != state.me;
+    const myTurn = state.current == state.me;
     
     cardButton.disabled = !myTurn || state.resources[G] == 0 || state.resources[W] == 0 || state.resources[E] == 0;
     tradeButton.disabled = !myTurn;
@@ -274,8 +274,8 @@ function updateControls() {
         for (const card of state.cards) {
             const cardButton = document.createElement('button');
             cardButton.className = "card";
-            cardButton.onclick = card.action;
-            cardButton.innerHTML = card.title;
+            cardButton.setAttribute('onclick', "playCard('" + card + "')");
+            cardButton.innerHTML = card;
             cards.appendChild(cardButton);
         }
     } else {

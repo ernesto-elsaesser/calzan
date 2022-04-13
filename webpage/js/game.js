@@ -348,8 +348,7 @@ function cardBought(player, args) {
         if (victoryCards.includes(card)) {
             state.vicotryCards.push(card);
         } else {
-            const action = "playCard('" + card + "')";
-            state.cards.push({title: card, action});
+            state.cards.push(card);
         }
     }
 
@@ -361,6 +360,11 @@ function cardPlayed(player, args) {
     assert(player, 'game');
     
     const card = args[0];
+    
+    if (player == state.me) {
+        const cardIndex = state.cards.indexOf(card);
+        state.cards.splice(cardIndex, 1);
+    }
     
     if (card == RI) {
         state.playedKnights[player] += 1;
@@ -533,9 +537,9 @@ function updateActions() {
             }
         }
         
-    } else if (state.phase == 'game') {
+    } else if (state.phase == 'bandit') {
         
-        for (const tileId in allTileIds) {
+        for (const tileId of allTileIds) {
             if (state.board[tileId].bandit) {
                 continue;
             }

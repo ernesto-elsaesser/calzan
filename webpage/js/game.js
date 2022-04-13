@@ -353,7 +353,7 @@ function resourcesDropped(player, args) {
         if (stealTarget) {
             if (state.resources.length <= stealTarget) {
                 state.context = null;
-                stealTarget == null;
+                stealTarget = null;
             }
         } else {
             logLine(player + " zahlt: " + format(resources));
@@ -424,7 +424,7 @@ function diceRolled(player, args) {
         const count = state.resources.length;
         if (count > 7) {
             stealTarget = Math.ceil(count / 2);
-            state.context = "Rohstoffe abwerfen (" + count + " -> " + stealTarget + ")";
+            state.context = "Rohstoffe abwerfen (" + count + " &rarr; " + stealTarget + ")";
         }
     } else {
         var yields = [];
@@ -461,7 +461,7 @@ function banditMoved(player, args) {
     
     const resource = state.board[tileId].res;
     if (targetPlayer) {
-        logLine(state.current + " setzt den Räuber auf " + resource + " und raubt von " + targetPlayer);
+        logLine(state.current + " setzt den Räuber auf " + resource + " und beraubt " + targetPlayer);
     } else {
         logLine(state.current + " setzt den Räuber auf " + resource);
     }

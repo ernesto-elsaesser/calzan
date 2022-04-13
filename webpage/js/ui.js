@@ -296,7 +296,7 @@ function updateControls() {
             const newCardButton = document.createElement('button');
             newCardButton.className = "card";
             newCardButton.disabled = true;
-            newCardButton.innerHTML = card;
+            newCardButton.innerHTML = card + " (neu)";
             cards.appendChild(newCardButton);
         }
     } else {

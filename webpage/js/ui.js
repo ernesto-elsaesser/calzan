@@ -228,13 +228,7 @@ function addRoad(player, dir, action, x, y) {
     road.setAttribute('stroke', 'black');
     road.setAttribute('stroke-width', 1);
     
-    var angle = 0;
-    if (dir == '/') {
-        angle = 60;
-    } else if (spin == '\\') {
-        angle = -60;
-    }
-    road.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');
+    road.setAttribute('transform', 'rotate(' + dir + ',' + x + ',' + y + ')');
     
     if (action) {
         road.setAttribute('opacity', 0.5);

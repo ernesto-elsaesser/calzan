@@ -161,7 +161,7 @@ function commitAction(action) {
        
     const actionId = prevActionId + 1;
     const actionPath = '/' + actionId.toString();
-    action.unshift(me);
+    action.unshift(state.me);
     actionsRef.child(actionPath).set(action);
 }
 
@@ -209,7 +209,7 @@ function placeInitial(player, args) {
     
     if (player == state.me) {
         for (const tileId of state.board[nodeId].tiles) {
-            const resource = state.board[tileId].resource;
+            const resource = state.board[tileId].res;
             if (resource != S) {
                 state.resources.push(resource);
             }
@@ -220,30 +220,34 @@ function placeInitial(player, args) {
 function placeTown(player, nodeId) {
     
     const cell = state.board[nodeId];
-    cell.town = player;
+    cell.player = player;
     
-    state.freeNodeIds.remove(nodeId);
+    var blockedNodeIds = [nodeId];
+    var blockedEdgeIds = [];
     if (player == state.me) {
         state.towns += 1;
     } else {
         for (const edgeId of cell.edges) {
-            state.freeEdgeIds.remove(edgeId);
+            blockedEdgeIds.push(edgeId);
             for (const nextNodeId of state.board[edgeId].nodes) {
-                state.freeNodeIds.remove(nextNodeId);
+                blockedNodeIds.push(nextNodeId);
                 for (const nextEdgeId of state.board[nextNodeId].edges) {
-                    state.freeEdgeIds.remove(nextEdgeId);
+                    blockedEdgeIds.push(nextEdgeId);
                 }
             }
         }
     }
+    
+    state.freeNodeIds = state.freeNodeIds.filter((i) => !blockedNodeIds.includes(i));
+    state.freeEdgeIds = state.freeEdgeIds.filter((i) => !blockedEdgeIds.includes(i));
 }
 
 function placeRoad(player, edgeId) {
     
     const cell = state.board[edgeId];
-    cell.road = player;
+    cell.player = player;
     
-    state.freeEdgeIds.remove(edgeId);
+    state.freeEdgeIds = state.freeEdgeIds.filter((i) => i != edgeId);
     
     // TODO update state.longestRoads[player]
 }
@@ -265,11 +269,11 @@ function turnEnded(player, args) {
             for (const nodeId of tileCell.nodes) {
                 const townCell = state.board[nodeId];
                 if (townCell.player) {
-                    logLine(townCell.player + " erhält " + tileCell.resource);
+                    logLine(townCell.player + " erhält " + tileCell.res);
                     if (townCell.player == state.me) {
-                        state.resources.push(tileCell.resource);
+                        state.resources.push(tileCell.res);
                         if (townCell.city) {
-                            state.resources.push(tileCell.resource);
+                            state.resources.push(tileCell.res);
                         }
                     }
                 }
@@ -306,11 +310,11 @@ function updateActions() {
         // placement
         if (selectedTownId) {
             for (const edgeId of state.board[selectedTownId].edges) {
-                state.board[edgeId].action = "selectRoad(" + edgeId + ")";
+                state.board[edgeId].action = "selectRoad('" + edgeId + "')";
             }
         } else {
             for (const nodeId of state.freeNodeIds) {
-                state.board[nodeId].action = "selectTown(" + nodeId + ")";
+                state.board[nodeId].action = "selectTown('" + nodeId + "')";
             }
         }
     }
@@ -319,7 +323,7 @@ function updateActions() {
 function selectTown(nodeId) {
     selectedTownId = nodeId;
     state.board[nodeId].player = state.me;
-    updateControls();
+    updateActions();
     updateUI();
 }
 

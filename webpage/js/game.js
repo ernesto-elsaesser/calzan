@@ -1,3 +1,10 @@
+const H = "Holz";
+const L = "Lehm";
+const G = "Getreide";
+const W = "Wolle";
+const E = "Erz";
+const S = "Sand";
+
 const resRanks = {
     'Holz': 1,
     'Lehm': 2,
@@ -6,12 +13,7 @@ const resRanks = {
     'Erz': 5,
 };
 
-const H = "Holz";
-const L = "Lehm";
-const G = "Getreide";
-const W = "Wolle";
-const E = "Erz";
-const S = "Sand";
+const allResources = [H, L, G, W, E];
 
 const RI = "Ritter";
 const SB = "Strassenbau";
@@ -74,7 +76,8 @@ var state = {
 var prevActionId = null;
 var selectedTownId = null;
 var selectedBanditTileId = null;
-var stealTarget = null;
+var dropState = null;
+var pendingSteal = false;
 var activeCard = null;
 var inventionResources = null;
 var trade4Resource = null;
@@ -328,9 +331,11 @@ function resourcesModified(player, args) {
         if (losses) {
             remove(losses);
             logLine(player + " zahlt: " + format(losses));
-            
-            if (stealTarget && state.resources.length <= stealTarget) {
-                stealTarget = null;
+            if (dropState) {
+                dropState = null;
+                if (pendingSteal) {
+                    performSteal();
+                }
             }
         }
         if (gains) {
@@ -399,7 +404,11 @@ function diceRolled(player, args) {
         state.phase = 'bandit';
         const count = state.resources.length;
         if (count > 7) {
-            stealTarget = Math.ceil(count / 2);
+            const target = Math.ceil(count / 2);
+            dropState = {target};
+            for (const resource of allResources) {
+                dropState[resource] = 0;
+            }
         }
     } else {
         var yields = [];
@@ -442,9 +451,11 @@ function banditMoved(player, args) {
     }
     
     if (targetPlayer == state.me) {
-        const randomIndex = Math.floor(state.resources.length * rng())
-        const resource = state.resources[randomIndex];
-        sendResources(player, resources);
+        if (dropState) {
+            pendingSteal = true;
+        } else {
+            performSteal();
+        }
     } else {
         rng(); // keep RNG in sync
     }
@@ -460,12 +471,16 @@ function updateState() {
         delete cell.action;
     }
     
-    if (stealTarget) {
-        const count = state.resources.length;
-        state.context = "Rohstoffe abwerfen (" + count + " &rarr; " + stealTarget + ")";
-        for (const resource of state.resources) {
-            state.actions[resource] = "modifyResources('TODO', null, ['" + resource + "'])";
+    if (dropState) {
+        state.context = "Werfe " + dropState.target + " Rohstoffe ab";
+        var dropSum = 0;
+        for (const resource of allResources) {
+            const dropCount = dropState[resource];
+            state.actions[dropCount + " x " + resource] = "addDrop('" + resource + "')";
+            dropSum += dropCount;
         }
+        state.actions["Abwerfen"] = "submitDrop()";
+        state.actions["Zurücksetzen"] = "resetDrop()";
     } else if (state.current == state.me) {
         
         if (selectedBanditTileId) {
@@ -478,7 +493,7 @@ function updateState() {
             }
         } else if (trade4Resource) {
             state.context = "Tauschen gegen";
-            for (const resource of Object.keys(resRanks)) {
+            for (const resource of allResources) {
                 if (resource != trade4Resource) {
                     state.actions[resource] = "trade4('" + resource + "')";
                 }
@@ -487,12 +502,12 @@ function updateState() {
         } else if (activeCard == ER) {
             const count = inventionResources.length + 1;
             state.context = "Wähle deinen " + count + ". Rohstoff";
-            for (const resource of Object.keys(resRanks)) {
+            for (const resource of allResources) {
                 state.actions[resource] = "selectInvention('" + resource + "')";
             }
         } else if (activeCard == MP) {
             state.context = "Monopol auf welchen Rohstoff?";
-            for (const resource of Object.keys(resRanks)) {
+            for (const resource of allResources) {
                 state.actions[resource] = "monoploize('" + resource + "')";
             }
         } else if (state.phase == 'game') {
@@ -508,7 +523,7 @@ function updateState() {
                 }
             }
             
-            for (const resource of Object.keys(resRanks)) {
+            for (const resource of allResources) {
                 if (stats[resource] > 3) {
                     state.actions["4 " + resource + " umtauschen"] = "initTrade4('" + resource + "')";
                 }
@@ -633,6 +648,20 @@ function moveBandit(targetPlayer) {
     commitAction(['move-bandit', tileId, targetPlayer]);
 }
 
+function performSteal() {
+    
+    pendingSteal = false;
+    
+    if (state.resources.length == 0) {
+        rng(); // keep RNG in sync
+        return;
+    }
+    
+    const randomIndex = Math.floor(state.resources.length * rng())
+    const resource = state.resources[randomIndex];
+    sendResources(player, [resource]);
+}
+
 function activateCard(card) {
     
     if (card == RI) {
@@ -678,6 +707,41 @@ function modifyResources(cause, gains, losses) {
 
 function sendResources(player, resources) {
     commitAction(['send-res', player, resources]);
+}
+
+function addDrop(resource) {
+    const dropCount = dropState[resource];
+    const available = state.resources.filter((r) => r == resource).length;
+    if (dropCount < available) {
+        dropState[resource] += 1;
+        updateState();
+    }
+}
+
+function resetDrop() {
+    for (const resource of allResources) {
+        dropState[resource] = 0;
+    }
+    updateState();
+}
+
+function submitDrop() {
+        
+    var resources = [];
+    for (const [key, value] of Object.entries(dropState)) {
+        if (key != 'target') {
+            for (var i = 0; i < value; i += 1) {
+                resources.push(key);
+            }
+        }
+    }
+    
+    if (resources.length < dropState.target) {
+        window.alert("Nicht genügend Rohstoffe ausgewählt!");
+        return;
+    }
+        
+    modifyResources("Über 7", null, resources);
 }
 
 function buyRoad(edgeId) {

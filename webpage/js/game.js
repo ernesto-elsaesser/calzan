@@ -81,7 +81,7 @@ var trade4Resource = null;
 
 
 function initGame(game, player) {
-
+    
     const gameRef = firebase.database().ref('/' + game);
     const initialRef = gameRef.child('/initial');
     actionsRef = gameRef.child('/actions');
@@ -126,7 +126,7 @@ function initState(data, player) {
     state.stack = allCards.map(v => ({ v, r: rng() }))
         .sort((a, b) => a.r - b.r).map((d) => d.v);
     
-    updateActions();
+    updateState();
     
     logLine("Spieler: " + state.players.join(', '));
     logLine(state.players[0] + " darf setzen");
@@ -144,10 +144,8 @@ function createRNG(seed) {
     
 function dispatchAction(action, prevId) {
     
-    console.log("action after", prevId);
-    
     if (prevId != prevActionId) {
-        console.log("Invalid action id", prevId);
+        console.log("invalid action id", prevId);
         return;
     }
     
@@ -172,17 +170,27 @@ function dispatchAction(action, prevId) {
     const key = action[1];
     const args = action.slice(2);
     
+    console.log(prevActionId, player, key, args);
+    
     actionFunctions[key](player, args);
     
-    updateActions();
+    updateState();
 }
 
 function commitAction(action) {
        
+    action.unshift(state.me);
+    
     const actionId = prevActionId + 1;
     const actionPath = '/' + actionId.toString();
-    action.unshift(state.me);
-    actionsRef.child(actionPath).set(action);
+    const actionRef = actionsRef.child(actionPath);
+    
+    actionRef.get().then((snap) => {
+        // page reload triggers re-commit of old actions
+        if (!snap.exists()) {
+            actionRef.set(action);
+        }
+    });
 }
 
 function forwardPlaced(player, args) {
@@ -238,14 +246,6 @@ function placeTown(player, nodeId) {
         
         for (const nextNodeId of state.board[edgeId].nodes) {
             blockedNodeIds.push(nextNodeId);
-            
-            /*
-            if (player != state.me) {
-                for (const nextEdgeId of state.board[nextNodeId].edges) {
-                    blockedEdgeIds.push(nextEdgeId);
-                }
-            }
-            */
         }
     }
     
@@ -307,21 +307,12 @@ function cardPlayed(player, args) {
     } else if (card == SB) {
         logLine(player + " spielt Strassenbau und erhält 2 kostenlose Strassen");
     } else if (card == MP) {
-        const chosenResource = args[1];
-        logLine(player + " spielt Monopol und erhält: " + chosenResource);
+        const resource = args[1];
+        logLine(player + " spielt Monopol und erhält: " + resource);
         if (player != state.me) {
-            var lost = [];
-            var kept = [];
-            for (const resource of state.resources) {
-                if (resource == chosenResource) {
-                    lost.push(resource);
-                } else {
-                    kept.push(resource);
-                }
-            }
-            if (lost.length > 0) {
-                state.resources = kept;
-                sendResources(player, lost);
+            const losses = state.resources.filter((r) => r == resource);
+            if (losses.length > 0) {
+                sendResources(player, losses);
             }
         }
     } else if (card == ER) {
@@ -334,10 +325,6 @@ function resourcesModified(player, args) {
     const [cause, gains, losses] = args;
     
     if (player == state.me) {
-        if (gains) {
-            add(gains);
-            logLine(player + " erhält: " + format(gains));
-        }
         if (losses) {
             remove(losses);
             logLine(player + " zahlt: " + format(losses));
@@ -346,13 +333,16 @@ function resourcesModified(player, args) {
                 stealTarget = null;
             }
         }
+        if (gains) {
+            add(gains);
+            logLine(player + " erhält: " + format(gains));
+        }
     }
 }
 
 function resourcesSent(player, args) {
     
-    const recipient = args[0];
-    const resources = args.slice(1);
+    const [recipient, resources] = args;
     if (player == state.me) {
         remove(resources);
         logLine(player + " zahlt an " + recipient + ": " + format(resources));
@@ -377,7 +367,9 @@ function turnEnded(player, args) {
     } else if (state.phase == 'backward') {
         if (currentIndex == 0) {
             state.phase = 'game';
-            logLine(state.current + " ist am Zug");
+            if (state.current == state.me) {
+                rollDice();
+            }
         } else {
             state.current = state.players[currentIndex - 1];
             logLine(state.current + " darf setzen");
@@ -450,8 +442,8 @@ function banditMoved(player, args) {
     }
     
     if (targetPlayer == state.me) {
-        const resIndex = Math.floor(state.resources.length * rng())
-        const resources = state.resources.splice(resIndex, 1);
+        const randomIndex = Math.floor(state.resources.length * rng())
+        const resource = state.resources[randomIndex];
         sendResources(player, resources);
     } else {
         rng(); // keep RNG in sync
@@ -460,7 +452,7 @@ function banditMoved(player, args) {
     state.phase = 'game';
 }
 
-function updateActions() {
+function updateState() {
     
     state.context = null;
     state.actions = {};
@@ -491,6 +483,7 @@ function updateActions() {
                     state.actions[resource] = "trade4('" + resource + "')";
                 }
             }
+            state.actions["(Abbrechen)"] = "abortTrade()";
         } else if (activeCard == ER) {
             const count = inventionResources.length + 1;
             state.context = "Wähle deinen " + count + ". Rohstoff";
@@ -588,7 +581,7 @@ function updateActions() {
 function selectTown(nodeId) {
     selectedTownId = nodeId;
     state.board[nodeId].player = state.me;
-    updateActions();
+    updateState();
 }
 
 function selectRoad(edgeId) {
@@ -602,7 +595,9 @@ function selectRoad(edgeId) {
     }
     selectedTownId = null;
     commitAction(['place-' + state.phase, nodeId, edgeId]);
-    modifyResources("Start-Rohstoffe", yields, null);
+    if (state.phase == 'backward') {
+        modifyResources("Start-Rohstoffe", yields, null);
+    }
     endTurn();
 }
 
@@ -622,7 +617,12 @@ function selectTile(tileId) {
         commitAction(['move-bandit', tileId, options[0]]);
     } else {
         selectedBanditTileId = tileId;
-        updateActions();
+        // pre-move bandit for UX
+        for (const otherTileId of allTileIds) {
+            state.board[otherTileId].bandit = false;
+        }
+        state.board[tileId].bandit = true;
+        updateState();
     }
     
 }
@@ -638,18 +638,16 @@ function activateCard(card) {
     if (card == RI) {
         commitAction(['play-card', RI]);
     } else if (card == ER) {
-        activeCard = ER;
-        inventionResources = []
-        updateActions();
+        activeCard = card;
+        inventionResources = [];
+        updateState();
     } else if (card == MP) {
-        activeCard = MP;
-        updateActions();
+        activeCard = card;
+        updateState();
     } else if (card == SB) {
         commitAction(['play-card', SB]);
         modifyResources(SB, [H, H, L, L], null);
     }
-    
-    // TODO end turn afterwards?
 }
 
 function monopolize(resource) {
@@ -660,7 +658,7 @@ function monopolize(resource) {
 function selectInvention(resource) {
     inventionResources.push(resource);
     if (inventionResources.length == 1) {
-        updateActions();
+        updateState();
     } else {
         const resources = inventionResources;
         activeCard = null;
@@ -679,7 +677,7 @@ function modifyResources(cause, gains, losses) {
 }
 
 function sendResources(player, resources) {
-    commitAction(['send-res', player].concat(resources));
+    commitAction(['send-res', player, resources]);
 }
 
 function buyRoad(edgeId) {
@@ -704,9 +702,14 @@ function buyCard() {
 
 function initTrade4(resource) {
     trade4Resource = resource;
-    updateActions();
+    updateState();
 }
 
+function abortTrade() {
+    trade4Resource = null;
+    updateState();
+}
+    
 function trade4(resource) {
     const price = trade4Resource;
     trade4Resource = null;

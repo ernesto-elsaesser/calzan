@@ -215,8 +215,8 @@ function addTown(player, isCity, shift, action, upgrade, x, y) {
         svgTokens.appendChild(dot);
     } else if (upgrade) {
         const arrow = shape('polygon');
-        arrow.setAttribute('points', "0,-5 5,5 -5,5");
-        arrow.setAttribute('transform', 'translate(' + x + ',' + y + ')');
+        arrow.setAttribute('points', "0,-20 20,20 -20,20");
+        arrow.setAttribute('transform', 'translate(' + x + ',' + ty + ')');
         arrow.setAttribute('onclick', upgrade);
         svgTokens.appendChild(arrow);
     }

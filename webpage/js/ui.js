@@ -1,3 +1,8 @@
+const hexaPath = 'M-81,0 L-81,48 L0,96 L81,48 L81,-48 L0,-96 L-81,-48 L-81,0';
+
+const oceanColor = '#2D2F6C';
+const tileColor = '#FFFFC0';
+
 const resColors = {
     'Holz': '#6E9B3C',
     'Lehm': '#DF9327',
@@ -16,8 +21,8 @@ const resStrokeColors = {
     'Sand': '#D8CC8B'
 };
 
-
 const log = document.getElementById("log");
+const svgOceans = document.getElementById("oceans");
 const svgTiles = document.getElementById("tiles");
 const svgTokens = document.getElementById("tokens");
 const svgBandits = document.getElementById("bandits");
@@ -51,19 +56,28 @@ function updateBoard() {
 
     for (const cell of Object.values(state.board)) {
             
-        const y = 550 + cell.v * 80;
-        const x = 550 + cell.h * 45;
+        const y = 600 + cell.v * 80;
+        const x = 630 + cell.h * 45;
 
-        if (cell.tile) {
+        if (cell.ocean) {
+            
+            addOcean(cell.trade, x, y);
+            
+        } else if (cell.tile) {
             
             addTile(cell.res, cell.roll, cell.bandit, cell.action, x, y);
             
         } else if (cell.node) {
             
+            const sy = cell.shift == '+' ? y + 26 : y - 26;
+            
+            if (cell.route) {
+                addPort(cell.port, x, sy);
+            }
             if (cell.player) {
-                addTown(cell.player, cell.city, cell.shift, null, cell.upgrade, x, y);
+                addTown(cell.player, cell.city, null, cell.upgrade, x, sy);
             } else if (cell.action) {
-                addTown(state.me, cell.city, cell.shift, cell.action, null, x, y);
+                addTown(state.me, cell.city, cell.action, null, x, sy);
             }
         } else if (cell.edge) {
             
@@ -72,11 +86,46 @@ function updateBoard() {
             } else if (cell.action) {
                 addRoad(state.me, cell.dir, cell.action, x, y);
             }
-            if (cell.port) {
-                addPort(cell.res, cell.port, x, y);
-            }
         }
     }
+}
+
+function addOcean(trade, x, y) {
+    
+    const ocean = shape('path');
+    ocean.setAttribute('d', hexaPath);
+    ocean.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.2)');
+    ocean.setAttribute('fill', oceanColor);
+    svgOceans.appendChild(ocean);
+    
+    if (trade) {
+        const port = shape('circle');
+        port.setAttribute('cx', x);
+        port.setAttribute('cy', y);
+        port.setAttribute('r', 25);
+
+        const label = shape('text');
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('x', x + 0.5);
+        
+        if (trade == '*') {
+            port.setAttribute('fill-opacity', 0);
+            port.setAttribute('stroke', 'white');
+            port.setAttribute('stroke-width', 2);
+            label.setAttribute('class', 'portw');
+            label.setAttribute('y', y + 7);
+            label.innerHTML = '3:1';
+        } else {
+            port.setAttribute('fill', resColors[trade]);
+            label.setAttribute('class', 'port');
+            label.setAttribute('y', y + 7.5);
+            label.innerHTML = '2:1';
+        }
+        
+        svgTokens.appendChild(port);
+        svgTokens.appendChild(label);
+    }
+    
 }
 
 function addTile(resource, roll, hasBandit, action, x, y) {
@@ -84,12 +133,10 @@ function addTile(resource, roll, hasBandit, action, x, y) {
     const color = resColors[resource];
     const strokeColor = resStrokeColors[resource];
     
-    const hexaPath = 'M-81,0 L-81,48 L0,96 L81,48 L81,-48 L0,-96 L-81,-48 L-81,0';
-    
     const bg = shape('path');
     bg.setAttribute('d', hexaPath);
     bg.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.2)');
-    bg.setAttribute('fill', '#FFFFC0');
+    bg.setAttribute('fill', tileColor);
     svgTiles.appendChild(bg);
 
     const tile = shape('path');
@@ -139,63 +186,24 @@ function addTile(resource, roll, hasBandit, action, x, y) {
     }
 }
 
-function addPort(resource, face, x, y) {
+function addPort(angle, x, y) {
     
-    var px = x;
-    var py = y;
-    
-    if (face == 'W') {
-        px -= 40;
-    } else if (face == 'NW') {
-        px -= 25;
-        py -= 35;
-    } else if (face == 'NE') {
-        px += 25;
-        py -= 35;
-    } else if (face == 'E') {
-        px += 40;
-    } else if (face == 'SE') {
-        px += 25;
-        py += 35;
-    } else if (face == 'SW') {
-        px -= 25;
-        py += 35;
-    }
-    
-    const port = shape('circle');
-    port.setAttribute('cx', px);
-    port.setAttribute('cy', py);
-    port.setAttribute('r', 25);
-
-    const label = shape('text');
-    label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('x', px + 0.5);
-    
-    if (resource == '*') {
-        port.setAttribute('fill-opacity', 0);
-        port.setAttribute('stroke', 'white');
-        port.setAttribute('stroke-width', 2);
-        label.setAttribute('class', 'portw');
-        label.setAttribute('y', py + 7);
-        label.innerHTML = '3:1';
-    } else {
-        port.setAttribute('fill', resColors[resource]);
-        label.setAttribute('class', 'port');
-        label.setAttribute('y', py + 7.5);
-        label.innerHTML = '2:1';
-    }
-    
-    svgTiles.appendChild(port);
-    svgTiles.appendChild(label);
+    const port = shape('rect');
+    port.setAttribute('x', x - 9);
+    port.setAttribute('y', y - 44);
+    port.setAttribute('width', 18);
+    port.setAttribute('height', 44);
+    port.setAttribute('rx', 5);
+    port.setAttribute('fill', 'saddlebrown');
+    port.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');
+    svgTokens.appendChild(port);
 }
-
-function addTown(player, isCity, shift, action, upgrade, x, y) {
     
-    const ty = shift == '+' ? y + 26 : y - 26;
+function addTown(player, isCity, action, upgrade, x, y) {
     
     const town = shape('circle', player);
     town.setAttribute('cx', x);
-    town.setAttribute('cy', ty);
+    town.setAttribute('cy', y);
     town.setAttribute('r', '25');
     town.setAttribute('stroke', 'black');
     town.setAttribute('stroke-width', 1);
@@ -210,7 +218,7 @@ function addTown(player, isCity, shift, action, upgrade, x, y) {
     if (isCity) {
         const dot = shape('circle');
         dot.setAttribute('cx', x);
-        dot.setAttribute('cy', ty);
+        dot.setAttribute('cy', y);
         dot.setAttribute('r', '10');
         svgTokens.appendChild(dot);
     } else if (upgrade) {
@@ -218,14 +226,14 @@ function addTown(player, isCity, shift, action, upgrade, x, y) {
         arrow.setAttribute('points', "0,-17 15,10 -15,10");
         arrow.setAttribute('fill', 'white');
         arrow.setAttribute('opacity', 0.5);
-        arrow.setAttribute('transform', 'translate(' + x + ',' + ty + ')');
+        arrow.setAttribute('transform', 'translate(' + x + ',' + y + ')');
         arrow.setAttribute('onclick', upgrade);
         svgTokens.appendChild(arrow);
     }
 }
     
 
-function addRoad(player, dir, action, x, y) {
+function addRoad(player, angle, action, x, y) {
     
     const road = shape('rect', player);
     road.setAttribute('x', x - 15);
@@ -236,7 +244,7 @@ function addRoad(player, dir, action, x, y) {
     road.setAttribute('stroke', 'black');
     road.setAttribute('stroke-width', 1);
     
-    road.setAttribute('transform', 'rotate(' + dir + ',' + x + ',' + y + ')');
+    road.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');
     
     if (action) {
         road.setAttribute('opacity', 0.5);

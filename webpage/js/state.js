@@ -23,16 +23,10 @@ function initState(data, player) {
     state.board = data.board;
     state.players = data.players;
     state.longestRoads = data.players.map((p) => 0);
-    state.playedKnights = data.players.map((p) => 0);
     state.me = player;
     state.current = data.players[0];
     state.resources = noResources();
     state.stack = cardIndices.map((i) => i);
-    
-    for (const player of data.players) {
-        state.longestRoads[player] = 0;
-        state.playedKnights[player] = 0;
-    }
 }
 
 function nextRandom() {
@@ -149,7 +143,11 @@ function pushChoice(choice) {
 
 function popChoice() {
     
-    state.choice = state.choice.parent;
+    if (state.choice.parent) {
+        state.choice = state.choice.parent;
+    } else {
+        console.log("INVALID POP");
+    }
 }
 
 function resetChoice(choice) {

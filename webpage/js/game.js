@@ -237,25 +237,23 @@ function purchaseMade(player, args) {
         const random = nextRandom();
         const cardIndex = state.stack[Math.floor(state.stack.length * random)];
         const cardName = cardNames[cardIndex];
-        const listener = () => {
-            
-            if (cardName == "Ritter") {
-                postEvent('play-knight', cardIndex);
-                return;
-            }
-            
-            var cardChoice;
-            if (cardName == "Straßenbau") {
-                cardChoice = createRoadworksChoice(cardIndex);
-            } else if (cardName == "Monopol") {
-                cardChoice = createMonopolyChoice(cardIndex);
-            } else if (cardName == "Erfindung") {
-                cardChoice = createInventionChoice(cardIndex);
-            }
-            
-            pushChoice(cardChoice);
-            refreshUI();
-        };
+        var listener = null;
+        if (cardName == "Ritter") {
+            listener = () => postEvent('play-knight', cardIndex);
+        } else if (cardIndex > victoryMaxIndex) {
+            listener = () => {
+                var cardChoice;
+                if (cardName == "Straßenbau") {
+                    cardChoice = createRoadworksChoice(cardIndex);
+                } else if (cardName == "Monopol") {
+                    cardChoice = createMonopolyChoice(cardIndex);
+                } else if (cardName == "Erfindung") {
+                    cardChoice = createInventionChoice(cardIndex);
+                }
+                pushChoice(cardChoice);
+                refreshUI();
+            };
+        }
         takeCard(player, cardIndex, listener);
         logLine(player + " kauft eine Entwicklungskarte");
         if (player == state.me) {
@@ -287,7 +285,7 @@ function roadsPlayed(player, args) {
     claimRoad(player, edgeId1);
     claimRoad(player, edgeId2);
     
-    if (player == state.me) {
+    if (state.choice.id == 'road') {
         popChoice();
     }
     
@@ -299,7 +297,7 @@ function monopolyPlayed(player, args) {
     const [cardIndex, resIndex] = args;
     discardCard(player, cardIndex);
     
-    if (player == state.me) {
+    if (state.choice.id == 'monopoly') {
         popChoice();
     }
     
@@ -320,7 +318,7 @@ function inventPlayed(player, args) {
     discardCard(player, cardIndex);
     updateResources(player, resources);
     
-    if (player == state.me) {
+    if (state.choice.id == 'invention') {
         popChoice();
     }
     
@@ -389,14 +387,14 @@ function forceClaimed(player, args) {
     
     const size = args;
     updateLargestForce(player, size);
-    logLine(player + "besitzt nun die größte Rittermacht");
+    logLine(player + " hält nun die größte Rittermacht");
 }
 
 function roadsClaimed(player, args) {
     
     const length = args;
     updateLongestRoad(player, length);
-    logLine(player + "besitzt nun die längste Handelsstraße");
+    logLine(player + " hält nun die längste Handelsstraße");
 }
 
 function seaTraded(player, args) {

@@ -129,24 +129,24 @@ function createMonopolyChoice(cardIndex) {
     return {
         id: 'monopoly',
         selectResource: (resIndex) => {
-            postEven('play-monopoly', [cardIndex, resIndex]);
+            postEvent('play-monopoly', [cardIndex, resIndex]);
         }
     };
 }
 
 function createInventionChoice(cardIndex) {
     
-    var firstResIndex = null;
+    const resources = noResources();
     
     return {
         id: 'invention',
-        indices,
-        getOrdinal: () => firstResIndex ? "Zweiter" : "Erster",
+        resources,
         selectResource: (resIndex) => {
-            if (firstResIndex) {
-                postEven('play-invent', [cardIndex, firstResIndex, resIndex]);
+            resources[resIndex] += 1;
+            const count = countResources(resources);
+            if (count == 2) {
+                postEvent('play-invent', [cardIndex, resources]);
             } else {
-                firstResIndex = resIndex;
                 refreshUI();
             }
         },

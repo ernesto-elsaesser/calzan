@@ -390,12 +390,13 @@ function refreshActionButtons() {
             buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });
     } else if (state.choice.id == 'invention') {
-        title.innerHTML = "Erfindung - " + state.choice.getOrdinal() + " Rohstoff";
+        const number = countResources(state.choice.resources) + 1;
+        title = "Erfindung - " + number + ". Rohstoff auswählen";
         resIndices.forEach((i) => {
             buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });
     } else if (state.choice.id == 'monopoly') {
-        title.innerHTML = "Monopol auf welchen Rohstoff?";
+        title = "Monopol auf welchen Rohstoff?";
         resIndices.forEach((i) => {
             buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });

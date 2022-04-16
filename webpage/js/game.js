@@ -426,7 +426,7 @@ function checkVictory() {
 function gameWon(player, args) {
     
     const points = args;
-    logLine(player + " gewinnt mit " points + " Siegpunkten");
+    logLine(player + " gewinnt mit " + points + " Siegpunkten");
     
     resetChoice();
 }

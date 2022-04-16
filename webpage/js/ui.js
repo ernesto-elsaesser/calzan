@@ -34,7 +34,7 @@ function updateBoard() {
     svgTokens.innerHTML = "";
     svgBandits.innerHTML = "";
     
-    for (const cellId, cell of Object.entries(state.board)) {
+    for (const [cellId, cell] of Object.entries(state.board)) {
             
         const y = 600 + cell.v * 80;
         const x = 630 + cell.h * 45;
@@ -70,11 +70,11 @@ function updateBoard() {
                 addTown(cell.player, cell.city, x, sy, null, upgradeListener);
             } else if (state.boardMode == 'place-town') {
                 if (canPlaceTown(cellId)) {
-                    addTown(state.me, false, x, y, () => dispatchClick('place-town', cellId), null);
+                    addTown(state.me, false, x, sy, () => dispatchClick('place-town', cellId), null);
                 }
             } else if (state.boardMode == 'buy-road') {
                 if (canBuildTown(cellId)) {
-                    addTown(state.me, false, x, y, () => dispatchClick('build-town', cellId), null);
+                    addTown(state.me, false, x, sy, () => dispatchClick('build-town', cellId), null);
                 }
             }
             
@@ -101,7 +101,7 @@ function updateBoard() {
             
 function canPlaceTown(cellId) {
     
-    for (const edgeId of state.board[cellId].edged) {
+    for (const edgeId of state.board[cellId].edges) {
         for (const nodeId of state.board[edgeId].nodes) {
             if (state.board[nodeId].player) {
                 return false;
@@ -352,12 +352,12 @@ function updateCards() {
     const canPlay = state.phase == 'game' && state.current == state.me && state.choice == null;
     
     cards.innerHTML = "";
-    if (state.cards.length) {
+    if (state.playableCards.length) {
         for (const playableCard of state.playableCards) {
             const cardButton = document.createElement('button');
             cardButton.className = "card";
             if (canPlay && playableCard.usable) {
-                cardButton.addEventListener('click', () => dispatchClick('play-card', playableCard.name);
+                cardButton.addEventListener('click', () => dispatchClick('play-card', playableCard.name));
             } else {
                 cardButton.disabled = true;
             }
@@ -555,7 +555,7 @@ function updateActionButtons() {
     for (const [text, reference, arg] of buttons) {
         const button = document.createElement('button');
         button.innerHTML = text;
-        button.addEventListener('click', () => dispatchClick(reference, arg);
+        button.addEventListener('click', () => dispatchClick(reference, arg));
         actions.appendChild(button);
     }
 }

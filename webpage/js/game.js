@@ -392,18 +392,18 @@ function playClicked(action, arg) {
             if (state.choice.first) {
                 const firstId = state.choice.first;
                 clearChoice();
-                postEvent(action', [ER, firstId, arg]);
+                postEvent(action, [ER, firstId, arg]);
             } else {
                 updateChoice('first', arg);
                 updateUI();
             }
         } else if (state.choice.cardName == MP) {
             clearChoice();
-            postEvent(action', [MP, arg]);
+            postEvent(action, [MP, arg]);
         }
 
     } else if (arg == RI) {
-        postEvent(action', [RI]);
+        postEvent(action, [RI]);
     } else {
         if (arg == SB) {
             setBoardMode('redeem-road');

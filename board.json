@@ -30,7 +30,7 @@
     "A3b": {"v": -5, "h": 3, "edge": true, "dir": 60, "nodes": ["A3A", "A3B"]},
     "A3B": {"v": -5, "h": 4, "node": true, "shift": "-", "edges": ["A3b", "A3c"], "tiles": ["A3"]},
     "A3c": {"v": -5, "h": 5, "edge": true, "dir": -60, "nodes": ["A3C", "A3B"]},
-    "A3C": {"v": -5, "h": 6, "node": true, "shift": "+", "edges": ["A3c", "A3d"], "tiles": ["A3"]},
+    "A3C": {"v": -5, "h": 6, "node": true, "shift": "+", "edges": ["A3c", "A3f"], "tiles": ["A3"]},
     
     "A1a": {"v": -4, "h": -6, "edge": true, "dir": 0, "nodes": ["B1B", "A1A"]},
     "A1": {"v": -4, "h": -4, "tile": true, "res": "Holz", "roll": 6, "nodes": ["A1A", "A1B", "A2A", "B2B", "B2A", "B1B"]},
@@ -54,7 +54,7 @@
     "B3c": {"v": -3, "h": 3, "edge": true, "dir": -60, "nodes": ["B3B", "B4A"]},
     "B4A": {"v": -3, "h": 4, "node": true, "shift": "+", "edges": ["B3c", "B4b", "B4a"], "tiles": ["B3", "A3", "B4"]},
     "B4b": {"v": -3, "h": 5, "edge": true, "dir": 60, "nodes": ["B4A", "B4B"]},
-    "B4B": {"v": -3, "h": 6, "node": true, "shift": "-", "route": "O5", "port": 60, "edges": ["B4b", "B4c", "A3d"], "tiles": ["A3", "B4"]},
+    "B4B": {"v": -3, "h": 6, "node": true, "shift": "-", "route": "O5", "port": 60, "edges": ["B4b", "B4c", "A3f"], "tiles": ["A3", "B4"]},
     "B4c": {"v": -3, "h": 7, "edge": true, "dir": -60, "nodes": ["B4B", "B4C"]},
     "B4C": {"v": -3, "h": 8, "node": true, "shift": "+", "route": "O5", "port": 0, "edges": ["B4c", "B4f"], "tiles": ["B4"]},
 

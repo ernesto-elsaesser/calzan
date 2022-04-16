@@ -1,6 +1,7 @@
 var eventsRef = null;
 var prevEventId = null;
 
+var dropCallback; // used when player is raided before having chosen resources to drop
 
 function initGame(game, player) {
     
@@ -34,11 +35,11 @@ function dispatchEvent(event, prevId) {
         'roll-dice': diceRolled,
         'move-bandit': banditMoved,
         'drop-res': resourcesDropped,
-        'build-town': townBuilt,
-        'build-road': roadBuilt,
-        'upgrade-town': townUpgraded,
-        'buy-card': cardBought,
-        'play-card': cardPlayed,
+        'make-purchase': purchaseMade,
+        'play-knight': knightPlayed,
+        'play-roads': roadsPlayed,
+        'play-monopoly': monopolyPlayed,
+        'play-invent': inventPlayed,
         'send-res': resourcesSent,
         'trade-sea': seaTraded,
         'offer-trade': tradeOffered,
@@ -82,7 +83,8 @@ function startGame() {
     logLine(state.current + " darf setzen");
 
     if (state.current == state.me) {
-        setBoardMode('place-town');
+        const townChoice = createTownChoice();
+        pushChoice(townChoice);
     }
 
     updateUI();
@@ -94,19 +96,17 @@ function townPlaced(player, args) {
     claimTown(player, nodeId);
     logLine(state.current + " setzt eine Siedlung");
     
-    if (state.current == state.me) {
+    if (player == state.me) {
         if (state.phase == 'backward') {
-            var yields = [];
-            for (const tileId of state.board[nodeId].tiles) {
-                const resource = state.board[tileId].res;
-                if (resource != S) {
-                    yields.push(resource);
-                }
+            const resources = noResources();
+            state.board[nodeId].tiles.map((i) => state.board[i]).forEach((t) => {
+                if (t.land > 0) resources[t.land] += 1;
             }
-            increaseResources(player, yields);
-            logLine("ERTRÄGE: " + sort(yields).join(', '));
+            updateResources(player, resources);
+            logLine("ERTRÄGE: " + formatResources(resources));
         }
-        setBoardMode('place-road');
+        const roadChoice = createRoadChoice();
+        pushChoice(roadChoice);
     }
 }
 
@@ -114,11 +114,7 @@ function roadPlaced(player, args) {
     
     const edgeId = args;
     claimRoad(player, edgeId);
-    logLine(state.current + " setzt eine Strasse");
-    
-    if (state.current == state.me) {
-        setBoardMode(null);
-    }
+    logLine(player + " setzt eine Strasse");
     
     advanceTurn();
     
@@ -128,96 +124,158 @@ function roadPlaced(player, args) {
             postEvent('roll-dice', null);
         }
     } else {
-        if (state.current == state.me) {
-            setBoardMode('place-town');
-        }
         logLine(state.current + " darf setzen");
-    }
-}
-
-function roadBuilt(player, args) {
-    
-    const edgeId = args;
-    decreaseResources(player, roadCosts);
-    claimRoad(player, edgeId);
-    logLine(state.current + " baut eine Strasse");
-}
-
-function townBuilt(player, args) {
-    
-    const nodeId = args;
-    decreaseResources(player, townCosts);
-    claimTown(player, nodeId);
-    logLine(state.current + " baut eine Siedlung");
-}
-
-function townUpgraded(player, args) {
-    
-    const nodeId = args;
-    decreaseResources(player, cityCosts);
-    upgradeTown(player, nodeId);
-    logLine(state.current + " baut eine Siedlung zur Stadt aus");
-}
-
-function cardBought(player, args) {
-    
-    decreaseResources(player, cardCosts);
-    const cardName = drawCard(player);
-    logLine(state.current + " kauft eine Entwicklungskarte");
-    if (player == state.me) {
-        logLine("KARTE: " + cardName);
-    }
-}
-
-function cardPlayed(player, args) {
-    
-    const card = args[0];
-    consumeCard(player, card);
-    
-    if (card == RI) {
         if (state.current == state.me) {
-            setBoardMode('move-bandit');
+            const townChoice = createTownChoice();
+            pushChoice(townChoice);
         }
-        logLine(player + " spielt eine Ritter-Karte und darf den Räuber bewegen");
-    } else if (card == SB) {
-        claimRoad(player, args[1]);
-        claimRoad(player, args[2]);
-        logLine(player + " spielt Strassenbau und erhält 2 kostenlose Strassen");
-    } else if (card == MP) {
-        const resource = args[1];
-        logLine(player + " spielt Monopol und erhält: " + resource);
-        if (player != state.me) {
-            const losses = state.resources.filter((r) => r == resource);
-            if (losses.length > 0) {
-                postEvent('send-res', [MP.toUpperCase(), player, losses]);
+    }
+}
+
+function diceRolled(player, args) {
+    
+    const random = nextRandom();
+    const roll = rolls[Math.floor(random * rolls.length)];
+    
+    logLine(player + " würfelt eine " + roll.toString());
+    
+    if (roll == 7) {
+        if (player == state.me) {
+            const banditChoice = createBanditChoice();
+            pushChoice(banditChoice);
+        }
+        if (countResources(state.resources) > 7) {
+            const dropChoice = createDropChoice();
+            pushChoice(dropChoice);
+        }
+        logLine(player + " darf den Räuber bewegen");
+    } else {
+        const resources = noResources();
+        getYieldingTileIds(roll).forEach((i) => {
+            getAdjacentTowns(i).filter((t) => t.player == state.me).forEach((t) => {
+                resources[t.res] += t.city ? 2 : 1;
+            });
+        });
+        const count = countResources(resources);
+        if (count > 0) {
+            updateResources(state.me, resources);
+            logLine("ERTRÄGE: " + formatResources(resources));
+        }
+        if (player == state.me) {
+            const turnChoice = createTurnChoice();
+            pushChoice(turnChoice);
+        }
+    }
+}
+
+function banditMoved(player, args) {
+    
+    const [tileId, targetPlayer] = args;
+    
+    moveBandit(tileId);
+    
+    const resIndex = state.board[tileId].land;
+    const resName = resNames[resIndex];
+    
+    if (targetPlayer) {
+        logLine(player + " setzt den Räuber auf " + resName + " und beraubt " + targetPlayer);
+        
+        const random = nextRandom();
+        
+        if (targetPlayer == state.me) {
+            if (state.choice && state.choice.id = 'drop') {
+                dropCallback = () => getRaided(player, random);
+            } else {
+                getRaided(player, random);
             }
         }
-    } else if (card == ER) {
-        const resources = args;
-        increaseResources(player, resources);
-        logLine(player + " spielt Erfindung und erhält Rohstoffe");
+        
+    } else {
+        logLine(player + " setzt den Räuber auf " + resName);
     }
 }
 
-function resourcesDropped(player, args) {
+function makePurchase(player, args) {
     
-    const losses = args;
-    decreaseResources(player, losses);
+    const purchaseIndex = args[0];
     
-    if (pendingSteal) {
-        pendingSteal = false;
-        performSteal();
+    const costs = purchaseCosts[purchaseIndex];
+    updateResources(player, costs);
+    
+    if (purchaseIndex == 1) {
+        claimRoad(player, args[1]);
+        logLine(player + " baut eine Strasse");
+    } else if (purchaseIndex == 2) {
+        claimTown(player, args[1]);
+        logLine(player + " baut eine Siedlung");
+    } else if (purchaseIndex == 3) {
+        upgradeTown(player, args[1]);
+        logLine(player + " baut eine Siedlung zur Stadt aus");
+    } else if (purchaseIndex == 4) {
+        const random = nextRandom();
+        const cardIndex = state.stack[Math.floor(state.stack.length * random)];
+        const listener = () => {
+            if (cardIndex >= knightMinIndex) {
+                postEvent('play-knight', cardIndex);
+            } else {
+                const cardChoice = createCardChoice(cardIndex);
+                setChoice(cardChoice);
+                updateUI();
+            }
+        };
+        takeCard(player, cardIndex, listener);
+        logLine(player + " kauft eine Entwicklungskarte");
+        if (player == state.me) {
+            logLine("KARTE: " + cardNames[cardIndex]);
+        }
     }
 }
 
-function resourcesSent(player, args) {
+function knightPlayed(player, args) {
     
-    const [cause, recipient, resources] = args;
-    decreaseResources(player, resources);
-    increaseResources(recipient, resources);
+    const cardIndex = args;
+    discardCard(player, cardIndex);
     
-    if (player == state.me || recipient == state.me) {
-        logLine(cause + ": " + sort(resources).join(', '));
+    logLine(player + " spielt eine Ritter-Karte und darf den Räuber bewegen");
+    if (player == state.me) {
+        const banditChoice = createBanditChoice();
+        pushChoice(banditChoice);
+    }
+}
+    
+function roadsPlayed(player, args) {
+    
+    const [cardIndex, edgeId1, edgeId2] = args;
+    discardCard(player, cardIndex);
+    claimRoad(player, edgeId1);
+    claimRoad(player, edgeId2);
+    logLine(player + " spielt Strassenbau und erhält 2 kostenlose Strassen");
+}
+
+function monopolyPlayed(player, args) {
+        
+    const [cardIndex, resIndex] = args;
+    discardCard(player, cardIndex);
+    logLine(player + " spielt Monopol auf: " + resNames[resIndex]);
+    
+    if (player != state.me) {
+        if (state.resources[resIndex] > 0) {
+            var resources = noResources();
+            resources[resIndex] = state.resources[resIndex];
+            postEvent('send-res', ["MONOPOL", player, resources]);
+        }
+    }
+}
+        
+function inventPlayed(player, args) {
+    
+    const [cardIndex, resources] = args;
+    discardCard(player, cardIndex);
+    updateResources(player, resources);
+    logLine(player + " spielt Erfindung und erhält Rohstoffe");
+    
+    if (player == state.me) {
+        logLine("ERFINDUNG: " + formatResources(resources));
     }
 }
 
@@ -233,91 +291,56 @@ function turnEnded(player, args) {
     }
 }
     
-function diceRolled(player, args) {
+function resourcesDropped(player, args) {
     
-    const roll = 2 + Math.floor(6 * state.rng()) + Math.floor(6 * state.rng())
+    const resources = args;
+    updateResources(player, resources);
     
-    logLine(player + " würfelt eine " + roll.toString());
-    
-    if (roll == 7) {
-        const count = state.resources.length;
-        if (count > 7) {
-            const targetCount = Math.ceil(count / 2);
-            const options = state.resources.map((r) => false);
-            startChoice({action: 'drop-res', targetCount, options});
-        }
-        if (state.current == state.me) {
-            setBoardMode('move-bandit');
-        }
-        logLine(state.current + " darf den Räuber bewegen");
-    } else {
-        var yields = [];
-        for (const tileId of allTileIds) {
-            const tileCell = state.board[tileId];
-            if (tileCell.roll == roll && tileCell.bandit != true) {
-                for (const nodeId of tileCell.nodes) {
-                    const townCell = state.board[nodeId];
-                    if (townCell.player) {
-                        if (townCell.player == state.me) {
-                            yields.push(tileCell.res);
-                            if (townCell.city) {
-                                yields.push(tileCell.res);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (yields.length > 0) {
-            increaseResources(state.me, yields);
-            logLine("ERTRÄGE: " + sort(yields).join(', '));
-        }
-    }
-}
-    
-function banditMoved(player, args) {
-    
-    const [tileId, targetPlayer] = args;
-    moveBandit(tileId);
-    setBoardMode(null);
-    
-    const resource = state.board[tileId].res;
-    if (targetPlayer) {
-        logLine(state.current + " setzt den Räuber auf " + resource + " und beraubt " + targetPlayer);
-    } else {
-        logLine(state.current + " setzt den Räuber auf " + resource);
-    }
-    
-    if (targetPlayer == state.me) {
-        if (state.choice) {
-            state.choice.pendingRaid = player;
-        } else {
-            getRaided(player);
-        }
-    } else {
-        state.rng(); // keep RNG in sync
+    if (dropCallback) {
+        dropCallback();
+        dropCallback = null;
     }
 }
 
-function getRaided(player) {
+function resourcesSent(player, args) {
     
-    if (state.resources.length == 0) {
-        rng(); // keep RNG in sync
+    const [cause, recipient, resources] = args;
+    
+    const negResources = resources.map((n) => n == null ? null : -n);
+    
+    updateResources(recipient, resources);
+    updateResources(player, negResources);
+    
+    if (player == state.me || recipient == state.me) {
+        logLine(cause + ": " + formatResources(resources));
+    }
+}
+
+function getRaided(player, random) {
+    
+    const count = countResources(state.resources);
+    if (count == 0) {
         return;
     }
     
-    const randomIndex = Math.floor(state.resources.length * state.rng())
-    const resource = state.resources[randomIndex];
-    const losses = [resource];
+    var indexList = [];
+    resIndices.forEach((i) => {
+        for (var r = 0; r < state.resources[i]; r += 1) {
+            indexList.push(i);
+        }
+    });
+    
+    const resIndex = indexList[Math.floor(indexList.length * random)];
+    const resources = noResources();
+    resources[resIndex] = 1;
 
-    postEvent('send-res', ["RÄUBER", player, losses]);
+    postEvent('send-res', ["RÄUBER", player, resources]);
 }
 
 function seaTraded(player, args) {
     
-    const [price, resource] = args;
-    decreaseResources(player, price);
-    increaseResources(player, [resource]);
+    const resources = args;
+    updateResources(player, resources);
 }
 
 function tradeOffered(player, args) {
@@ -326,171 +349,4 @@ function tradeOffered(player, args) {
 
 function tradeAccepted(player, args) {
     
-}
-
-function dispatchClick(action, arg) {
-    
-    const functionMap = {
-        'place-town': tokenClicked,
-        'place-road': tokenClicked,
-        'build-town': tokenClicked,
-        'build-road': tokenClicked,
-        'upgrade-town': tokenClicked,
-        'redeen-road': freeRoadClicked,
-        'move-bandit': banditClicked,
-        'buy-card': actionClicked,
-        'play-card': playClicked,
-        'toggle-drop': dropToggled,
-        'drop-res': dropClicked,
-        'trade-sea': tradeClicked,
-        'end-turn': actionClicked,
-    };
-    
-    functionMap[action](action, arg);
-}
-    
-    
-function tokenClicked(action, arg) {
-        
-    if (state.boardMode == action) {
-        setBoardMode(null);
-        postEvent(action, arg);
-    } else {
-        setBoardMode(action);
-        updateUI();
-    }
-}
-        
-function banditClicked(action, arg) {
-        
-    if (state.choice) {
-        const tileId = state.choice.tileId;
-        clearChoice();
-        postEvent(action, [tileId, arg]);
-    } else {
-        moveBandit(arg); // NOTE: premature placement, not confirmed by event!!!
-        setBoardMode(null);
-
-        var targets = [];
-        for (const nodeId of state.board[arg].nodes) {
-            const player = state.board[nodeId].player;
-            if (player && player != state.me && !targets.includes(player)) {
-                targets.push(player);
-            }
-        }
-
-        if (targets.length == 0) {
-            postEvent(action, [tileId, null]);
-        } else if (targets.length == 1) {
-            postEvent(action, [tileId, targets[0]]);
-        } else {
-            startChoice({action, tileId: arg, targets});
-            updateUI();
-        }
-    }
-}
-        
-function actionClicked(action, arg) {
-        
-    postEvent(action, null);
-}
-        
-function playClicked(action, arg) {
-        
-    if (state.choice) {
-
-        if (arg == null) {
-            clearChoice();
-            updateUI();
-            return;
-        }
-
-        if (state.choice.cardName == ER) {
-            if (state.choice.first) {
-                const firstId = state.choice.first;
-                clearChoice();
-                postEvent(action, [ER, firstId, arg]);
-            } else {
-                updateChoice('first', arg);
-                updateUI();
-            }
-        } else if (state.choice.cardName == MP) {
-            clearChoice();
-            postEvent(action, [MP, arg]);
-        }
-
-    } else if (arg == RI) {
-        postEvent(action, [RI]);
-    } else {
-        if (arg == SB) {
-            setBoardMode('redeem-road');
-        }
-        startChoice({action, cardName: arg});
-        updateUI();
-    }
-}
-
-function freeRoadClicked(action, arg) {
-        
-    if (state.choice.first) {
-        const firstId = state.choice.first;
-        setBoardMode(null);
-        clearChoice();
-        postEvent('play-card', [SB, firstId, arg]);
-    } else {
-        claimRoad(state.me, arg); // NOTE: premature placement, not confirmed by event!!!
-        updateChoice('first', arg);
-        updateUI();
-    }
-}
-        
-function dropToggled(action, arg) {
-        
-    var toggles = state.choice.toggles;
-    toggles[arg] = !toggles[arg];
-    updateUI();
-}
-        
-function dropClicked(action, arg) {
-
-    var losses = [];
-    for (var i = 0; i < state.resources.length; i += 1) {
-        if (state.choice.toggles[i]) {
-            losses.push(state.resources[i]);
-        }
-    }
-
-    if (losses.length != state.choice.targetCount) {
-        window.alert("Ungültige Auswahl!");
-        return;
-    }
-    
-    const pendingRaid = state.choice.pendingRaid;
-
-    clearChoice();
-    postEvent(action, losses);
-    
-    if (pendingRaid) {
-        // TODO: delayed?
-        getRaided(pendingRaid);
-    }
-}
-        
-function tradeClicked(action, arg) {
-    
-    if (state.choice) {
-        if (arg == null) {
-            clearChoice();
-            updateUI();
-            return;
-        }
-
-        const price = state.choice.price;
-        clearChoice();
-        postEvent(action, [price, arg]);
-
-    } else {
-        startChoice({action, price: arg});
-        updateUI();
-    }
 }

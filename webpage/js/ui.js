@@ -39,42 +39,40 @@ function updateBoard() {
         const y = 600 + cell.v * 80;
         const x = 630 + cell.h * 45;
 
-        if (cell.ocean) {
-            
-            addOcean(cell.trade, x, y);
-            
-        } else if (cell.tile) {
+        if (cell.tile) {
             
             const roll = cell.bandit ? null : cell.roll;
-            addTile(cell.res, roll, x, y);
+            addTile(cell.land, roll, x, y);
             
-            if (cell.bandit) {
+            if (cell.rate) {
+                addTrade(cell.rate, cell.trade, x, y);
+            } else if (cell.bandit) {
                 addBandit(x, y, null);
-            } else if (state.boardMode == 'move-bandit' && state.choice == null) {
-                addBandit(x, y, () => dispatchClick('move-bandit', cellId));
+            } else if (state.choice.action == 'move-bandit') {
+                addBandit(x, y, () => state.choice.selectCell(cellId));
             }
             
         } else if (cell.node) {
             
-            const sy = cell.shift == '+' ? y + 26 : y - 26;
+            const sy = y + cell.shift * 26;
             
             if (cell.route) {
                 addPort(cell.port, x, sy);
             }
             
             if (cell.player) {
-                if (state.boardMode == 'upgrade-town' && cell.player == state.me) {
-                    addTown(cell.player, cell.city, x, sy, null, () => dispatchClick('upgrade-town', cellId));
+                if (state.choice.action == 'make-purchase' && state.choice.index == 3 && cell.player == state.me) {
+                    addTown(cell.player, cell.city, x, sy, null, () => state.choice.selectCell(cellId));
                 } else {
                     addTown(cell.player, cell.city, x, sy, null, null);
                 }
-            } else if (state.boardMode == 'place-town') {
+            } else if (state.choice.action == 'place-town') {
                 if (canPlaceTown(cellId)) {
-                    addTown(state.me, false, x, sy, () => dispatchClick('place-town', cellId), null);
+                    addTown(state.me, false, x, sy, () => state.choice.selectCell(cellId), null);
                 }
-            } else if (state.boardMode == 'build-town') {
-                if (canBuildTown(cellId)) {
-                    addTown(state.me, false, x, sy, () => dispatchClick('build-town', cellId), null);
+            } else if (state.choice.action == 'make-purchase' && state.choice.index == 1) {
+                if (canBuildTown(state.me, cellId)) {
+                    addTown(state.me, false, x, sy, () => state.choice.selectCell(cellId), null);
                 }
             }
             
@@ -82,128 +80,26 @@ function updateBoard() {
             
             if (cell.player) {
                 addRoad(cell.player, cell.dir, x, y, null);
-            } else if (state.boardMode == 'place-road') {
-                if (canPlaceRoad(cellId)) {
-                    addRoad(state.me, cell.dir, x, y, () => dispatchClick('place-road', cellId));
+            } else if (state.choice.action == 'place-road') {
+                if (canPlaceRoad(state.me, cellId)) {
+                    addRoad(state.me, cell.dir, x, y, () => state.choice.selectCell(cellId));
                 }
-            } else if (state.boardMode == 'build-road') {
-                if (canBuildRoad(cellId)) {
-                    addRoad(state.me, cell.dir, x, y, () => dispatchClick('build-road', cellId));
+            } else if (state.choice.action == 'make-purchase' && state.choice.index == 2) {
+                if (canBuildRoad(state.me, cellId)) {
+                    addRoad(state.me, cell.dir, x, y, () => state.choice.selectCell(cellId));
                 }
-            } else if (state.boardMode == 'redeem-road') {
-                if (canBuildRoad(cellId)) {
-                    addRoad(state.me, cell.dir, x, y, () => dispatchClick('redeem-road', cellId));
+            } else if (state.choice.action == 'play-roads') {
+                if (canBuildRoad(state.me, cellId)) {
+                    addRoad(state.me, cell.dir, x, y, () => state.choice.selectCell(cellId));
                 }
             }
         }
     }
 }
-            
-function canPlaceTown(cellId) {
-    
-    for (const edgeId of state.board[cellId].edges) {
-        for (const nodeId of state.board[edgeId].nodes) {
-            if (state.board[nodeId].player) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
+function addTile(resIndex, roll, x, y) {
 
-function canPlaceRoad(cellId) {
-    
-    for (const nodeId of state.board[cellId].nodes) {
-        if (state.board[nodeId].player == state.me) {
-            return true;
-        }
-    }
-    return false;
-}
-            
-function canBuildTown(cellId) {
-    
-    if (!canPlaceTown(cellId)) {
-        return false;
-    }
-    
-    var ownedEdgeId = null;
-    for (const edgeId of state.board[cellId].edges) {
-        if (state.board[edgeId].player == state.me) {
-            ownedEdgeId = edgeId;
-            break;
-        }
-    }
-    
-    if (ownedEdgeId == null) {
-        return false;
-    }
-    
-    for (const nodeId of state.board[ownedEdgeId].nodes) {
-        if (state.board[nodeId].player) {
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-function canBuildRoad(cellId) {
-    
-    for (const nodeId of state.board[cellId].nodes) {
-        if (state.board[nodeId].player == state.me) {
-            return true;
-        }
-        for (const edgeId of state.board[nodeId].edges) {
-            if (state.board[edgeId].player == state.me) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-function addOcean(trade, x, y) {
-    
-    const ocean = shape('path');
-    ocean.setAttribute('d', hexaPath);
-    ocean.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.2)');
-    ocean.setAttribute('fill', oceanColor);
-    svgOceans.appendChild(ocean);
-    
-    if (trade) {
-        const port = shape('circle');
-        port.setAttribute('cx', x);
-        port.setAttribute('cy', y);
-        port.setAttribute('r', 25);
-
-        const label = shape('text');
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('x', x + 0.5);
-        
-        if (trade == '*') {
-            port.setAttribute('fill-opacity', 0);
-            port.setAttribute('stroke', 'white');
-            port.setAttribute('stroke-width', 2);
-            label.setAttribute('class', 'portw');
-            label.setAttribute('y', y + 7);
-            label.innerHTML = '3:1';
-        } else {
-            port.setAttribute('fill', resColors[trade]);
-            label.setAttribute('class', 'port');
-            label.setAttribute('y', y + 7.5);
-            label.innerHTML = '2:1';
-        }
-        
-        svgTokens.appendChild(port);
-        svgTokens.appendChild(label);
-    }
-}
-
-function addTile(resource, roll, x, y) {
-
-    const color = resColors[resource];
-    const strokeColor = resStrokeColors[resource];
+    const color = resColors[resIndex];
+    const strokeColor = resStrokeColors[resIndex];
     
     const bg = shape('path');
     bg.setAttribute('d', hexaPath);
@@ -254,6 +150,35 @@ function addBandit(x, y, listener) {
     
     svgBandits.appendChild(bandit);
 }
+
+function addTrade(rate, trade, x, y) {
+    
+    const trade = shape('circle');
+    trade.setAttribute('cx', x);
+    trade.setAttribute('cy', y);
+    trade.setAttribute('r', 25);
+
+    const label = shape('text');
+    label.innerHTML = rate + ':1';
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('x', x + 0.5);
+
+    if (trade) {
+        trade.setAttribute('fill', resColors[trade]);
+        label.setAttribute('class', 'port');
+        label.setAttribute('y', y + 7.5);
+    } else {
+        trade.setAttribute('fill-opacity', 0);
+        trade.setAttribute('stroke', 'white');
+        trade.setAttribute('stroke-width', 2);
+        label.setAttribute('class', 'portw');
+        label.setAttribute('y', y + 7);
+    }
+    
+    svgTokens.appendChild(trade);
+    svgTokens.appendChild(label);
+}
+
 
 function addPort(angle, x, y) {
     
@@ -349,19 +274,19 @@ function updateResources() {
     
 function updateCards() {
     
-    const canPlay = state.phase == 'game' && state.current == state.me && state.choice == null && state.boardMode == null;
+    const canPlay = state.phase == 'game' && state.current == state.me && state.choice == null;
     
     cards.innerHTML = "";
-    if (state.playableCards.length) {
-        for (const playableCard of state.playableCards) {
+    if (state.cards.length) {
+        for (const cardIndex of state.cards) {
             const cardButton = document.createElement('button');
             cardButton.className = "card";
-            if (canPlay && playableCard.usable) {
-                cardButton.addEventListener('click', () => dispatchClick('play-card', playableCard.name));
+            if (canPlay && cardIndex > victoryMaxIndex && !state.lockedCards.includes(cardIndex)) {
+                cardButton.addEventListener('click', () => dispatchClick('play-card', cardIndex));
             } else {
                 cardButton.disabled = true;
             }
-            cardButton.innerHTML = playableCard.name;
+            cardButton.innerHTML = cardNames[cardIndex];
             cards.appendChild(cardButton);
         }
     } else {
@@ -375,30 +300,30 @@ function updateVictoryPoints() {
     victory.innerHTML = "";
     
     var townCount = 0, cityCount = 0;
-    for (const nodeId of allNodeIds) {
-        if (state.board[nodeId].player == state.me) {
-            if (state.board[nodeId].city) {
-                cityCount += 1;
-            } else {
-                townCount += 1;
-            }
+    getTowns(state.me).forEach((t) => {
+        if (t.city) {
+            cityCount += 1;
+            points += 2;
+        } else {
+            townCount += 1;
+            points += 1;
         }
-    }
+    });
     
     if (townCount) {
         victory.innerHTML += townCount + " Siedlungen (1P)";
-        points += townCount;
     }
     
     if (cityCount) {
         victory.innerHTML += " + " + cityCount + " Städte (2P)";
-        points += 2 * cityCount;
     }
     
-    for (const card of state.victoryCards) {
-        victory.innerHTML += " + " + card + " (1P)";
+    state.cards.filter((i) => i <= victoryMinIndex).forEach((i) => {
+        victory.innerHTML += " + " + cardNames[i] + " (1P)";
         points += 1;
-    }
+    });
+    
+    // TODO use reduce
     
     var maxLength = 4;
     var maxLengthPlayer = null;
@@ -446,102 +371,58 @@ function updateActionButtons() {
         
         if (state.choice.action == 'drop-res') {
             title = "Werfe " + state.choice.targetCount + " Rohstoffe ab";
-            for (var i = 0; i < state.resources.length; i += 1) {
-                const resource =  state.resources[i];
-                const suffix = state.choice.toggles[i] ? " (X)" : " ( )";
-                buttons.push([resource + suffix, 'toggle-drop', i]);
-            }
+            resIndices.filter((i) => state.resources[i] > 0).forEach((i) => {
+                const amount = state.choice.resources[i];
+                const text = amount + " " resourceNames[i];
+                buttons.push([text, 'inc-drop', i]);
+            });
             buttons.push(["Bestätigen", 'drop-res', null]);
         } else if (state.choice.action == 'move-bandit') {
             title = "Wen berauben?";
-            for (const player of state.choice.targets) {
-                buttons.push([player, 'move-bandit', player]);
-            }
+            state.choice.targets.forEach((p) => {
+                buttons.push([p, 'move-bandit', p]);
+            });
         } else if (state.choice.action == 'trade-sea') {
             title = "Tauschen gegen";
-            for (const resource of allResources) {
-                if (resource != state.choice.price[0]) {
-                    buttons.push([resource, 'trade-sea', resource]);
-                }
-            }
+            resIndices.filter((i) => state.choice.resources[i] == 0).forEach((i) => {
+                buttons.push([resourceNames[i], 'trade-sea', i]);
+            });
             buttons.push(["Abbrechen", 'trade-sea', null]);
         } else if (state.choice.action == 'play-card') {
-            const cardName = state.choice.cardName;
-            if (cardName == ER) {
+            const cardIndex = state.choice.cardIndex;
+            const cardName = cardNames[cardIndex];
+            if (cardName == "Erfindung") {
                 const ord = state.choice.first ? "2." : "1.";
-                title.innerHTML = "Wähle deinen " + ord + ". Rohstoff";
-                for (const resource of allResources) {
-                    buttons.push([resource, 'play-card', resource]);
-                }
+                title.innerHTML = cardName + ": " + ord + ". Rohstoff wählen";
+                resIndices..forEach((i) => {
+                    buttons.push([resourceNames[i], 'play-card', i]);
+                });
                 buttons.push(["Abbrechen", 'play-card', null]);
-            } else if (cardName == MP) {
-                title.innerHTML = "Monopol auf welchen Rohstoff?";
-                for (const resource of allResources) {
-                    buttons.push([resource, 'play-card', resource]);
-                }
+            } else if (cardName == "Monopol") {
+                title.innerHTML = cardName + ": Rohstoff wählen";
+                resIndices..forEach((i) => {
+                    buttons.push([resourceNames[i], 'play-card', i]);
+                });
                 buttons.push(["Abbrechen", 'play-card', null]);
-            } else if (cardName == SB) {
-                title.innerHTML = "Setze 2 freie Strassen";
+            } else if (cardName == "Strassenbau") {
+                title.innerHTML = cardName + ": 2 Strassen setzen";
                 buttons.push(["Abbrechen", 'play-card', null]);
             }
         }
         
-    } else if (state.phase == 'game' && state.current == state.me && state.boardMode == null) {
+    } else if (state.phase == 'game' && state.current == state.me) {
         
-        var stats = {};
-        for (const resource of state.resources) {
-            if (resource in stats) {
-                stats[resource] += 1;
-            } else {
-                stats[resource] = 1;
-            }
-        }
-
-        const canRoad = stats[H] > 0 && stats[L] > 0;
-        const canTown = canRoad && stats[G] > 0 && stats[W] > 0;
-        const canCity = stats[G] > 1 && stats[E] > 2;
-        const canCard = stats[G] > 0 && stats[W] > 0 && stats[E] > 0;
-
-        if (canRoad) {
-            buttons.push(["Strasse bauen", 'build-road', null]);
-        }
+        purchaseIndices.filter((i) => canBuy(i)).forEach((i) => {
+            buttons.push([purchaseActionNames[i], 'make-purchase', i]);
+        });
         
-        if (canTown) {
-            buttons.push(["Siedlung bauen", 'build-town', null]);
-        }
-        
-        if (canCity) {
-            buttons.push(["Siedlung ausbauen", 'upgrade-town', null]);
-        }
-        
-        var portResources = [];
-        var canTrade3To1 = false;
-        
-        for (const nodeId of allNodeIds) {
-            const cell = state.board[nodeId];
-            if (cell.player == state.me && cell.route) {
-                const tradeResource = state.board[cell.route].trade;
-                if (tradeResource == '*') {
-                    canTrade3To1 = true;
-                } else {
-                    portResources.push(tradeResource);
-                }
-            }
-        }
-        
-        for (const resource of allResources) {
-            if (portResources.includes(resource) && stats[resource] > 1) {
-                buttons.push(["2 " + resource + " umtauschen", 'trade-sea', [resource, resource]]);
-            } else if (canTrade3To1 && stats[resource] > 2) {
-                buttons.push(["3 " + resource + " umtauschen", 'trade-sea', [resource, resource, resource]]);
-            } else if (stats[resource] > 3) {
-                buttons.push(["4 " + resource + " umtauschen", 'trade-sea', [resource, resource, resource, resource]]);
-            }
-        }
-
-        if (canCard) {
-            buttons.push(["Entwicklungskarte kaufen", 'buy-card', null]);
-        }
+        const rates = getTradeRates(state.me);
+        resIndices.filter((i) => rates[i] > 0).forEach((i) => {
+            const rate = rates[i];
+            var resources = noResources();
+            resources[i] = -rate;
+            buttons.push([rate + " " + resourceNames[i] + " umtauschen";, 'trade-sea', resources]);
+        });
 
         buttons.push(["Zug beenden", 'end-turn', null]);
     }

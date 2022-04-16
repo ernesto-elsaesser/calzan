@@ -1,41 +1,33 @@
-const H = "Holz";
-const L = "Lehm";
-const G = "Getreide";
-const W = "Wolle";
-const E = "Erz";
-const S = "Sand";
+const rolls = [2, 3, 3, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 11, 11, 12];
 
-const resRanks = {
-    'Holz': 1,
-    'Lehm': 2,
-    'Getreide': 3,
-    'Wolle': 4,
-    'Erz': 5,
-};
+const resIndices = [1, 2, 3, 4, 5];
+const resourceNames = [null, "Holz", "Lehm", "Getreide", "Wolle", "Erz"];
 
-const allResources = [H, L, G, W, E];
+const noResources = () => ['R', 0, 0, 0, 0, 0];
 
-const roadCosts = [H, L];
-const townCosts = [H, L, G, W];
-const cityCosts = [G, G, E, E, E];
-const cardCosts = [G, W, E];
+const purchaseIndices = [1, 2, 3, 4];
+const purchaseCosts = [null, ['R', -1, -1, 0, 0, 0], ['R', -1, -1, -1, -1, 0], ['R', 0, 0, -2, 0, -3], ['R', 0, 0, -1, -1, -1]];
+const purchaseNames = [null, "Strasse", "Siedlung", "Stadt", "Entwicklungskarte"];
+const purchaseActionNames = [null, "Strasse bauen", "Siedlung bauen", "Siedlung ausbauen", "Entwicklungskarte kaufen"];
 
-const RI = "Ritter";
-const SB = "Strassenbau";
-const MP = "Monopol";
-const ER = "Erfindung";
-
-const victoryCards = [
-    "Bibliothek", "Marktplatz", "Rathaus", "Kirche", "Universität"
+const cardIndices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
+const vitoryMaxIndex = 5;
+const knightMinIndex = 12;
+const cardActions = [
+    null, null, null, null, null, null,
+    "play-roads", "play-roads", "play-monopoly", "play-monopoly", "play-invent", "play-invent",
+    'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 
+    'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 
+];
+const cardNames = [
+    null,
+    "Bibliothek", "Marktplatz", "Rathaus", "Kirche", "Universität",
+    "Strassenbau", "Strassenbau", "Monopol", "Monopol", "Erfindung", "Erfindung",
+    "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", 
+    "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", 
 ];
 
-const allCards = [
-    RI, RI, RI, RI, RI, RI, RI, RI, RI, RI, RI, RI, RI, RI, // 14
-    SB, SB, MP, MP, ER, ER
-].concat(victoryCards);
-
-
-const allTileIds = [
+const landTileIds = [
     'A1', 'A2', 'A3',
     'B1', 'B2', 'B3', 'B4',
     'C1', 'C2', 'C3', 'C4', 'C5',
@@ -43,7 +35,7 @@ const allTileIds = [
     'E1', 'E2', 'E3',
 ];
 
-const allNodeIds = [
+const nodeIds = [
     'A1A', 'A1B', 'A2A', 'A2B', 'A3A', 'A3B', 'A3C',
     'B1A', 'B1B', 'B2A', 'B2B', 'B3A', 'B3B', 'B4A', 'B4B', 'B4C',
     'C1A', 'C1B', 'C2A', 'C2B', 'C3A', 'C3B', 'C4A', 'C4B', 'C5A', 'C5B', 'C5C', 'C1D',
@@ -51,7 +43,7 @@ const allNodeIds = [
     'E1A', 'E1B', 'E2A', 'E2B', 'E3A', 'E3B', 'E3C', 'D4F', 'E1D', 'E1E', 'E2D', 'E2E', 'E3D', 'E3E', 'E3F',
 ];
 
-const allEdgeIds = [
+const edgeIds = [
     'A1b', 'A1c', 'A2b', 'A2c', 'A3b', 'A3c', 'A1a', 'A2a', 'A3a', 'A3f',
     'B1b', 'B1c', 'B2b', 'B2c', 'B3b', 'B3c', 'B4b', 'B4c', 'B1a', 'B2a', 'B3a', 'B4a', 'B4f', 'C1b',
     'C1c', 'C2b', 'C2c', 'C3b', 'C3c', 'C4b', 'C4c', 'C5b', 'C5c', 'C1a', 'C2a', 'C3a', 'C4a', 'C5a', 'C5f', 'C1d',
@@ -59,25 +51,8 @@ const allEdgeIds = [
     'E1b', 'E1c', 'E2b', 'E2c', 'E3b', 'E3c', 'D4e', 'E1a', 'E2a', 'E3a', 'E3f', 'E1d', 'E1e', 'E2d', 'E2e', 'E3d', 'E3e',
 ];
 
-const hexaPath = 'M-81,0 L-81,48 L0,96 L81,48 L81,-48 L0,-96 L-81,-48 L-81,0';
+const hexaPath = "M-81,0 L-81,48 L0,96 L81,48 L81,-48 L0,-96 L-81,-48 L-81,0";
 
-const oceanColor = '#2D2F6C';
 const tileColor = '#FFFFC0';
-
-const resColors = {
-    'Holz': '#6E9B3C',
-    'Lehm': '#DF9327',
-    'Getreide': '#EFDA61',
-    'Wolle': '#AEE670',
-    'Erz': '#A4A296',
-    'Sand': '#EBE3B0'
-};
-
-const resStrokeColors = {
-    'Holz': '#4F702A',
-    'Lehm': '#A87325',
-    'Getreide': '#CCB94C',
-    'Wolle': '#89C852',
-    'Erz': '#7F7E74',
-    'Sand': '#D8CC8B'
-};
+const resColors = ['#EBE3B0', '#6E9B3C', '#DF9327', '#EFDA61', '#AEE670', '#A4A296', '#2D2F6C'];
+const resStrokeColors = ['#D8CC8B', '#4F702A', '#A87325', '#CCB94C', '#89C852', '#7F7E74', '#2D2F6C'];

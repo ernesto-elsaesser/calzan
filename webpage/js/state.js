@@ -3,15 +3,14 @@ var state = {
     players: [],
     board: {},
     rng: null,
-    stack: [],
     me: null,
     current: null,
     phase: 'forward',
-    boardMode: null,
     choice: null,
     resources: [],
-    playableCards: [],
-    victoryCards: [],
+    stack: [],
+    cards: [],
+    newCards: [],
     // per player
     longestRoads: {},
     playedKnights: {},
@@ -19,30 +18,27 @@ var state = {
 
 function initState(data, player) {
     
-    state.rng = createRNG(data.seed);
-    
+    state.seed = data.seed;
     state.board = data.board;
     state.players = data.players;
     state.me = player;
     state.current = data.players[0];
+    state.resources = noResources();
+    state.stack = cardIndices.map((i) => i);
     
     for (const player of data.players) {
         state.longestRoads[player] = 0;
         state.playedKnights[player] = 0;
     }
-    
-    state.stack = allCards.map(v => ({ v, r: state.rng() }))
-        .sort((a, b) => a.r - b.r).map((d) => d.v);
 }
 
-function createRNG(seed) {
+function nextRandom() {
     
-    return function() {
-      var t = seed += 0x6D2B79F5;
-      t = Math.imul(t ^ t >>> 15, t | 1);
-      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    }
+    state.seed += 0x6D2B79F5;
+    var t = state.seed;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
 }
 
 function advanceTurn() {
@@ -63,27 +59,14 @@ function advanceTurn() {
     } else if (state.phase == 'game') {
         const nextIndex = (currentIndex + 1) % state.players.length;
         state.current = state.players[nextIndex];
-        
-        if (state.current == state.me) {
-            // cards can be played one round after buy
-            for (const playableCard of state.playableCards) {
-                playableCard.usable = true;
-            }
-        }
+        state.cards.forEach((c) => c.locked = false);
     }
 }
 
-function increaseResources(player, resources) {
+function updateResources(player, resources) {
     if (player == state.me) {
-        state.resources = state.resources.concat(resources).sort((a, b) => resRanks[a] - resRanks[b]);
-    }
-}
-
-function decreaseResources(player, resources) {
-    if (player == state.me) {
-        for (const resource of resources) {
-            const resIndex = state.resources.indexOf(resource);
-            state.resources.splice(resIndex, 1);
+        for (const index in resIndicies) {
+            state.resources[index] += resources[index];
         }
     }
 }
@@ -112,61 +95,159 @@ function moveBandit(tileId) {
     state.board[tileId].bandit = true;
 }
 
-function drawCard(player) {
+function takeCard(player, cardIndex, listener) {
     
-    const cardName = state.stack.shift();
+    state.stack = state.stack.filter((i) => i != cardIndex);
     
     if (player == state.me) {
-        if (victoryCards.includes(cardName)) {
-            state.victoryCards.push(cardName);
-        } else {
-            var playableCard = {name: cardName, usable: false};
-            state.playableCards.push(playableCard);
-        }
+        const card = {
+            index: cardIndex,
+            locked: true,
+            listener,
+        };
+        state.cards.push(card);
     }
-    
-    return cardName;
 }
 
-function consumeCard(player, cardName) {
+function discardCard(player, cardIndex) {
     
     if (player == state.me) {
-        var cardIndex;
-        for (var i = 0; i <= state.playableCards.length; i += 1) {
-            
-            if (state.playableCards[i].name == cardName) {
-                cardIndex = i;
-                break;
-            }
-        }
-        state.playableCards.splice(cardIndex, 1);
+        state.cards = state.cards.filter((c) => c.index != cardIndex);
     }
     
-    if (cardName == RI) {
+    if (cardIndex >= knightMinIndex) {
         state.playedKnights[player] += 1;
     }
 }
 
-function setBoardMode(mode) {
+function pushChoice(choice) {
     
-    state.boardMode = mode;
-}
-
-function startChoice(choice) {
-    
+    if (state.choice) {
+        choice.parent = state.choice;
+    }
     state.choice = choice;
 }
 
-function updateChoice(key, value) {
+function popChoice() {
     
-    state.choice[key] = value;
-}
-    
-function clearChoice(choice) {
-    
-    state.choice = null;
+    if (state.choice.parent) {
+        state.choice = state.choice.parent;
+    } else {
+        state.choice = null;
+    }
 }
 
-function sort(resources) {
-    return resources.sort((a, b) => resRanks[a] - resRanks[b])
+function countResources(resources) {
+    
+    return resIndices.reduce((acc, i) => acc + resources[i], 0);
+}
+
+function getTowns(player) {
+    
+    return nodeIds.map((i) => state.board[i]).filter((c) => c.player == player);
+}
+
+function getTradeRates(player) {
+    
+    const rates = noResources();
+    
+    getTowns(player).filter((t) => t.rate).forEach((t) => {
+        if (t.trade) {
+            rates[t.trade] = t.rate;
+        } else {
+            resIndices.filter((i) => rates[i] == 0).forEach((i) => rates[i] = t.rate);
+        }
+    });
+    
+    return rates;
+}
+
+function getAdjacentTowns(tileId) {
+    
+    return state.board[tileId].nodes.map((i) => state.board[i]).filter((c) => c.player);
+}
+
+function getYieldingTileIds(roll) {
+    
+    return landTileIds.filter((i) => state.board[i].roll == roll && state.board[i].bandit != true);
+}
+
+function canBuy(purchase) {
+    
+    const costs = purchaseCosts[purchase];
+    for (const index in resIndicies) {
+        if (state.resources[index] + costs[index] < 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function canPlaceTown(cellId) {
+    
+    for (const edgeId of state.board[cellId].edges) {
+        for (const nodeId of state.board[edgeId].nodes) {
+            if (state.board[nodeId].player) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function canPlaceRoad(player, cellId) {
+    
+    for (const nodeId of state.board[cellId].nodes) {
+        if (state.board[nodeId].player == player) {
+            return true;
+        }
+    }
+    return false;
+}
+            
+function canBuildTown(player, cellId) {
+    
+    if (!canPlaceTown(cellId)) {
+        return false;
+    }
+    
+    var ownedEdgeId = null;
+    for (const edgeId of state.board[cellId].edges) {
+        if (state.board[edgeId].player == player) {
+            ownedEdgeId = edgeId;
+            break;
+        }
+    }
+    
+    if (ownedEdgeId == null) {
+        return false;
+    }
+    
+    for (const nodeId of state.board[ownedEdgeId].nodes) {
+        if (state.board[nodeId].player) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+function canBuildRoad(player, cellId) {
+    
+    for (const nodeId of state.board[cellId].nodes) {
+        if (state.board[nodeId].player == player) {
+            return true;
+        }
+        for (const edgeId of state.board[nodeId].edges) {
+            if (state.board[edgeId].player == player) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function formatResources(resources) {
+    
+    return resIndices.filter((i) => resources[i]).map((i) => resources[i] + " " + resNames[i]).join(', ');
 }

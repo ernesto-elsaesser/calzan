@@ -162,6 +162,11 @@ function countResources(resources) {
     return resIndices.reduce((acc, i) => acc + resources[i], 0);
 }
 
+function negateResources(resources) {
+    
+    return resources.map((n) => n == 'R' ? 'R' : -n);
+}
+
 function expandResources(resources) {
     
     var expanded = [];
@@ -229,14 +234,14 @@ function canBuildHometown(nodeId) {
     return true;
 }
 
-function canBuildTown(player, cellId) {
+function canBuildTown(player, nodeId) {
     
-    if (!canPlaceTown(cellId)) {
+    if (!canBuildHometown(nodeId)) {
         return false;
     }
     
     var ownedEdgeId = null;
-    for (const edgeId of state.board[cellId].edges) {
+    for (const edgeId of state.board[nodeId].edges) {
         if (state.board[edgeId].player == player) {
             ownedEdgeId = edgeId;
             break;
@@ -256,9 +261,9 @@ function canBuildTown(player, cellId) {
     return true;
 }
 
-function canBuildRoad(player, cellId) {
+function canBuildRoad(player, edgeId) {
     
-    for (const nodeId of state.board[cellId].nodes) {
+    for (const nodeId of state.board[edgeId].nodes) {
         if (state.board[nodeId].player == player) {
             return true;
         }

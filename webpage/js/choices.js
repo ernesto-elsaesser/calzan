@@ -66,10 +66,10 @@ function createPurchaseChoice(purchaseIndex) {
     
     if (purchaseIndex == 1) {
         choice.id = 'road';
-        choice.edgeIds = edgeIds.filter((i) => canBuildRoad(i));
+        choice.edgeIds = edgeIds.filter((i) => canBuildRoad(state.me, i));
     } else if (purchaseIndex == 2) {
         choice.id = 'town';
-        choice.nodeIds = nodeIds.filter((i) => canBuildTown(i));
+        choice.nodeIds = nodeIds.filter((i) => canBuildTown(state.me, i));
     } else if (purchaseIndex == 3) {
         choice.id = 'city';
     }
@@ -162,7 +162,7 @@ function createDropChoice() {
         targetCount,
         resources: resources,
         selectResource: (index) => {
-            resources[index] = (resources[index] + 1) % state.resources[index] + 1;
+            resources[index] = (resources[index] + 1) % (state.resources[index] + 1);
             refreshUI();
         },
         confirm: () => {
@@ -173,7 +173,8 @@ function createDropChoice() {
                 return;
             }
 
-            postEvent('drop-res', resources);
+            const negResources = negateResources(resources);
+            postEvent('drop-res', negResources);
         },
     };
 }

@@ -211,7 +211,6 @@ function banditMoved(player, args) {
 function purchaseMade(player, args) {
     
     const purchaseIndex = args[0];
-    
     const costs = purchaseCosts[purchaseIndex];
     updateResources(player, costs);
     
@@ -219,8 +218,7 @@ function purchaseMade(player, args) {
         claimRoad(player, args[1]);
         logLine(player + " baut eine Straße");
         if (player == state.me) {
-            popChoice();
-            const length = state.computeRoadLength(state.me);
+            const length = computeRoadLength(state.me);
             if (length > state.longestRoad) {
                 postEvent('claim-roads', length);
             }
@@ -228,15 +226,9 @@ function purchaseMade(player, args) {
     } else if (purchaseIndex == 2) {
         claimTown(player, args[1]);
         logLine(player + " baut eine Siedlung");
-        if (player == state.me) {
-            popChoice();
-        }
     } else if (purchaseIndex == 3) {
         upgradeTown(player, args[1]);
         logLine(player + " baut eine Siedlung zur Stadt aus");
-        if (player == state.me) {
-            popChoice();
-        }
     } else if (purchaseIndex == 4) {
         const random = nextRandom();
         const cardIndex = state.stack[Math.floor(state.stack.length * random)];
@@ -365,8 +357,7 @@ function resourcesDropped(player, args) {
 function resourcesSent(player, args) {
     
     const [cause, recipient, resources] = args;
-    
-    const negResources = resources.map((n) => n == null ? null : -n);
+    const negResources = negateResources(resources);
     
     updateResources(recipient, resources);
     updateResources(player, negResources);

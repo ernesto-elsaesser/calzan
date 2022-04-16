@@ -372,10 +372,10 @@ function refreshActionButtons() {
         });
         buttons.push(["Zug beenden", state.choice.end]);
     } else if (state.choice.id == 'drop') {
-        title = "Werfe " + state.choice.targetCount + " Rohstoffe ab";
+        title = "Werfe " + state.choice.targetCount + " Rohstoffe ab:";
         resIndices.filter((i) => state.resources[i] > 0).forEach((i) => {
             const amount = state.choice.resources[i];
-            const text = amount + " " + resNames[i];
+            const text = resNames[i] + ": " + amount;
             buttons.push([text, () => state.choice.selectResource(i)]);
         });
         buttons.push(["Bestätigen", state.choice.confirm]);
@@ -389,7 +389,6 @@ function refreshActionButtons() {
         resIndices.filter((i) => state.choice.resources[i] == 0).forEach((i) => {
             buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });
-        buttons.push(["Abbrechen", state.choice.abort]);
     } else if (state.choice.id == 'invention') {
         if (state.choice.indices.length == 0) {
             title.innerHTML = "Erfindung - Erster Rohstoff";
@@ -399,12 +398,14 @@ function refreshActionButtons() {
         resIndices.forEach((i) => {
             buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });
-        buttons.push(["Abbrechen", state.choice.abort]);
     } else if (state.choice.id == 'monopoly') {
         title.innerHTML = "Monopol auf welchen Rohstoff?";
         resIndices.forEach((i) => {
             buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });
+    }
+    
+    if (state.choice.abort) {
         buttons.push(["Abbrechen", state.choice.abort]);
     }
     

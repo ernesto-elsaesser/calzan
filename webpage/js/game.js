@@ -47,6 +47,7 @@ function dispatchEvent(event, prevId) {
         'offer-trade': tradeOffered,
         'accept-trade': tradeAccepted,
         'end-turn': turnEnded,
+        'win-game': gameWon,
     };
     
     if (event.args) {
@@ -413,6 +414,21 @@ function tradeOffered(player, args) {
 
 function tradeAccepted(player, args) {
     
+}
+
+function checkVictory() {
+    const progress = getVictoryProgress();
+    if (progress.points >= 10) {
+        postEvent('win-game', progress.points);
+    }
+}
+
+function gameWon(player, args) {
+    
+    const points = args;
+    logLine(player + " gewinnt mit " points + " Siegpunkten");
+    
+    resetChoice();
 }
 
 // TEMPORARY FUNCTION UNTIL ALGORITHM IMPLEMENTED

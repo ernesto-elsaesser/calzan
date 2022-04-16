@@ -274,6 +274,26 @@ function canBuildRoad(player, edgeId) {
     return false;
 }
 
+function getVictoryProgress() {
+    
+    var townCount = 0, cityCount = 0;
+    getTowns(state.me).forEach((t) => {
+        if (t.city) {
+            cityCount += 1;
+        } else {
+            townCount += 1;
+        }
+    });
+    
+    const cards = state.cards.filter((c) => c.index <= victoryMaxIndex);
+    const longest = state.longestRoadPlayer == state.me;
+    const largest = state.largestForcePlayer == state.me;
+    
+    const points = townCount + 2 * cityCount + cards.length + (longest ? 2 : 0) + (largest ? 2 : 0);
+    
+    return {points, townCount, cityCount, cards, longest, largest};
+}
+
 function formatResources(resources) {
     
     return resIndices.filter((i) => resources[i]).map((i) => resources[i] + " " + resNames[i]).join(', ');

@@ -305,45 +305,32 @@ function refreshCards() {
     
 function refreshVictoryPoints() {
     
-    var points = 0;
+    const progress = getVictoryProgress();
+    
     victory.innerHTML = "";
     
-    var townCount = 0, cityCount = 0;
-    getTowns(state.me).forEach((t) => {
-        if (t.city) {
-            cityCount += 1;
-            points += 2;
-        } else {
-            townCount += 1;
-            points += 1;
-        }
-    });
-    
-    if (townCount) {
-        victory.innerHTML += townCount + " Siedlungen (1P)";
+    if (progress.townCount) {
+        victory.innerHTML += progress.townCount + " Siedlungen (1P)";
     }
     
-    if (cityCount) {
-        victory.innerHTML += " + " + cityCount + " Städte (2P)";
+    if (progress.cityCount) {
+        victory.innerHTML += " + " + progress.cityCount + " Städte (2P)";
     }
     
-    state.cards.filter((c) => c.index <= victoryMaxIndex).forEach((c) => {
+    progress.cards.forEach((c) => {
         victory.innerHTML += " + " + cardNames[c.index] + " (1P)";
-        points += 1;
     });
     
-    if (state.longestRoadPlayer == state.me) {
+    if (progress.longest) {
         victory.innerHTML += " + Längste Handelsstraße (2P)";
-        points += 2;
     }
     
-    if (state.largestForcePlayer == state.me) {
+    if (progress.largest) {
         victory.innerHTML += " + Größte Rittermacht (2P)";
-        points += 2;
     }
     
-    if (points > 0) {
-        victory.innerHTML += " = " + points;
+    if (progress.points) {
+        victory.innerHTML += " = " + progress.points;
     } else {
         victory.innerHTML = 'keine Punkte';
     }

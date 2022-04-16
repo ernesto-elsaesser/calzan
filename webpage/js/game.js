@@ -154,8 +154,9 @@ function diceRolled(player, args) {
     } else {
         const resources = noResources();
         getYieldingTileIds(roll).forEach((i) => {
+            const resIndex = state.board[i].land;
             getAdjacentTowns(i).filter((t) => t.player == state.me).forEach((t) => {
-                resources[t.res] += t.city ? 2 : 1;
+                resources[resIndex] += t.city ? 2 : 1;
             });
         });
         const count = countResources(resources);

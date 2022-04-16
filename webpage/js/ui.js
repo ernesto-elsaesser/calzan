@@ -390,11 +390,7 @@ function refreshActionButtons() {
             buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });
     } else if (state.choice.id == 'invention') {
-        if (state.choice.indices.length == 0) {
-            title.innerHTML = "Erfindung - Erster Rohstoff";
-        } else {
-            title.innerHTML = "Erfindung - Zweiter Rohstoff";
-        }
+        title.innerHTML = "Erfindung - " + state.choice.getOrdinal() + " Rohstoff";
         resIndices.forEach((i) => {
             buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });

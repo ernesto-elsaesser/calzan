@@ -214,6 +214,10 @@ function purchaseMade(player, args) {
     const costs = purchaseCosts[purchaseIndex];
     updateResources(player, costs);
     
+    if (state.choice.purchaseIndex) {
+        popChoice();
+    }
+    
     if (purchaseIndex == 1) {
         claimRoad(player, args[1]);
         logLine(player + " baut eine Straße");

@@ -55,6 +55,7 @@ function createTurnChoice() {
 function createPurchaseChoice(purchaseIndex) {
     
     const choice = {
+        purchaseIndex,
         selectCell: (cellId) => {
             postEvent('make-purchase', [purchaseIndex, cellId]);
         },
@@ -98,17 +99,21 @@ function createTradeChoice(resIndex, rate) {
         
 function createRoadworksChoice(cardIndex) {
     
-    const edgeIds = [];
+    const freeEdgeIds = edgeIds.filter((i) => canBuildRoad(state.me, i));
+    var firstEdgeId = null;
     
     return {
         id: 'road',
-        edgeIds,
+        edgeIds: freeEdgeIds,
         selectCell: (edgeId) => {
-            edgeIds.push(edgeId);
-            if (edgeIds.lenght == 2) {
-                postEven('play-roads', [cardIndex].concat(edgeIds));
+            if (firstEdgeId) {
+                postEvent('play-roads', [cardIndex, firstEdgeId, edgeId]);
             } else {
+                firstEdgeId = edgeId;
                 claimRoad(state.me, edgeId); // premature placement
+                edgeIds.filter((i) => canBuildRoad(state.me, i)).forEach((i) => {
+                    if (!freeEdgeIds.includes(i)) freeEdgeIds.push(i);
+                });
                 refreshUI();
             }
         },
@@ -131,16 +136,17 @@ function createMonopolyChoice(cardIndex) {
 
 function createInventionChoice(cardIndex) {
     
-    const indices = [];
+    var firstResIndex = null;
     
     return {
         id: 'invention',
         indices,
+        getOrdinal: () => firstResIndex ? "Zweiter" : "Erster",
         selectResource: (resIndex) => {
-            indices.push(resIndex);
-            if (indices.lenght == 2) {
-                postEven('play-invent', [cardIndex].concat(indices));
+            if (firstResIndex) {
+                postEven('play-invent', [cardIndex, firstResIndex, resIndex]);
             } else {
+                firstResIndex = resIndex;
                 refreshUI();
             }
         },

@@ -57,7 +57,7 @@ function dispatchEvent(event, prevId) {
     
     functionMap[event.action](event.player, event.args);
     
-    updateUI();
+    refreshUI();
 }
 
 function postEvent(action, args) {
@@ -89,7 +89,7 @@ function startGame() {
         setChoice(townChoice);
     }
 
-    updateUI();
+    refreshUI();
 }
     
 function townPlaced(player, args) {
@@ -240,7 +240,7 @@ function purchaseMade(player, args) {
             }
             
             pushChoice(cardChoice);
-            updateUI();
+            refreshUI();
         };
         takeCard(player, cardIndex, listener);
         logLine(player + " kauft eine Entwicklungskarte");

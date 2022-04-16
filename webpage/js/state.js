@@ -72,7 +72,7 @@ function advanceTurn() {
 function updateResources(player, resources) {
     
     if (player == state.me) {
-        for (const index in resIndicies) {
+        for (const index of resIndices) {
             state.resources[index] += resources[index];
         }
     }
@@ -214,7 +214,7 @@ function getYieldingTileIds(roll) {
 function canBuy(purchase) {
     
     const costs = purchaseCosts[purchase];
-    for (const index in resIndicies) {
+    for (const index of resIndices) {
         if (state.resources[index] + costs[index] < 0) {
             return false;
         }

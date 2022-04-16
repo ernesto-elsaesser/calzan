@@ -19,16 +19,16 @@ function logLine(line) {
     log.innerHTML = html + "<br>" + log.innerHTML;
 }
 
-function updateUI() {
+function refreshUI() {
     
-    updateBoard();
-    updateActionButtons();
-    updateCards();
-    updateResources();
-    updateVictoryPoints();
+    refreshBoard();
+    refreshActionButtons();
+    refreshCards();
+    refreshResources();
+    refreshVictoryPoints();
 }
 
-function updateBoard() {
+function refreshBoard() {
     
     svgTiles.innerHTML = "";
     svgTokens.innerHTML = "";
@@ -247,7 +247,7 @@ function shape(tag, player) {
     return shape;
 }
 
-function updateResources() {
+function refreshResources() {
     
     resources.innerHTML = "";
     
@@ -265,7 +265,7 @@ function updateResources() {
     }
 }
     
-function updateCards() {
+function refreshCards() {
     
     const canPlay = state.choice.id == 'turn';
     
@@ -287,7 +287,7 @@ function updateCards() {
     }
 }
     
-function updateVictoryPoints() {
+function refreshVictoryPoints() {
     
     var points = 0;
     victory.innerHTML = "";
@@ -333,7 +333,7 @@ function updateVictoryPoints() {
     }
 }
         
-function updateActionButtons() {
+function refreshActionButtons() {
     
     actions.innerHTML = "";
     

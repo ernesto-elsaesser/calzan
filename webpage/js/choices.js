@@ -40,13 +40,13 @@ function createTurnChoice() {
             } else {
                 const purchaseChoice = createPurchaseChoice(state.choice, index);
                 pushChoice(purchaseChoice);
-                updateUI();
+                refreshUI();
             }
         },
         trade: (index) => {
             const tradeChoice = createTradeChoice(index, tradeRates[index]);
             pushChoice(tradeChoice);
-            updateUI();
+            refreshUI();
         },
         end: () => {
             popChoice();
@@ -64,7 +64,7 @@ function createPurchaseChoice(purchaseIndex) {
         },
         abort: () => {
             popChoice();
-            updateUI();
+            refreshUI();
         },
     };
     
@@ -92,7 +92,7 @@ function createTradeChoice(resIndex, rate) {
         selectResource: (index) => {
             popChoice();
             if (index == null) {
-                updateUI();
+                refreshUI();
             } else {
                 resources[index] = 1;
                 postEvent('trade-sea', resources);
@@ -100,7 +100,7 @@ function createTradeChoice(resIndex, rate) {
         },
         abort: () => {
             popChoice();
-            updateUI();
+            refreshUI();
         },
     };
 }
@@ -119,12 +119,12 @@ function createRoadworksChoice(cardIndex) {
                 postEven('play-roads', [cardIndex].concat(edgeIds));
             } else {
                 claimRoad(state.me, edgeId); // premature placement
-                updateUI();
+                refreshUI();
             }
         },
         abort: () => {
             popChoice();
-            updateUI();
+            refreshUI();
         },
     };
 }
@@ -153,12 +153,12 @@ function createInventionChoice(cardIndex) {
                 popChoice();
                 postEven('play-invent', [cardIndex].concat(indices));
             } else {
-                updateUI();
+                refreshUI();
             }
         },
         abort: () => {
             popChoice();
-            updateUI();
+            refreshUI();
         },
     };
 }
@@ -175,7 +175,7 @@ function createDropChoice() {
         resources: resources,
         selectResource: (index) => {
             resources[index] = (resources[index] + 1) % state.resources[index] + 1;
-            updateUI();
+            refreshUI();
         },
         confirm: () => {
             const count = countResources(resources);
@@ -215,7 +215,7 @@ function createBanditChoice() {
                 postEvent('move-bandit', args);
             } else {
                 // TODO remove board buttons?
-                updateUI();
+                refreshUI();
             }
         },
         selectPlayer: (player) => {

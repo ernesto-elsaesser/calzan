@@ -39,7 +39,9 @@
             <svg id="board" viewBox="0 0 1280 1200" xmlns="http://www.w3.org/2000/svg">
                 <g id="outlines"></g>
                 <g id="tiles"></g>
-                <g id="tokens"></g>
+                <g id="tokens">
+                    <text text-anchor="middle" x="640" y="600" class="roll">Kein Spiel ausgewählt</text>
+                </g>
                 <g id="bandits"></g>
             </svg>
             
@@ -81,7 +83,7 @@
             const game = urlParams.get('game');
             const player = urlParams.get('player');
 
-            if (game != null && player != null) {
+            if (game != null) {
                 initGame(game, player);
             }
 

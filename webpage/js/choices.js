@@ -193,7 +193,6 @@ function createBanditChoice() {
             
             const adjacentPlayers = getAdjacentTowns(tileId).map((t) => t.player);
             const targets = state.players.filter((p) => p != state.me && adjacentPlayers.includes(p));
-            state.players.filter((p) => p != state.me && adjacentPlayers.includes(p)).forEach(targetOptions.push);
             
             if (targets.length == 0) {
                 postEvent('move-bandit', args);

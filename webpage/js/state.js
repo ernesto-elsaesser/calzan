@@ -65,9 +65,9 @@ function advanceTurn() {
         state.current = state.players[nextIndex];
         
         if (state.current == state.me) {
-            // enable cards
-            for (const cardInfo of state.cards) {
-                card.usable = true;
+            // cards can be played one round after buy
+            for (const playableCard of state.playableCards) {
+                playableCard.usable = true;
             }
         }
     }
@@ -88,13 +88,13 @@ function decreaseResources(player, resources) {
     }
 }
 
-function addRoad(player, edgeId) {
+function claimRoad(player, edgeId) {
     
     state.board[edgeId].player = player;
     // TODO update state.longestRoads[player]
 }
 
-function addTown(player, nodeId) {
+function claimTown(player, nodeId) {
     
     state.board[nodeId].player = player;
 }
@@ -112,18 +112,20 @@ function moveBandit(tileId) {
     state.board[tileId].bandit = true;
 }
 
-function drawCard(player, callback) {
+function drawCard(player) {
     
     const cardName = state.stack.shift();
     
     if (player == state.me) {
         if (victoryCards.includes(cardName)) {
-            state.vicotryCards.push(cardName);
+            state.victoryCards.push(cardName);
         } else {
             var playableCard = {name: cardName, usable: false};
             state.playableCards.push(playableCard);
         }
     }
+    
+    return cardName;
 }
 
 function consumeCard(player, cardName) {

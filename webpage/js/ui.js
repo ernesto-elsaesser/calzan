@@ -63,16 +63,16 @@ function updateBoard() {
             }
             
             if (cell.player) {
-                var upgradeListener = null;
-                if (canUpgradeTown(cellId)) {
-                    upgradeListener = () => dispatchClick('upgrade-town', cellId);
+                if (state.boardMode == 'upgrade-town' && cell.player == state.me) {
+                    addTown(cell.player, cell.city, x, sy, null, () => dispatchClick('upgrade-town', cellId));
+                } else {
+                    addTown(cell.player, cell.city, x, sy, null, null);
                 }
-                addTown(cell.player, cell.city, x, sy, null, upgradeListener);
             } else if (state.boardMode == 'place-town') {
                 if (canPlaceTown(cellId)) {
                     addTown(state.me, false, x, sy, () => dispatchClick('place-town', cellId), null);
                 }
-            } else if (state.boardMode == 'buy-road') {
+            } else if (state.boardMode == 'build-town') {
                 if (canBuildTown(cellId)) {
                     addTown(state.me, false, x, sy, () => dispatchClick('build-town', cellId), null);
                 }
@@ -81,18 +81,18 @@ function updateBoard() {
         } else if (cell.edge) {
             
             if (cell.player) {
-                addRoad(cell.player, cell.angle, x, y, null);
+                addRoad(cell.player, cell.dir, x, y, null);
             } else if (state.boardMode == 'place-road') {
                 if (canPlaceRoad(cellId)) {
-                    addRoad(state.me, cell.angle, x, y, () => dispatchClick('place-road', cellId));
+                    addRoad(state.me, cell.dir, x, y, () => dispatchClick('place-road', cellId));
                 }
-            } else if (state.boardMode == 'buy-road') {
+            } else if (state.boardMode == 'build-road') {
                 if (canBuildRoad(cellId)) {
-                    addRoad(state.me, cell.angle, x, y, () => dispatchClick('build-road', cellId));
+                    addRoad(state.me, cell.dir, x, y, () => dispatchClick('build-road', cellId));
                 }
             } else if (state.boardMode == 'redeem-road') {
                 if (canBuildRoad(cellId)) {
-                    addRoad(state.me, cell.angle, x, y, () => dispatchClick('redeem-road', cellId));
+                    addRoad(state.me, cell.dir, x, y, () => dispatchClick('redeem-road', cellId));
                 }
             }
         }

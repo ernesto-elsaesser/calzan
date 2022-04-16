@@ -46,10 +46,10 @@ function dispatchEvent(event, prevId) {
         'end-turn': turnEnded,
     };
     
-    console.log(prevActionId, event.player, event.action, event.args);
+    console.log(prevEventId, event.player, event.action, event.args);
     functionMap[event.action](event.player, event.args);
     
-    updateState();
+    updateUI();
 }
 
 function postEvent(action, args) {
@@ -66,7 +66,7 @@ function postEvent(action, args) {
     eventRef.get().then((snap) => {
         // page reload triggers re-commit of old actions
         if (!snap.exists()) {
-            eventRef.set(action);
+            eventRef.set(event);
         }
     });
 }
@@ -86,7 +86,7 @@ function startGame() {
 function townPlaced(player, args) {
     
     const nodeId = args;
-    addTown(player, nodeId);
+    claimTown(player, nodeId);
     logLine(state.current + " setzt eine Siedlung");
     
     if (state.current == state.me) {
@@ -99,7 +99,7 @@ function townPlaced(player, args) {
                 }
             }
             increaseResources(player, yields);
-            logLine(" - Erträge: " + sort(yields).join(', '));
+            logLine("ERTRÄGE: " + sort(yields).join(', '));
         }
         setBoardMode('place-road');
     }
@@ -108,7 +108,7 @@ function townPlaced(player, args) {
 function roadPlaced(player, args) {
     
     const edgeId = args;
-    addRoad(player, edgeId);
+    claimRoad(player, edgeId);
     logLine(state.current + " setzt eine Strasse");
     
     if (state.current == state.me) {
@@ -120,9 +120,12 @@ function roadPlaced(player, args) {
     if (state.phase == 'game') {
         logLine(state.current + " ist am Zug");
         if (state.current == state.me) {
-            postEvent('roll-dice');
+            postEvent('roll-dice', null);
         }
     } else {
+        if (state.current == state.me) {
+            setBoardMode('place-town');
+        }
         logLine(state.current + " darf setzen");
     }
 }
@@ -131,7 +134,7 @@ function roadBuilt(player, args) {
     
     const edgeId = args;
     decreaseResources(player, roadCosts);
-    addRoad(player, edgeId);
+    claimRoad(player, edgeId);
     logLine(state.current + " baut eine Strasse");
 }
 
@@ -139,7 +142,7 @@ function townBuilt(player, args) {
     
     const nodeId = args;
     decreaseResources(player, townCosts);
-    addTown(player, nodeId);
+    claimTown(player, nodeId);
     logLine(state.current + " baut eine Siedlung");
 }
 
@@ -153,9 +156,12 @@ function townUpgraded(player, args) {
 
 function cardBought(player, args) {
     
-    decreaseResources(cardCosts);
-    drawCard(player, "cardSelected");
+    decreaseResources(player, cardCosts);
+    const cardName = drawCard(player);
     logLine(state.current + " kauft eine Entwicklungskarte");
+    if (player == state.me) {
+        logLine("KARTE: " + cardName);
+    }
 }
 
 function cardPlayed(player, args) {
@@ -169,8 +175,8 @@ function cardPlayed(player, args) {
         }
         logLine(player + " spielt eine Ritter-Karte und darf den Räuber bewegen");
     } else if (card == SB) {
-        addRoad(player, args[1]);
-        addRoad(player, args[2]);
+        claimRoad(player, args[1]);
+        claimRoad(player, args[2]);
         logLine(player + " spielt Strassenbau und erhält 2 kostenlose Strassen");
     } else if (card == MP) {
         const resource = args[1];
@@ -214,13 +220,13 @@ function turnEnded(player, args) {
 
     if (state.current == state.me) {
         // NOTE: technically, cards can be played before rolling
-        postEvent('roll-dice');
+        postEvent('roll-dice', null);
     }
 }
     
 function diceRolled(player, args) {
     
-    const roll = 2 + Math.floor(6 * rng()) + Math.floor(6 * rng())
+    const roll = 2 + Math.floor(6 * state.rng()) + Math.floor(6 * state.rng())
     
     logLine(player + " würfelt eine " + roll.toString());
     
@@ -254,8 +260,8 @@ function diceRolled(player, args) {
             }
         }
         if (yields.length > 0) {
-            increaseResources(yields);
-            logLine(" - Erträge: " + sort(yields).join(', '));
+            increaseResources(state.me, yields);
+            logLine("ERTRÄGE: " + sort(yields).join(', '));
         }
     }
 }
@@ -273,14 +279,13 @@ function banditMoved(player, args) {
     }
     
     if (targetPlayer == state.me) {
-        if (context.choice) {
-            // TODO check in dispatchClick, call getRaided
-            context.choice.pendingRaid = true;
+        if (state.choice) {
+            state.choice.pendingRaid = true;
         } else {
             getRaided();
         }
     } else {
-        rng(); // keep RNG in sync
+        state.rng(); // keep RNG in sync
     }
 }
 
@@ -320,13 +325,15 @@ function dispatchClick(action, arg) {
         'place-road': tokenClicked,
         'build-town': tokenClicked,
         'build-road': tokenClicked,
+        'upgrade-town': tokenClicked,
         'redeen-road': freeRoadClicked,
         'move-bandit': banditClicked,
-        'buy-card': buyClicked,
+        'buy-card': actionClicked,
         'play-card': playClicked,
         'toggle-drop': dropToggled,
         'drop-res': dropClicked,
         'trade-sea': tradeClicked,
+        'end-turn': actionClicked,
     };
     
     functionMap[action](action, arg);
@@ -373,7 +380,7 @@ function banditClicked(action, arg) {
     }
 }
         
-function buyClicked(action, arg) {
+function actionClicked(action, arg) {
         
     postEvent(action, null);
 }
@@ -382,7 +389,7 @@ function playClicked(action, arg) {
         
     if (state.choice) {
 
-        if (args == null) {
+        if (arg == null) {
             clearChoice();
             updateUI();
             return;
@@ -421,7 +428,7 @@ function freeRoadClicked(action, arg) {
         clearChoice();
         postEvent('play-card', [SB, firstId, arg]);
     } else {
-        addRoad(state.me, arg); // NOTE: premature placement, not confirmed by event!!!
+        claimRoad(state.me, arg); // NOTE: premature placement, not confirmed by event!!!
         updateChoice('first', arg);
         updateUI();
     }
@@ -447,21 +454,28 @@ function dropClicked(action, arg) {
         window.alert("Ungültige Auswahl!");
         return;
     }
+    
+    const pendingRaid = state.choice.pendingRaid;
 
     clearChoice();
     postEvent(action, losses);
+    
+    if (pendingRaid) {
+        // TODO: delayed?
+        getRaided();
+    }
 }
         
 function tradeClicked(action, arg) {
     
-    if (context.choice) {
-        if (args == null) {
+    if (state.choice) {
+        if (arg == null) {
             clearChoice();
             updateUI();
             return;
         }
 
-        const price = context.choice.price;
+        const price = state.choice.price;
         clearChoice();
         postEvent(action, [price, arg]);
 

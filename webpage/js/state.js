@@ -6,7 +6,7 @@ var state = {
     me: null,
     current: null,
     phase: 'forward',
-    choice: null,
+    choice: {},
     resources: [],
     stack: [],
     cards: [],

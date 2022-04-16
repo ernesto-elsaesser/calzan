@@ -2,7 +2,7 @@
 function createTownChoice() {
     
     return {
-        id: 'town',
+        id: 'hometown',
         selectCell: (nodeId) => {
             popChoice();
             postEvent('place-town', nodeId);
@@ -23,8 +23,11 @@ function createRoadChoice() {
 
 function createTurnChoice() {
     
+    const tradeRates = getTradeRates(state.me);
+    
     return {
         id: 'turn',
+        tradeRates,
         purchase: (index) => {
             if (index == 4) { // knight is separated into 2 events
                 postEvent(action, purchaseIndex);
@@ -34,12 +37,12 @@ function createTurnChoice() {
                 updateUI();
             }
         },
-        trade: (resources) => {
-            const tradeChoice = createTradeChoice(state.choice, resources);
+        trade: (index) => {
+            const tradeChoice = createTradeChoice(index, tradeRates[index]);
             pushChoice(tradeChoice);
             updateUI();
         },
-        endTurn: () => {
+        end: () => {
             popChoice();
             postEvent('end-turn', null);
         },
@@ -54,10 +57,17 @@ function createPurchaseChoice(purchaseIndex) {
             popChoice();
             postEvent('make-purchase', [purchaseIndex, cellId]);
         },
+        abort: () => {
+            popChoice();
+            updateUI();
+        },
     };
 }
         
-function createTradeChoice(resources) {
+function createTradeChoice(resIndex, rate) {
+    
+    const resources = noResources();
+    resources[resIndex] = -rate;
     
     return {
         id: 'trade',
@@ -70,6 +80,10 @@ function createTradeChoice(resources) {
                 resources[index] = 1;
                 postEvent('trade-sea', resources);
             }
+        },
+        abort: () => {
+            popChoice();
+            updateUI();
         },
     });
 }
@@ -90,7 +104,11 @@ function createRoadworksChoice(cardIndex) {
                 claimRoad(state.me, edgeId); // premature placement
                 updateUI();
             }
-        }
+        },
+        abort: () => {
+            popChoice();
+            updateUI();
+        },
     };
 }
 
@@ -120,7 +138,11 @@ function createInventionChoice(cardIndex) {
             } else {
                 updateUI();
             }
-        }
+        },
+        abort: () => {
+            popChoice();
+            updateUI();
+        },
     };
 }
     

@@ -103,7 +103,7 @@ function townPlaced(player, args) {
             const resources = noResources();
             state.board[nodeId].tiles.map((i) => state.board[i]).forEach((t) => {
                 if (t.land > 0) resources[t.land] += 1;
-            }
+            });
             updateResources(player, resources);
             logLine("ERTRÄGE: " + formatResources(resources));
         }
@@ -185,7 +185,7 @@ function banditMoved(player, args) {
         const random = nextRandom();
         
         if (targetPlayer == state.me) {
-            if (state.choice && state.choice.id = 'drop') {
+            if (state.choice && state.choice.id == 'drop') {
                 dropCallback = () => getRaided(player, random);
             } else {
                 getRaided(player, random);

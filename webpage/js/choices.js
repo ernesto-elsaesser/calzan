@@ -36,7 +36,7 @@ function createTurnChoice() {
             if (index == 4) { // knight is separated into 2 events
                 postEvent('make-purchase', [index]);
             } else {
-                const purchaseChoice = createPurchaseChoice(state.choice, index);
+                const purchaseChoice = createPurchaseChoice(index);
                 pushChoice(purchaseChoice);
                 refreshUI();
             }

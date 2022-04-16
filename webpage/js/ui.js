@@ -61,8 +61,8 @@ function refreshBoard() {
             }
             
             if (cell.player) {
-                if (state.choice.id == 'city' && cell.player == state.me) {
-                    addTown(cell.player, cell.city, x, sy, null, () => state.choice.selectCell(cellId));
+                if (state.choice.id == 'city' && cell.player == state.me && !cell.city) {
+                    addTown(cell.player, false, x, sy, null, () => state.choice.selectCell(cellId));
                 } else {
                     addTown(cell.player, cell.city, x, sy, null, null);
                 }
@@ -215,13 +215,21 @@ function addTown(player, isCity, x, y, listener, upgradeListener) {
         dot.setAttribute('r', '10');
         svgTokens.appendChild(dot);
     } else if (upgradeListener) {
-        const arrow = shape('polygon');
-        arrow.setAttribute('points', "0,-17 15,10 -15,10");
-        arrow.setAttribute('fill', 'white');
-        arrow.setAttribute('opacity', 0.5);
-        arrow.setAttribute('transform', 'translate(' + x + ',' + y + ')');
-        arrow.addEventListener('click', upgradeListener);
-        svgTokens.appendChild(arrow);
+        const dot = shape('circle');
+        dot.setAttribute('cx', x);
+        dot.setAttribute('cy', y);
+        dot.setAttribute('r', '10');
+        dot.setAttribute('opacity', 0.5);
+        svgTokens.appendChild(dot);
+        const button = shape('circle', player);
+        button.setAttribute('cx', x);
+        button.setAttribute('cy', y);
+        button.setAttribute('r', '40');
+        button.setAttribute('stroke', 'black');
+        button.setAttribute('stroke-width', 1);
+        button.setAttribute('opacity', 0.5);
+        button.addEventListener('click', upgradeListener);
+        svgTokens.appendChild(button);
     }
 }
 

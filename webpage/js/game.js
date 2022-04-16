@@ -231,9 +231,11 @@ function purchaseMade(player, args) {
     } else if (purchaseIndex == 2) {
         claimTown(player, args[1]);
         logLine(player + " baut eine Siedlung");
+        if (player == state.me) checkVictory();
     } else if (purchaseIndex == 3) {
         upgradeTown(player, args[1]);
         logLine(player + " baut eine Siedlung zur Stadt aus");
+        if (player == state.me) checkVictory();
     } else if (purchaseIndex == 4) {
         const random = nextRandom();
         const cardIndex = state.stack[Math.floor(state.stack.length * random)];
@@ -259,6 +261,7 @@ function purchaseMade(player, args) {
         logLine(player + " kauft eine Entwicklungskarte");
         if (player == state.me) {
             logLine("KARTE: " + cardName);
+            checkVictory();
         }
     }
 }
@@ -389,6 +392,8 @@ function forceClaimed(player, args) {
     const size = args;
     updateLargestForce(player, size);
     logLine(player + " hält nun die größte Rittermacht");
+    
+    if (player == state.me) checkVictory();
 }
 
 function roadsClaimed(player, args) {
@@ -396,6 +401,8 @@ function roadsClaimed(player, args) {
     const length = args;
     updateLongestRoad(player, length);
     logLine(player + " hält nun die längste Handelsstraße");
+    
+    if (player == state.me) checkVictory();
 }
 
 function seaTraded(player, args) {
@@ -417,6 +424,7 @@ function tradeAccepted(player, args) {
 }
 
 function checkVictory() {
+    
     const progress = getVictoryProgress();
     if (progress.points >= 10) {
         postEvent('win-game', progress.points);

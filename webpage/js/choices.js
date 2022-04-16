@@ -1,8 +1,11 @@
 
-function createTownChoice() {
+function createHometownChoice() {
+    
+    const freeNodeIds = nodeIds.filter((i) => canBuildHometown(i));
     
     return {
-        id: 'hometown',
+        id: 'town',
+        nodeIds: freeNodeIds,
         selectCell: (nodeId) => {
             popChoice();
             postEvent('place-town', nodeId);
@@ -10,10 +13,13 @@ function createTownChoice() {
     };
 }
 
-function createRoadChoice() {
+function createHometownRoadChoice(nodeId) {
+    
+    const edgeIds = state.board[nodeId].edges;
     
     return {
         id: 'road',
+        edgeIds,
         selectCell: (edgeId) => {
             popChoice();
             postEvent('place-road', edgeId);
@@ -51,8 +57,7 @@ function createTurnChoice() {
     
 function createPurchaseChoice(purchaseIndex) {
     
-    return {
-        id: ['road', 'town', 'city'][purchaseIndex],
+    const choice = {
         selectCell: (cellId) => {
             popChoice();
             postEvent('make-purchase', [purchaseIndex, cellId]);
@@ -62,6 +67,18 @@ function createPurchaseChoice(purchaseIndex) {
             updateUI();
         },
     };
+    
+    if (purchaseIndex == 1) {
+        choice.id = 'road';
+        choice.edgeIds = edgeIds.filter((i) => canBuildRoad(i));
+    } else if (purchaseIndex == 2) {
+        choice.id = 'town';
+        choice.nodeIds = nodeIds.filter((i) => canBuildTown(i));
+    } else if (purchaseIndex == 3) {
+        choice.id = 'city';
+    }
+    
+    return choice;
 }
         
 function createTradeChoice(resIndex, rate) {
@@ -85,7 +102,7 @@ function createTradeChoice(resIndex, rate) {
             popChoice();
             updateUI();
         },
-    });
+    };
 }
         
 function createRoadworksChoice(cardIndex) {
@@ -205,5 +222,6 @@ function createBanditChoice() {
             args[1] = player;
             popChoice();
             postEvent('move-bandit', args);
+        },
     };
 }

@@ -66,12 +66,8 @@ function updateBoard() {
                 } else {
                     addTown(cell.player, cell.city, x, sy, null, null);
                 }
-            } else if (state.choice.id == 'hometown') {
-                if (canBuildHomeTown(cellId)) {
-                    addTown(state.me, false, x, sy, () => state.choice.selectCell(cellId), null);
-                }
             } else if (state.choice.id == 'town') {
-                if (canBuildTown(state.me, cellId)) {
+                if (state.choice.nodeIds.includes(cellId)) {
                     addTown(state.me, false, x, sy, () => state.choice.selectCell(cellId), null);
                 }
             }
@@ -81,7 +77,7 @@ function updateBoard() {
             if (cell.player) {
                 addRoad(cell.player, cell.dir, x, y, null);
             } else if (state.choice.id == 'road') {
-                if (canBuildRoad(state.me, cellId)) {
+                if (state.choice.edgeIds.includes(cellId)) {
                     addRoad(state.me, cell.dir, x, y, () => state.choice.selectCell(cellId));
                 }
             }
@@ -320,12 +316,12 @@ function updateVictoryPoints() {
         points += 1;
     });
     
-    if (longestRoadPlayer == state.me) {
+    if (state.longestRoadPlayer == state.me) {
         victory.innerHTML += " + Längste Handelsstraße (2P)";
         points += 2;
     }
     
-    if (largestForcePlayer == state.me) {
+    if (state.largestForcePlayer == state.me) {
         victory.innerHTML += " + Größte Rittermacht (2P)";
         points += 2;
     }
@@ -354,14 +350,14 @@ function updateActionButtons() {
         });
         resIndices.filter((i) => state.choice.tradeRates[i] > 0).forEach((i) => {
             const rate = state.choice.tradeRates[i];
-            buttons.push([rate + " " + resourceNames[i] + " umtauschen", () => state.choice.trade(i)]);
+            buttons.push([rate + " " + resNames[i] + " umtauschen", () => state.choice.trade(i)]);
         });
         buttons.push(["Zug beenden", state.choice.end]);
     } else if (state.choice.id == 'drop') {
         title = "Werfe " + state.choice.targetCount + " Rohstoffe ab";
         resIndices.filter((i) => state.resources[i] > 0).forEach((i) => {
             const amount = state.choice.resources[i];
-            const text = amount + " " + resourceNames[i];
+            const text = amount + " " + resNames[i];
             buttons.push([text, () => state.choice.selectResource(i)]);
         });
         buttons.push(["Bestätigen", state.choice.confirm]);
@@ -373,7 +369,7 @@ function updateActionButtons() {
     } else if (state.choice.id == 'trade') {
         title = "Tauschen gegen";
         resIndices.filter((i) => state.choice.resources[i] == 0).forEach((i) => {
-            buttons.push([resourceNames[i], () => state.choice.selectResource(i)]);
+            buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });
         buttons.push(["Abbrechen", state.choice.abort]);
     } else if (state.choice.id == 'invention') {
@@ -383,13 +379,13 @@ function updateActionButtons() {
             title.innerHTML = "Erfindung - Zweiter Rohstoff";
         }
         resIndices.forEach((i) => {
-            buttons.push([resourceNames[i], () => state.choice.selectResource(i)]);
+            buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });
         buttons.push(["Abbrechen", state.choice.abort]);
     } else if (state.choice.id == 'monopoly') {
         title.innerHTML = "Monopol auf welchen Rohstoff?";
         resIndices.forEach((i) => {
-            buttons.push([resourceNames[i], () => state.choice.selectResource(i)]);
+            buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });
         buttons.push(["Abbrechen", state.choice.abort]);
     }

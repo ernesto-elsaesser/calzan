@@ -45,6 +45,9 @@ function nextRandom() {
 }
 
 function advanceTurn() {
+    
+    state.choice = {};
+    
     const currentIndex = state.players.indexOf(state.current);
     
     if (state.phase == 'forward') {
@@ -140,21 +143,21 @@ function updateLongestRoad(player, length) {
     state.longestRoadPlayer = player;
 }
 
+function setChoice(choice) {
+    
+    choice.parent = {};
+    state.choice = choice;
+}
+
 function pushChoice(choice) {
     
-    if (state.choice) {
-        choice.parent = state.choice;
-    }
+    choice.parent = state.choice;
     state.choice = choice;
 }
 
 function popChoice() {
     
-    if (state.choice.parent) {
-        state.choice = state.choice.parent;
-    } else {
-        state.choice = null;
-    }
+    state.choice = state.choice.parent;
 }
 
 function countResources(resources) {
@@ -219,11 +222,11 @@ function canBuy(purchase) {
     return true;
 }
 
-function canBuildHomeTown(cellId) {
+function canBuildHometown(nodeId) {
     
-    for (const edgeId of state.board[cellId].edges) {
-        for (const nodeId of state.board[edgeId].nodes) {
-            if (state.board[nodeId].player) {
+    for (const edgeId of state.board[nodeId].edges) {
+        for (const nextNodeId of state.board[edgeId].nodes) {
+            if (state.board[nextNodeId].player) {
                 return false;
             }
         }

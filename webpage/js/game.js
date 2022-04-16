@@ -85,8 +85,8 @@ function startGame() {
     logLine(state.current + " darf setzen");
 
     if (state.current == state.me) {
-        const townChoice = createTownChoice();
-        pushChoice(townChoice);
+        const townChoice = createHometownChoice();
+        setChoice(townChoice);
     }
 
     updateUI();
@@ -107,8 +107,8 @@ function townPlaced(player, args) {
             updateResources(player, resources);
             logLine("ERTRÄGE: " + formatResources(resources));
         }
-        const roadChoice = createRoadChoice();
-        pushChoice(roadChoice);
+        const roadChoice = createHometownRoadChoice(nodeId);
+        setChoice(roadChoice);
     }
 }
 
@@ -128,8 +128,8 @@ function roadPlaced(player, args) {
     } else {
         logLine(state.current + " darf setzen");
         if (state.current == state.me) {
-            const townChoice = createTownChoice();
-            pushChoice(townChoice);
+            const townChoice = createHometownChoice();
+            setChoice(townChoice);
         }
     }
 }
@@ -144,7 +144,7 @@ function diceRolled(player, args) {
     if (roll == 7) {
         if (player == state.me) {
             const banditChoice = createBanditChoice();
-            pushChoice(banditChoice);
+            setChoice(banditChoice);
         }
         if (countResources(state.resources) > 7) {
             const dropChoice = createDropChoice();
@@ -165,7 +165,7 @@ function diceRolled(player, args) {
         }
         if (player == state.me) {
             const turnChoice = createTurnChoice();
-            pushChoice(turnChoice);
+            setChoice(turnChoice);
         }
     }
 }
@@ -197,7 +197,7 @@ function banditMoved(player, args) {
     }
 }
 
-function makePurchase(player, args) {
+function purchaseMade(player, args) {
     
     const purchaseIndex = args[0];
     

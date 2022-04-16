@@ -48,7 +48,7 @@ function refreshBoard() {
                 addTrade(cell.rate, cell.trade, x, y);
             } else if (cell.bandit) {
                 addBandit(x, y, null);
-            } else if (state.choice.id == 'bandit') {
+            } else if (state.choice.id == 'bandit' && cell.land < 6) {
                 addBandit(x, y, () => state.choice.selectCell(cellId));
             }
             
@@ -133,7 +133,7 @@ function addBandit(x, y, listener) {
         <path d="M167.072526,163.201074 L168.356728,165.277438 C155.696726,173.107476 143.073559,173.270602 130.687635,165.760372 L129.897369,165.270574 L131.203504,163.207937 C142.791134,170.545638 154.417091,170.705153 166.281228,163.680057 L167.072526,163.201074 Z" fill-rule="nonzero"></path>
         `;
     if (listener) {
-        bandit.setAttribute('opacity', 0.3);
+        bandit.setAttribute('opacity', 0.5);
         //bandit.setAttribute('stroke', 'black');
         bandit.setAttribute('stroke-width', 1);
         bandit.addEventListener('click', listener);
@@ -363,7 +363,7 @@ function refreshActionButtons() {
         buttons.push(["Bestätigen", state.choice.confirm]);
     } else if (state.choice.id == 'bandit') {
         title = "Wen berauben?";
-        state.choice.targets.forEach((p) => {
+        state.choice.targetOptions.forEach((p) => {
             buttons.push([p, () => state.choice.selectPlayer(p)]);
         });
     } else if (state.choice.id == 'trade') {

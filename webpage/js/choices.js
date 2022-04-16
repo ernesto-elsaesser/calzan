@@ -204,16 +204,17 @@ function createBanditChoice() {
             args[0] = tileId;
             
             const adjacentPlayers = getAdjacentTowns(tileId).map((t) => t.player);
-            state.player.filter((p) => p != state.me && adjacentPlayers.includes(p)).forEach(targetOptions.push);
+            const targets = state.players.filter((p) => p != state.me && adjacentPlayers.includes(p));
             
-            if (targetOptions.length == 0) {
+            if (targets.length == 0) {
                 popChoice();
                 postEvent('move-bandit', args);
-            } else if (targetOptions.length == 1) {
+            } else if (targets.length == 1) {
                 popChoice();
-                args[1] = targetOptions[0];
+                args[1] = targets[0];
                 postEvent('move-bandit', args);
             } else {
+                targets.forEach((p) => targetOptions.push(p));
                 // TODO remove board buttons?
                 refreshUI();
             }

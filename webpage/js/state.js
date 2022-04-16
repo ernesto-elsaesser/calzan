@@ -101,7 +101,7 @@ function upgradeTown(player, nodeId) {
 
 function moveBandit(tileId) {
     
-    for (const otherTileId of allTileIds) {
+    for (const otherTileId of landTileIds) {
         state.board[otherTileId].bandit = false;
     }
     state.board[tileId].bandit = true;

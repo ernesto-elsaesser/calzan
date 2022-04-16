@@ -51,7 +51,7 @@ function updateBoard() {
             if (cell.bandit) {
                 addBandit(x, y, null);
             } else if (state.boardMode == 'move-bandit' && state.choice == null) {
-                addBandit(x, y, () => dispatchClick('bandit', cellId));
+                addBandit(x, y, () => dispatchClick('move-bandit', cellId));
             }
             
         } else if (cell.node) {
@@ -127,8 +127,8 @@ function canBuildTown(cellId) {
         return false;
     }
     
-    var onwedEdgeId = null;
-    for (const edgeId of state.board[cellId].edged) {
+    var ownedEdgeId = null;
+    for (const edgeId of state.board[cellId].edges) {
         if (state.board[edgeId].player == state.me) {
             ownedEdgeId = edgeId;
             break;
@@ -248,8 +248,8 @@ function addBandit(x, y, listener) {
         <path d="M167.072526,163.201074 L168.356728,165.277438 C155.696726,173.107476 143.073559,173.270602 130.687635,165.760372 L129.897369,165.270574 L131.203504,163.207937 C142.791134,170.545638 154.417091,170.705153 166.281228,163.680057 L167.072526,163.201074 Z" fill-rule="nonzero"></path>
         `;
     if (listener) {
-        banditButton.setAttribute('opacity', 0.3);
-        banditButton.addEventListener('click', listener);
+        bandit.setAttribute('opacity', 0.3);
+        bandit.addEventListener('click', listener);
     }
     
     svgBandits.appendChild(bandit);
@@ -349,7 +349,7 @@ function updateResources() {
     
 function updateCards() {
     
-    const canPlay = state.phase == 'game' && state.current == state.me && state.choice == null;
+    const canPlay = state.phase == 'game' && state.current == state.me && state.choice == null && state.boardMode == null;
     
     cards.innerHTML = "";
     if (state.playableCards.length) {
@@ -454,7 +454,7 @@ function updateActionButtons() {
             buttons.push(["Bestätigen", 'drop-res', null]);
         } else if (state.choice.action == 'move-bandit') {
             title = "Wen berauben?";
-            for (const player in state.choice.targets) {
+            for (const player of state.choice.targets) {
                 buttons.push([player, 'move-bandit', player]);
             }
         } else if (state.choice.action == 'trade-sea') {
@@ -530,7 +530,7 @@ function updateActionButtons() {
         }
         
         for (const resource of allResources) {
-            if (portResources.includes(resource)) {
+            if (portResources.includes(resource) && stats[resource] > 1) {
                 buttons.push(["2 " + resource + " umtauschen", 'trade-sea', [resource, resource]]);
             } else if (canTrade3To1 && stats[resource] > 2) {
                 buttons.push(["3 " + resource + " umtauschen", 'trade-sea', [resource, resource, resource]]);

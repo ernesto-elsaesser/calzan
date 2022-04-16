@@ -46,7 +46,12 @@ function dispatchEvent(event, prevId) {
         'end-turn': turnEnded,
     };
     
-    console.log(prevEventId, event.player, event.action, event.args);
+    if (event.args) {
+        console.log(prevEventId, event.player, event.action, event.args)
+    } else {
+        console.log(prevEventId, event.player, event.action)
+    }
+    
     functionMap[event.action](event.player, event.args);
     
     updateUI();
@@ -167,7 +172,7 @@ function cardBought(player, args) {
 function cardPlayed(player, args) {
     
     const card = args[0];
-    consumeCard(card);
+    consumeCard(player, card);
     
     if (card == RI) {
         if (state.current == state.me) {
@@ -184,7 +189,7 @@ function cardPlayed(player, args) {
         if (player != state.me) {
             const losses = state.resources.filter((r) => r == resource);
             if (losses.length > 0) {
-                postEvent('send-res', [MP, player, losses]);
+                postEvent('send-res', [MP.toUpperCase(), player, losses]);
             }
         }
     } else if (card == ER) {
@@ -210,6 +215,10 @@ function resourcesSent(player, args) {
     const [cause, recipient, resources] = args;
     decreaseResources(player, resources);
     increaseResources(recipient, resources);
+    
+    if (player == state.me || recipient == state.me) {
+        logLine(cause + ": " + sort(resources).join(', '));
+    }
 }
 
 function turnEnded(player, args) {
@@ -270,6 +279,7 @@ function banditMoved(player, args) {
     
     const [tileId, targetPlayer] = args;
     moveBandit(tileId);
+    setBoardMode(null);
     
     const resource = state.board[tileId].res;
     if (targetPlayer) {
@@ -280,27 +290,27 @@ function banditMoved(player, args) {
     
     if (targetPlayer == state.me) {
         if (state.choice) {
-            state.choice.pendingRaid = true;
+            state.choice.pendingRaid = player;
         } else {
-            getRaided();
+            getRaided(player);
         }
     } else {
         state.rng(); // keep RNG in sync
     }
 }
 
-function getRaided() {
+function getRaided(player) {
     
     if (state.resources.length == 0) {
         rng(); // keep RNG in sync
         return;
     }
     
-    const randomIndex = Math.floor(state.resources.length * rng())
+    const randomIndex = Math.floor(state.resources.length * state.rng())
     const resource = state.resources[randomIndex];
     const losses = [resource];
 
-    postEvent('send-res', ["Räuber", player, losses]);
+    postEvent('send-res', ["RÄUBER", player, losses]);
 }
 
 function seaTraded(player, args) {
@@ -374,7 +384,7 @@ function banditClicked(action, arg) {
         } else if (targets.length == 1) {
             postEvent(action, [tileId, targets[0]]);
         } else {
-            startChoice({tileId: arg, targets});
+            startChoice({action, tileId: arg, targets});
             updateUI();
         }
     }
@@ -462,7 +472,7 @@ function dropClicked(action, arg) {
     
     if (pendingRaid) {
         // TODO: delayed?
-        getRaided();
+        getRaided(pendingRaid);
     }
 }
         

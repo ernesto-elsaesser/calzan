@@ -10,12 +10,11 @@ var state = {
     resources: [],
     stack: [],
     cards: [],
+    playedKnights: 0,
     longestRoad: 4,
     longestRoadPlayer: null,
     largestForce: 2,
     largestForcePlayer: null,
-    homeTownIds: [],
-    playedKnights: 0,
 };
 
 function initState(data, player) {
@@ -76,25 +75,20 @@ function updateResources(player, resources) {
     }
 }
 
-function claimTown(player, nodeId, home) {
+function claimTown(player, nodeId) {
     
     state.board[nodeId].player = player;
-    
-    if (player == state.me && home) {
-        homeTownIds.push(nodeId);
-    }
 }
 
 function claimRoad(player, edgeId) {
     
     state.board[edgeId].player = player;
-    // TODO update state.longestRoads[player]
 }
 
-function getRoadLength() {
+function computeRoadLength(player) {
     
-    // TODO get lengths in all dirs, add two longest
-    homeTownIds
+    const roads = getRoads(player);
+    return 0; // TODO implement!
 }
 
 function upgradeTown(player, nodeId) {
@@ -182,6 +176,11 @@ function expandResources(resources) {
 function getTowns(player) {
     
     return nodeIds.map((i) => state.board[i]).filter((c) => c.player == player);
+}
+
+function getRoads(player) {
+    
+    return edgeIds.map((i) => state.board[i]).filter((c) => c.player == player);
 }
 
 function getTradeRates(player) {

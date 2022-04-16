@@ -95,7 +95,7 @@ function startGame() {
 function townPlaced(player, args) {
     
     const nodeId = args;
-    claimTown(player, nodeId, true);
+    claimTown(player, nodeId);
     logLine(state.current + " setzt eine Siedlung");
     
     if (player == state.me) {
@@ -207,12 +207,14 @@ function makePurchase(player, args) {
     if (purchaseIndex == 1) {
         claimRoad(player, args[1]);
         logLine(player + " baut eine Straße");
-        const length = state.getRoadLength();
-        if (length > state.longestRoad) {
-            postEvent('claim-roads', length);
+        if (player == state.me) {
+            const length = state.computeRoadLength(state.me);
+            if (length > state.longestRoad) {
+                postEvent('claim-roads', length);
+            }
         }
     } else if (purchaseIndex == 2) {
-        claimTown(player, args[1], false);
+        claimTown(player, args[1]);
         logLine(player + " baut eine Siedlung");
     } else if (purchaseIndex == 3) {
         upgradeTown(player, args[1]);
@@ -377,4 +379,10 @@ function tradeOffered(player, args) {
 
 function tradeAccepted(player, args) {
     
+}
+
+// TEMPORARY FUNCTION UNTIL ALGORITHM IMPLEMENTED
+
+function lhs(length) {
+    postEvent('claim-roads', length);
 }

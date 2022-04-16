@@ -3,10 +3,11 @@ const svgOutlines = document.getElementById("outlines");
 const svgTiles = document.getElementById("tiles");
 const svgTokens = document.getElementById("tokens");
 const svgBandits = document.getElementById("bandits");
+const actions = document.getElementById("actions");
+const info = document.getElementById("info");
 const resources = document.getElementById("resources");
 const cards = document.getElementById("cards");
 const victory = document.getElementById("victory");
-const actions = document.getElementById("actions");
 
 function logLine(line) {
     
@@ -22,10 +23,15 @@ function logLine(line) {
 function refreshUI() {
     
     refreshBoard();
-    refreshActionButtons();
-    refreshCards();
-    refreshResources();
-    refreshVictoryPoints();
+    
+    if (state.me) {
+        refreshActionButtons();
+        refreshCards();
+        refreshResources();
+        refreshVictoryPoints();
+    } else {
+        info.style.display = 'none';
+    }
 }
 
 function refreshBoard() {
@@ -255,6 +261,7 @@ function addRoad(player, angle, x, y, listener) {
 }
 
 function shape(tag, player) {
+    
     const shape = document.createElementNS("http://www.w3.org/2000/svg", tag);
     if (player) {
         const playerNum = state.players.indexOf(player);

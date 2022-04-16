@@ -215,14 +215,11 @@ function purchaseMade(player, args) {
     const costs = purchaseCosts[purchaseIndex];
     updateResources(player, costs);
     
-    if (player == state.me) {
-        popChoice();
-    }
-    
     if (purchaseIndex == 1) {
         claimRoad(player, args[1]);
         logLine(player + " baut eine Straße");
         if (player == state.me) {
+            popChoice();
             const length = state.computeRoadLength(state.me);
             if (length > state.longestRoad) {
                 postEvent('claim-roads', length);
@@ -231,9 +228,15 @@ function purchaseMade(player, args) {
     } else if (purchaseIndex == 2) {
         claimTown(player, args[1]);
         logLine(player + " baut eine Siedlung");
+        if (player == state.me) {
+            popChoice();
+        }
     } else if (purchaseIndex == 3) {
         upgradeTown(player, args[1]);
         logLine(player + " baut eine Siedlung zur Stadt aus");
+        if (player == state.me) {
+            popChoice();
+        }
     } else if (purchaseIndex == 4) {
         const random = nextRandom();
         const cardIndex = state.stack[Math.floor(state.stack.length * random)];

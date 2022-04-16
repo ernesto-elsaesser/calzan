@@ -319,7 +319,7 @@ function refreshVictoryPoints() {
         victory.innerHTML += " + " + cityCount + " Städte (2P)";
     }
     
-    state.cards.filter((c) => c.index <= victoryMinIndex).forEach((i) => {
+    state.cards.filter((c) => c.index <= victoryMaxIndex).forEach((i) => {
         victory.innerHTML += " + " + cardNames[c.index] + " (1P)";
         points += 1;
     });
@@ -356,9 +356,11 @@ function refreshActionButtons() {
         purchaseIndices.filter((i) => canBuy(i)).forEach((i) => {
             buttons.push([purchaseActionNames[i], () => state.choice.purchase(i)]);
         });
-        resIndices.filter((i) => state.choice.tradeRates[i] > 0).forEach((i) => {
+        resIndices.forEach((i) => {
             const rate = state.choice.tradeRates[i];
-            buttons.push([rate + " " + resNames[i] + " umtauschen", () => state.choice.trade(i)]);
+            if (state.resources[i] >= rate) {
+                buttons.push([rate + " " + resNames[i] + " umtauschen", () => state.choice.trade(i)]);
+            }
         });
         buttons.push(["Zug beenden", state.choice.end]);
     } else if (state.choice.id == 'drop') {

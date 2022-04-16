@@ -11,7 +11,7 @@ const purchaseNames = [null, "Straße", "Siedlung", "Stadt", "Entwicklungskarte"
 const purchaseActionNames = [null, "Straße bauen", "Siedlung bauen", "Siedlung ausbauen", "Entwicklungskarte kaufen"];
 
 const cardIndices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
-const vitoryMaxIndex = 5;
+const victoryMaxIndex = 5;
 const knightMinIndex = 12;
 const cardActions = [
     null, null, null, null, null, null,

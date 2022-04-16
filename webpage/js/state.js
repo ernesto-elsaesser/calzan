@@ -185,15 +185,13 @@ function getRoads(player) {
 
 function getTradeRates(player) {
     
-    const rates = noResources();
+    const portTowns = getTowns(player).filter((t) => t.rate);
+    const specPortTowns = portTowns.filter((t) => t.trade);
     
-    getTowns(player).filter((t) => t.rate).forEach((t) => {
-        if (t.trade) {
-            rates[t.trade] = t.rate;
-        } else {
-            resIndices.filter((i) => rates[i] == 0).forEach((i) => rates[i] = t.rate);
-        }
-    });
+    const canTrade3 = portTowns.length > specPortTowns.length;
+    const rates = noResources().map((n) => canTrade3 ? 3 : 4);
+    
+    specPortTowns.forEach((t) => rates[t.trade] = 2);
     
     return rates;
 }

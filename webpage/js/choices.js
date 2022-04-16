@@ -34,7 +34,7 @@ function createTurnChoice() {
         tradeRates,
         purchase: (index) => {
             if (index == 4) { // knight is separated into 2 events
-                postEvent(action, purchaseIndex);
+                postEvent('make-purchase', [index]);
             } else {
                 const purchaseChoice = createPurchaseChoice(state.choice, index);
                 pushChoice(purchaseChoice);

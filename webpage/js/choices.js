@@ -7,7 +7,6 @@ function createHometownChoice() {
         id: 'town',
         nodeIds: freeNodeIds,
         selectCell: (nodeId) => {
-            popChoice();
             postEvent('place-town', nodeId);
         },
     };
@@ -21,7 +20,6 @@ function createHometownRoadChoice(nodeId) {
         id: 'road',
         edgeIds,
         selectCell: (edgeId) => {
-            popChoice();
             postEvent('place-road', edgeId);
         },
     };
@@ -49,7 +47,6 @@ function createTurnChoice() {
             refreshUI();
         },
         end: () => {
-            popChoice();
             postEvent('end-turn', null);
         },
     }
@@ -59,7 +56,6 @@ function createPurchaseChoice(purchaseIndex) {
     
     const choice = {
         selectCell: (cellId) => {
-            popChoice();
             postEvent('make-purchase', [purchaseIndex, cellId]);
         },
         abort: () => {
@@ -90,13 +86,8 @@ function createTradeChoice(resIndex, rate) {
         id: 'trade',
         resources,
         selectResource: (index) => {
-            popChoice();
-            if (index == null) {
-                refreshUI();
-            } else {
-                resources[index] = 1;
-                postEvent('trade-sea', resources);
-            }
+            resources[index] = 1;
+            postEvent('trade-sea', resources);
         },
         abort: () => {
             popChoice();
@@ -115,7 +106,6 @@ function createRoadworksChoice(cardIndex) {
         selectCell: (edgeId) => {
             edgeIds.push(edgeId);
             if (edgeIds.lenght == 2) {
-                popChoice();
                 postEven('play-roads', [cardIndex].concat(edgeIds));
             } else {
                 claimRoad(state.me, edgeId); // premature placement
@@ -134,7 +124,6 @@ function createMonopolyChoice(cardIndex) {
     return {
         id: 'monopoly',
         selectResource: (resIndex) => {
-            popChoice();
             postEven('play-monopoly', [cardIndex, resIndex]);
         }
     };
@@ -150,7 +139,6 @@ function createInventionChoice(cardIndex) {
         selectResource: (resIndex) => {
             indices.push(resIndex);
             if (indices.lenght == 2) {
-                popChoice();
                 postEven('play-invent', [cardIndex].concat(indices));
             } else {
                 refreshUI();
@@ -185,7 +173,6 @@ function createDropChoice() {
                 return;
             }
 
-            popChoice();
             postEvent('drop-res', resources);
         },
     };
@@ -205,12 +192,11 @@ function createBanditChoice() {
             
             const adjacentPlayers = getAdjacentTowns(tileId).map((t) => t.player);
             const targets = state.players.filter((p) => p != state.me && adjacentPlayers.includes(p));
+            state.players.filter((p) => p != state.me && adjacentPlayers.includes(p)).forEach(targetOptions.push);
             
             if (targets.length == 0) {
-                popChoice();
                 postEvent('move-bandit', args);
             } else if (targets.length == 1) {
-                popChoice();
                 args[1] = targets[0];
                 postEvent('move-bandit', args);
             } else {
@@ -221,7 +207,6 @@ function createBanditChoice() {
         },
         selectPlayer: (player) => {
             args[1] = player;
-            popChoice();
             postEvent('move-bandit', args);
         },
     };

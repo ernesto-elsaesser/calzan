@@ -46,8 +46,6 @@ function nextRandom() {
 
 function advanceTurn() {
     
-    state.choice = {};
-    
     const currentIndex = state.players.indexOf(state.current);
     
     if (state.phase == 'forward') {
@@ -143,12 +141,6 @@ function updateLongestRoad(player, length) {
     state.longestRoadPlayer = player;
 }
 
-function setChoice(choice) {
-    
-    choice.parent = {};
-    state.choice = choice;
-}
-
 function pushChoice(choice) {
     
     choice.parent = state.choice;
@@ -158,6 +150,11 @@ function pushChoice(choice) {
 function popChoice() {
     
     state.choice = state.choice.parent;
+}
+
+function resetChoice(choice) {
+    
+    state.choice = {};
 }
 
 function countResources(resources) {

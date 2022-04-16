@@ -86,7 +86,7 @@ function startGame() {
 
     if (state.current == state.me) {
         const townChoice = createHometownChoice();
-        setChoice(townChoice);
+        pushChoice(townChoice);
     }
 
     refreshUI();
@@ -98,6 +98,8 @@ function townPlaced(player, args) {
     claimTown(player, nodeId);
     logLine(state.current + " setzt eine Siedlung");
     
+    resetChoice();
+    
     if (player == state.me) {
         if (state.phase == 'backward') {
             const resources = noResources();
@@ -108,7 +110,7 @@ function townPlaced(player, args) {
             logLine("ERTRÄGE: " + formatResources(resources));
         }
         const roadChoice = createHometownRoadChoice(nodeId);
-        setChoice(roadChoice);
+        pushChoice(roadChoice);
     }
 }
 
@@ -119,6 +121,7 @@ function roadPlaced(player, args) {
     logLine(player + " setzt eine Straße");
     
     advanceTurn();
+    resetChoice();
     
     if (state.phase == 'game') {
         logLine(state.current + " ist am Zug");
@@ -129,7 +132,7 @@ function roadPlaced(player, args) {
         logLine(state.current + " darf setzen");
         if (state.current == state.me) {
             const townChoice = createHometownChoice();
-            setChoice(townChoice);
+            pushChoice(townChoice);
         }
     }
 }
@@ -139,12 +142,15 @@ function diceRolled(player, args) {
     const random = nextRandom();
     const roll = rolls[Math.floor(random * rolls.length)];
     
+    resetChoice();
     logLine(player + " würfelt eine " + roll.toString());
     
     if (roll == 7) {
         if (player == state.me) {
+            const turnChoice = createTurnChoice();
+            pushChoice(turnChoice);
             const banditChoice = createBanditChoice();
-            setChoice(banditChoice);
+            pushChoice(banditChoice);
         }
         if (countResources(state.resources) > 7) {
             const dropChoice = createDropChoice();
@@ -166,7 +172,7 @@ function diceRolled(player, args) {
         }
         if (player == state.me) {
             const turnChoice = createTurnChoice();
-            setChoice(turnChoice);
+            pushChoice(turnChoice);
         }
     }
 }
@@ -176,6 +182,10 @@ function banditMoved(player, args) {
     const [tileId, targetPlayer] = args;
     
     moveBandit(tileId);
+    
+    if (player == state.me) {
+        popChoice();
+    }
     
     const resIndex = state.board[tileId].land;
     const resName = resNames[resIndex];
@@ -204,6 +214,10 @@ function purchaseMade(player, args) {
     
     const costs = purchaseCosts[purchaseIndex];
     updateResources(player, costs);
+    
+    if (player == state.me) {
+        popChoice();
+    }
     
     if (purchaseIndex == 1) {
         claimRoad(player, args[1]);
@@ -273,6 +287,11 @@ function roadsPlayed(player, args) {
     discardCard(player, cardIndex);
     claimRoad(player, edgeId1);
     claimRoad(player, edgeId2);
+    
+    if (player == state.me) {
+        popChoice();
+    }
+    
     logLine(player + " spielt Straßenbau und erhält 2 kostenlose Straßen");
 }
 
@@ -280,6 +299,11 @@ function monopolyPlayed(player, args) {
         
     const [cardIndex, resIndex] = args;
     discardCard(player, cardIndex);
+    
+    if (player == state.me) {
+        popChoice();
+    }
+    
     logLine(player + " spielt Monopol auf: " + resNames[resIndex]);
     
     if (player != state.me) {
@@ -296,6 +320,11 @@ function inventPlayed(player, args) {
     const [cardIndex, resources] = args;
     discardCard(player, cardIndex);
     updateResources(player, resources);
+    
+    if (player == state.me) {
+        popChoice();
+    }
+    
     logLine(player + " spielt Erfindung und erhält Rohstoffe");
     
     if (player == state.me) {
@@ -307,6 +336,7 @@ function turnEnded(player, args) {
     
     advanceTurn();
     
+    resetChoice();
     logLine(state.current + " ist am Zug");
 
     if (state.current == state.me) {
@@ -320,9 +350,12 @@ function resourcesDropped(player, args) {
     const resources = args;
     updateResources(player, resources);
     
-    if (dropCallback) {
-        dropCallback();
-        dropCallback = null;
+    if (player == state.me) {
+        popChoice();
+        if (dropCallback) {
+            dropCallback();
+            dropCallback = null;
+        }
     }
 }
 
@@ -372,6 +405,10 @@ function seaTraded(player, args) {
     
     const resources = args;
     updateResources(player, resources);
+    
+    if (player == state.me) {
+        popChoice();
+    }
 }
 
 function tradeOffered(player, args) {

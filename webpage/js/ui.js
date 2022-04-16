@@ -1,5 +1,5 @@
 const log = document.getElementById("log");
-const svgOceans = document.getElementById("oceans");
+const svgOutlines = document.getElementById("outlines");
 const svgTiles = document.getElementById("tiles");
 const svgTokens = document.getElementById("tokens");
 const svgBandits = document.getElementById("bandits");
@@ -37,7 +37,7 @@ function refreshBoard() {
     for (const [cellId, cell] of Object.entries(state.board)) {
             
         const y = 600 + cell.v * 80;
-        const x = 630 + cell.h * 45;
+        const x = 640 + cell.h * 45;
 
         if (cell.tile) {
             
@@ -89,6 +89,14 @@ function addTile(resIndex, roll, x, y) {
 
     const color = resColors[resIndex];
     const strokeColor = resStrokeColors[resIndex];
+    
+    if (resIndex > 5) {
+        const outline = shape('path');
+        outline.setAttribute('d', hexaPath);
+        outline.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.21)');
+        //bg.setAttribute('fill', tileColor);
+        svgOutlines.appendChild(outline);
+    }
     
     const bg = shape('path');
     bg.setAttribute('d', hexaPath);

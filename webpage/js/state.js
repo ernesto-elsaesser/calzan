@@ -10,10 +10,12 @@ var state = {
     resources: [],
     stack: [],
     cards: [],
-    newCards: [],
-    // per player
-    longestRoads: {},
-    playedKnights: {},
+    longestRoad: 4,
+    longestRoadPlayer: null,
+    largestForce: 2,
+    largestForcePlayer: null,
+    homeTownIds: [],
+    playedKnights: 0,
 };
 
 function initState(data, player) {
@@ -21,6 +23,8 @@ function initState(data, player) {
     state.seed = data.seed;
     state.board = data.board;
     state.players = data.players;
+    state.longestRoads = data.players.map((p) => 0);
+    state.playedKnights = data.players.map((p) => 0);
     state.me = player;
     state.current = data.players[0];
     state.resources = noResources();
@@ -64,10 +68,20 @@ function advanceTurn() {
 }
 
 function updateResources(player, resources) {
+    
     if (player == state.me) {
         for (const index in resIndicies) {
             state.resources[index] += resources[index];
         }
+    }
+}
+
+function claimTown(player, nodeId, home) {
+    
+    state.board[nodeId].player = player;
+    
+    if (player == state.me && home) {
+        homeTownIds.push(nodeId);
     }
 }
 
@@ -77,9 +91,10 @@ function claimRoad(player, edgeId) {
     // TODO update state.longestRoads[player]
 }
 
-function claimTown(player, nodeId) {
+function getRoadLength() {
     
-    state.board[nodeId].player = player;
+    // TODO get lengths in all dirs, add two longest
+    homeTownIds
 }
 
 function upgradeTown(player, nodeId) {
@@ -113,11 +128,22 @@ function discardCard(player, cardIndex) {
     
     if (player == state.me) {
         state.cards = state.cards.filter((c) => c.index != cardIndex);
+        if (cardIndex >= knightMinIndex) {
+            state.playedKnights += 1;
+        }
     }
+}
+
+function updateLargestForce(player, size) {
     
-    if (cardIndex >= knightMinIndex) {
-        state.playedKnights[player] += 1;
-    }
+    state.largestForce = size;
+    state.largestForcePlayer = player;
+}
+
+function updateLongestRoad(player, length) {
+    
+    state.longestRoad = length;
+    state.longestRoadPlayer = player;
 }
 
 function pushChoice(choice) {
@@ -140,6 +166,17 @@ function popChoice() {
 function countResources(resources) {
     
     return resIndices.reduce((acc, i) => acc + resources[i], 0);
+}
+
+function expandResources(resources) {
+    
+    var expanded = [];
+    resIndices.forEach((i) => {
+        for (var r = 0; r < resources[i]; r += 1) {
+            expanded.push(i);
+        }
+    });
+    return expanded;
 }
 
 function getTowns(player) {
@@ -183,7 +220,7 @@ function canBuy(purchase) {
     return true;
 }
 
-function canPlaceTown(cellId) {
+function canBuildHomeTown(cellId) {
     
     for (const edgeId of state.board[cellId].edges) {
         for (const nodeId of state.board[edgeId].nodes) {
@@ -195,16 +232,6 @@ function canPlaceTown(cellId) {
     return true;
 }
 
-function canPlaceRoad(player, cellId) {
-    
-    for (const nodeId of state.board[cellId].nodes) {
-        if (state.board[nodeId].player == player) {
-            return true;
-        }
-    }
-    return false;
-}
-            
 function canBuildTown(player, cellId) {
     
     if (!canPlaceTown(cellId)) {

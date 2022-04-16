@@ -7,8 +7,8 @@ const noResources = () => ['R', 0, 0, 0, 0, 0];
 
 const purchaseIndices = [1, 2, 3, 4];
 const purchaseCosts = [null, ['R', -1, -1, 0, 0, 0], ['R', -1, -1, -1, -1, 0], ['R', 0, 0, -2, 0, -3], ['R', 0, 0, -1, -1, -1]];
-const purchaseNames = [null, "Strasse", "Siedlung", "Stadt", "Entwicklungskarte"];
-const purchaseActionNames = [null, "Strasse bauen", "Siedlung bauen", "Siedlung ausbauen", "Entwicklungskarte kaufen"];
+const purchaseNames = [null, "Straße", "Siedlung", "Stadt", "Entwicklungskarte"];
+const purchaseActionNames = [null, "Straße bauen", "Siedlung bauen", "Siedlung ausbauen", "Entwicklungskarte kaufen"];
 
 const cardIndices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
 const vitoryMaxIndex = 5;
@@ -22,7 +22,7 @@ const cardActions = [
 const cardNames = [
     null,
     "Bibliothek", "Marktplatz", "Rathaus", "Kirche", "Universität",
-    "Strassenbau", "Strassenbau", "Monopol", "Monopol", "Erfindung", "Erfindung",
+    "Straßenbau", "Straßenbau", "Monopol", "Monopol", "Erfindung", "Erfindung",
     "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", 
     "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", 
 ];

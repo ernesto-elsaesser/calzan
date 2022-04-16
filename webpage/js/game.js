@@ -41,6 +41,8 @@ function dispatchEvent(event, prevId) {
         'play-monopoly': monopolyPlayed,
         'play-invent': inventPlayed,
         'send-res': resourcesSent,
+        'claim-force': forceClaimed,
+        'claim-roads': roadsClaimed,
         'trade-sea': seaTraded,
         'offer-trade': tradeOffered,
         'accept-trade': tradeAccepted,
@@ -93,7 +95,7 @@ function startGame() {
 function townPlaced(player, args) {
     
     const nodeId = args;
-    claimTown(player, nodeId);
+    claimTown(player, nodeId, true);
     logLine(state.current + " setzt eine Siedlung");
     
     if (player == state.me) {
@@ -114,7 +116,7 @@ function roadPlaced(player, args) {
     
     const edgeId = args;
     claimRoad(player, edgeId);
-    logLine(player + " setzt eine Strasse");
+    logLine(player + " setzt eine Straße");
     
     advanceTurn();
     
@@ -204,9 +206,13 @@ function makePurchase(player, args) {
     
     if (purchaseIndex == 1) {
         claimRoad(player, args[1]);
-        logLine(player + " baut eine Strasse");
+        logLine(player + " baut eine Straße");
+        const length = state.getRoadLength();
+        if (length > state.longestRoad) {
+            postEvent('claim-roads', length);
+        }
     } else if (purchaseIndex == 2) {
-        claimTown(player, args[1]);
+        claimTown(player, args[1], false);
         logLine(player + " baut eine Siedlung");
     } else if (purchaseIndex == 3) {
         upgradeTown(player, args[1]);
@@ -214,19 +220,30 @@ function makePurchase(player, args) {
     } else if (purchaseIndex == 4) {
         const random = nextRandom();
         const cardIndex = state.stack[Math.floor(state.stack.length * random)];
+        const cardName = cardNames[cardIndex];
         const listener = () => {
-            if (cardIndex >= knightMinIndex) {
+            
+            if (cardName == "Ritter") {
                 postEvent('play-knight', cardIndex);
-            } else {
-                const cardChoice = createCardChoice(cardIndex);
-                setChoice(cardChoice);
-                updateUI();
+                return;
             }
+            
+            var cardChoice;
+            if (cardName == "Straßenbau") {
+                cardChoice = createRoadworksChoice(cardIndex);
+            } else if (cardName == "Monopol") {
+                cardChoice = createMonopolyChoice(cardIndex);
+            } else if (cardName == "Erfindung") {
+                cardChoice = createInventionChoice(cardIndex);
+            }
+            
+            pushChoice(cardChoice);
+            updateUI();
         };
         takeCard(player, cardIndex, listener);
         logLine(player + " kauft eine Entwicklungskarte");
         if (player == state.me) {
-            logLine("KARTE: " + cardNames[cardIndex]);
+            logLine("KARTE: " + cardName);
         }
     }
 }
@@ -237,7 +254,11 @@ function knightPlayed(player, args) {
     discardCard(player, cardIndex);
     
     logLine(player + " spielt eine Ritter-Karte und darf den Räuber bewegen");
+    
     if (player == state.me) {
+        if (state.playedKnights > state.largestForce) {
+            postEvent('claim-force', state.playedKnights);
+        }
         const banditChoice = createBanditChoice();
         pushChoice(banditChoice);
     }
@@ -249,7 +270,7 @@ function roadsPlayed(player, args) {
     discardCard(player, cardIndex);
     claimRoad(player, edgeId1);
     claimRoad(player, edgeId2);
-    logLine(player + " spielt Strassenbau und erhält 2 kostenlose Strassen");
+    logLine(player + " spielt Straßenbau und erhält 2 kostenlose Straßen");
 }
 
 function monopolyPlayed(player, args) {
@@ -318,23 +339,30 @@ function resourcesSent(player, args) {
 
 function getRaided(player, random) {
     
-    const count = countResources(state.resources);
-    if (count == 0) {
+    const expResources = expandResources(state.resources);
+    if (expResources.length == 0) {
         return;
     }
     
-    var indexList = [];
-    resIndices.forEach((i) => {
-        for (var r = 0; r < state.resources[i]; r += 1) {
-            indexList.push(i);
-        }
-    });
-    
-    const resIndex = indexList[Math.floor(indexList.length * random)];
+    const resIndex = expResources[Math.floor(expResources.length * random)];
     const resources = noResources();
     resources[resIndex] = 1;
 
     postEvent('send-res', ["RÄUBER", player, resources]);
+}
+
+function forceClaimed(player, args) {
+    
+    const size = args;
+    updateLargestForce(player, size);
+    logLine(player + "besitzt nun die größte Rittermacht");
+}
+
+function roadsClaimed(player, args) {
+    
+    const length = args;
+    updateLongestRoad(player, length);
+    logLine(player + "besitzt nun die längste Handelsstraße");
 }
 
 function seaTraded(player, args) {

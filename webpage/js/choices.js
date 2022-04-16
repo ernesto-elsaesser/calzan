@@ -49,11 +49,10 @@ function createTurnChoice() {
 function createPurchaseChoice(purchaseIndex) {
     
     return {
-        id: 'purchase',
-        index: purchaseIndex,
+        id: ['road', 'town', 'city'][purchaseIndex],
         selectCell: (cellId) => {
             popChoice();
-            postEvent('make-purchase', cellId);
+            postEvent('make-purchase', [purchaseIndex, cellId]);
         },
     };
 }
@@ -75,66 +74,55 @@ function createTradeChoice(resources) {
     });
 }
         
-function createCardChoice(cardIndex) {
-        
-    if (state.choice) {
-
-        const resIndex = arg;
-        
-        if (resIndex == null) {
-            clearChoice();
-            updateUI();
-            return;
-        }
-
-        const cardIndex = state.choice.cardIndex;
-        const cardName = cardNames[cardIndex];
-        
-        if (cardName == "Erfindung") {
-            if (state.choice.first) {
-                const firstResIndex = state.choice.first;
-                clearChoice();
-                postEvent(action, [cardIndex, firstResIndex, resIndex]);
+function createRoadworksChoice(cardIndex) {
+    
+    const edgeIds = [];
+    
+    return {
+        id: 'road',
+        edgeIds,
+        selectCell: (edgeId) => {
+            edgeIds.push(edgeId);
+            if (edgeIds.lenght == 2) {
+                popChoice();
+                postEven('play-roads', [cardIndex].concat(edgeIds));
             } else {
-                updateChoice('first', resIndex);
+                claimRoad(state.me, edgeId); // premature placement
                 updateUI();
             }
-        } else if (cardName == "Monopol") {
-            clearChoice();
-            postEvent(action, [cardIndex, resIndex]);
         }
-
-    } else {
-        
-    const cardIndex = arg;
-
-    if (cardIndex >= knightMinIndex) {
-        postEvent(action, [cardIndex]);
-        return;
-    }
-
-    if (cardNames[cardIndex] == "Strassenbau") {
-        setBoardMode('redeem-road');
-    }
-    startChoice({action, cardIndex});
-    updateUI();
+    };
 }
 
-function freeRoadClicked(action, arg) {
-        
-    const edgeId = arg;
-    if (state.choice.first) {
-        const firstEdgeId = state.choice.first;
-        setBoardMode(null);
-        clearChoice();
-        postEvent('play-card', [state.choice.cardIndex, firstEdgeId, edgeId]);
-    } else {
-        claimRoad(state.me, edgeId); // NOTE: premature placement, not confirmed by event!!!
-        updateChoice('first', edgeId);
-        updateUI();
-    }
+function createMonopolyChoice(cardIndex) {
+    
+    return {
+        id: 'monopoly',
+        selectResource: (resIndex) => {
+            popChoice();
+            postEven('play-monopoly', [cardIndex, resIndex]);
+        }
+    };
 }
 
+function createInventionChoice(cardIndex) {
+    
+    const indices = [];
+    
+    return {
+        id: 'invention',
+        indices,
+        selectResource: (resIndex) => {
+            indices.push(resIndex);
+            if (indices.lenght == 2) {
+                popChoice();
+                postEven('play-invent', [cardIndex].concat(indices));
+            } else {
+                updateUI();
+            }
+        }
+    };
+}
     
 function createDropChoice() {
     
@@ -173,7 +161,7 @@ function createBanditChoice() {
         id: 'bandit',
         targetOptions,
         selectCell: (tileId) => {
-            moveBandit(tileId); // NOTE: premature placement, not confirmed by event!!!
+            moveBandit(tileId); // premature placement
             args[0] = tileId;
             
             const adjacentPlayers = getAdjacentTowns(tileId).map((t) => t.player);

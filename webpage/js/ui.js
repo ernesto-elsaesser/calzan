@@ -48,7 +48,7 @@ function updateBoard() {
                 addTrade(cell.rate, cell.trade, x, y);
             } else if (cell.bandit) {
                 addBandit(x, y, null);
-            } else if (state.choice.action == 'move-bandit') {
+            } else if (state.choice.id == 'bandit') {
                 addBandit(x, y, () => state.choice.selectCell(cellId));
             }
             
@@ -61,16 +61,16 @@ function updateBoard() {
             }
             
             if (cell.player) {
-                if (state.choice.action == 'make-purchase' && state.choice.index == 3 && cell.player == state.me) {
+                if (state.choice.id == 'city' && cell.player == state.me) {
                     addTown(cell.player, cell.city, x, sy, null, () => state.choice.selectCell(cellId));
                 } else {
                     addTown(cell.player, cell.city, x, sy, null, null);
                 }
-            } else if (state.choice.action == 'place-town') {
-                if (canPlaceTown(cellId)) {
+            } else if (state.choice.id == 'hometown') {
+                if (canBuildHomeTown(cellId)) {
                     addTown(state.me, false, x, sy, () => state.choice.selectCell(cellId), null);
                 }
-            } else if (state.choice.action == 'make-purchase' && state.choice.index == 1) {
+            } else if (state.choice.id == 'town') {
                 if (canBuildTown(state.me, cellId)) {
                     addTown(state.me, false, x, sy, () => state.choice.selectCell(cellId), null);
                 }
@@ -80,15 +80,7 @@ function updateBoard() {
             
             if (cell.player) {
                 addRoad(cell.player, cell.dir, x, y, null);
-            } else if (state.choice.action == 'place-road') {
-                if (canPlaceRoad(state.me, cellId)) {
-                    addRoad(state.me, cell.dir, x, y, () => state.choice.selectCell(cellId));
-                }
-            } else if (state.choice.action == 'make-purchase' && state.choice.index == 2) {
-                if (canBuildRoad(state.me, cellId)) {
-                    addRoad(state.me, cell.dir, x, y, () => state.choice.selectCell(cellId));
-                }
-            } else if (state.choice.action == 'play-roads') {
+            } else if (state.choice.id == 'road') {
                 if (canBuildRoad(state.me, cellId)) {
                     addRoad(state.me, cell.dir, x, y, () => state.choice.selectCell(cellId));
                 }
@@ -96,6 +88,7 @@ function updateBoard() {
         }
     }
 }
+
 function addTile(resIndex, roll, x, y) {
 
     const color = resColors[resIndex];
@@ -225,7 +218,6 @@ function addTown(player, isCity, x, y, listener, upgradeListener) {
         svgTokens.appendChild(arrow);
     }
 }
-    
 
 function addRoad(player, angle, x, y, listener) {
     
@@ -260,10 +252,13 @@ function shape(tag, player) {
 function updateResources() {
     
     resources.innerHTML = "";
-    if (state.resources.length) {
-        for (const resource of state.resources) {
+    
+    const expResources = expandResources(state.resources);
+    
+    if (expResources.length) {
+        for (const resIndex of expResources) {
             const resImg = document.createElement('img');
-            resImg.src = "img/" + resource + ".png";
+            resImg.src = "img/" + resNames[resIndex] + ".png";
             resImg.width = "50";
             resources.appendChild(resImg);
         }
@@ -274,19 +269,19 @@ function updateResources() {
     
 function updateCards() {
     
-    const canPlay = state.phase == 'game' && state.current == state.me && state.choice == null;
+    const canPlay = state.choice.id == 'turn';
     
     cards.innerHTML = "";
     if (state.cards.length) {
-        for (const cardIndex of state.cards) {
+        for (const card of state.cards) {
             const cardButton = document.createElement('button');
             cardButton.className = "card";
-            if (canPlay && cardIndex > victoryMaxIndex && !state.lockedCards.includes(cardIndex)) {
-                cardButton.addEventListener('click', () => dispatchClick('play-card', cardIndex));
+            if (canPlay && card.listener && !card.locked) {
+                cardButton.addEventListener('click', card.listener)
             } else {
                 cardButton.disabled = true;
             }
-            cardButton.innerHTML = cardNames[cardIndex];
+            cardButton.innerHTML = cardNames[card.index];
             cards.appendChild(cardButton);
         }
     } else {
@@ -318,37 +313,17 @@ function updateVictoryPoints() {
         victory.innerHTML += " + " + cityCount + " Städte (2P)";
     }
     
-    state.cards.filter((i) => i <= victoryMinIndex).forEach((i) => {
-        victory.innerHTML += " + " + cardNames[i] + " (1P)";
+    state.cards.filter((c) => c.index <= victoryMinIndex).forEach((i) => {
+        victory.innerHTML += " + " + cardNames[c.index] + " (1P)";
         points += 1;
     });
     
-    // TODO use reduce
-    
-    var maxLength = 4;
-    var maxLengthPlayer = null;
-    for (const [player, length] of Object.entries(state.longestRoads)) {
-        if (length > maxLength) {
-            maxLength = length;
-            maxLengthPlayer = player;
-        }
-    }
-    
-    if (maxLengthPlayer == state.me) {
+    if (longestRoadPlayer == state.me) {
         victory.innerHTML += " + Längste Handelsstraße (2P)";
         points += 2;
     }
     
-    var maxKnights = 2;
-    var maxKnightPlayer = null;
-    for (const [player, knights] of Object.entries(state.playedKnights)) {
-        if (knights > maxKnights) {
-            maxKnights = knights;
-            maxKnightPlayer = player;
-        }
-    }
-    
-    if (maxKnightPlayer == state.me) {
+    if (largestForcePlayer == state.me) {
         victory.innerHTML += " + Größte Rittermacht (2P)";
         points += 2;
     }
@@ -404,8 +379,8 @@ function updateActionButtons() {
                     buttons.push([resourceNames[i], 'play-card', i]);
                 });
                 buttons.push(["Abbrechen", 'play-card', null]);
-            } else if (cardName == "Strassenbau") {
-                title.innerHTML = cardName + ": 2 Strassen setzen";
+            } else if (cardName == "Straßenbau") {
+                title.innerHTML = cardName + ": 2 Straßen setzen";
                 buttons.push(["Abbrechen", 'play-card', null]);
             }
         }

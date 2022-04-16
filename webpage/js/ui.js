@@ -327,7 +327,7 @@ function refreshVictoryPoints() {
         victory.innerHTML += " + " + cityCount + " Städte (2P)";
     }
     
-    state.cards.filter((c) => c.index <= victoryMaxIndex).forEach((i) => {
+    state.cards.filter((c) => c.index <= victoryMaxIndex).forEach((c) => {
         victory.innerHTML += " + " + cardNames[c.index] + " (1P)";
         points += 1;
     });
@@ -380,10 +380,12 @@ function refreshActionButtons() {
         });
         buttons.push(["Bestätigen", state.choice.confirm]);
     } else if (state.choice.id == 'bandit') {
-        title = "Wen berauben?";
-        state.choice.targetOptions.forEach((p) => {
-            buttons.push([p, () => state.choice.selectPlayer(p)]);
-        });
+        if (state.choice.targetOptions.length) {
+            title = "Wen berauben?";
+            state.choice.targetOptions.forEach((p) => {
+                buttons.push([p, () => state.choice.selectPlayer(p)]);
+            });
+        }
     } else if (state.choice.id == 'trade') {
         title = "Tauschen gegen";
         resIndices.filter((i) => state.choice.resources[i] == 0).forEach((i) => {

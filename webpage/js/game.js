@@ -183,7 +183,7 @@ function banditMoved(player, args) {
     
     moveBandit(tileId);
     
-    if (player == state.me) {
+    if (state.choice.id == 'bandit') {
         popChoice();
     }
     
@@ -404,7 +404,7 @@ function seaTraded(player, args) {
     const resources = args;
     updateResources(player, resources);
     
-    if (player == state.me) {
+    if (state.choice.id == 'trade') {
         popChoice();
     }
 }

@@ -54,8 +54,8 @@ function refreshBoard() {
                 addTrade(cell.rate, cell.trade, x, y);
             } else if (cell.bandit) {
                 addBandit(x, y, null);
-            } else if (state.choice.token == 'bandit' && state.choice.tileIds.includes(cellId)) {
-                addBandit(x, y, () => state.choice.selectCell(cellId));
+            } else if (state.choice.token == 'bandit' && state.choice.options.includes(cellId)) {
+                addBandit(x, y, () => state.choice.select(cellId));
             }
             
         } else if (cell.node) {
@@ -69,11 +69,11 @@ function refreshBoard() {
             if (cell.player) {
                 var upgradeListener = null;
                 if (state.choice.token == 'city' && state.choice.nodeIds.includes(cellId)) {
-                    upgradeListener = () => state.choice.selectCell(cellId);
+                    upgradeListener = () => state.choice.select(cellId);
                 }
                 addTown(cell.player, cell.city, x, sy, null, upgradeListener);
             } else if (state.choice.token == 'town' && state.choice.nodeIds.includes(cellId)) {
-                addTown(state.me, false, x, sy, () => state.choice.selectCell(cellId), null);
+                addTown(state.me, false, x, sy, () => state.choice.select(cellId), null);
             }
             
         } else if (cell.edge) {
@@ -81,7 +81,7 @@ function refreshBoard() {
             if (cell.player) {
                 addRoad(cell.player, cell.dir, x, y, null);
             } else if (state.choice.token == 'road' && state.choice.edgeIds.includes(cellId)) {
-                addRoad(state.me, cell.dir, x, y, () => state.choice.selectCell(cellId));
+                addRoad(state.me, cell.dir, x, y, () => state.choice.select(cellId));
             }
         }
     }
@@ -96,7 +96,6 @@ function addTile(resIndex, roll, x, y) {
         const outline = shape('path');
         outline.setAttribute('d', hexaPath);
         outline.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.21)');
-        //bg.setAttribute('fill', tileColor);
         svgOutlines.appendChild(outline);
     }
     
@@ -144,8 +143,10 @@ function addBandit(x, y, listener) {
         `;
     if (listener) {
         bandit.setAttribute('opacity', 0.5);
+        // needed?
         //bandit.setAttribute('stroke', 'black');
         bandit.setAttribute('stroke-width', 1);
+        bandit.setAttribute('stroke-opacity', 1.0);
         bandit.addEventListener('click', listener);
     }
     
@@ -352,84 +353,78 @@ function refreshActionButtons() {
     
     
     if (state.choice.id == 'turn') {
-        purchaseIndices.filter((i) => hasResources(purchaseCosts[i])).forEach((i) => {
-            buttons.push([purchaseActionNames[i], () => state.choice.purchase(i)]);
+        state.choice.purchaseOptions.forEach((i) => {
+            buttons.push([purchaseActionNames[i], () => state.choice.selectPurchase(i)]);
         });
-        resIndices.forEach((i) => {
+        state.choice.swapOptions.forEach((i) => {
             const rate = state.choice.swapRates[i];
-            if (state.resources[i] >= rate) {
-                buttons.push([rate + " " + resNames[i] + " umtauschen", () => state.choice.swap(i)]);
-            }
+            buttons.push([rate + " " + resNames[i] + " umtauschen", () => state.choice.selectSwap(i)]);
         });
-        const count = countResources(state.resources);
-        if (count > 0) {
-            buttons.push(["Handel vorschlagen", state.choice.propose]);
-        }
+        state.choice.tradeOptions.forEach((p) => {
+            buttons.push(["Mit " + p + " handeln", () => state.choice.selectTrade(p)]);
+        });
         buttons.push(["Zug beenden", state.choice.end]);
     } else if (state.choice.id == 'drop') {
         title = "Werfe " + state.choice.targetCount + " Rohstoffe ab:";
-        resIndices.forEach((i) => {
+        state.choice.options.forEach((i) => {
             const amount = state.choice.resources[i];
-            const listener = state.resources[i] > 0 ? () => state.choice.selectResource(i) : null;
-            buttons.push([resNames[i] + ": " + amount, listener]);
+            buttons.push([resNames[i] + ": " + amount, state.choice.select(i)]);
         });
         const count = countResources(state.choice.resources);
         const confirmListener = count == state.choice.targetCount ? state.choice.confirm : null;
         buttons.push(["Bestätigen", confirmListener]);
-    } else if (state.choice.id == 'bandit') {
-        if (state.choice.targetOptions.length) {
-            title = "Wen berauben?";
-            state.choice.targetOptions.forEach((p) => {
-                buttons.push([p, () => state.choice.selectPlayer(p)]);
-            });
-        }
+    } else if (state.choice.id == 'raid') {
+        title = "Wen berauben?";
+        state.choice.options.forEach((p) => {
+            buttons.push([p, () => state.choice.select(p)]);
+        });
     } else if (state.choice.id == 'swap') {
         title = "Tauschen gegen";
-        resIndices.filter((i) => i != state.choice.resIndex).forEach((i) => {
-            buttons.push([resNames[i], () => state.choice.selectResource(i)]);
+        state.choice.options.forEach((i) => {
+            buttons.push([resNames[i], () => state.choice.select(i)]);
         });
     } else if (state.choice.id == 'offer') {
-        const stage = state.choice.getStage();
-        if (stage == 'partner') {
-            title = "Handelspartner";
-            state.players.filter((p) => p != state.me).forEach((p) => {
-                buttons.push([p, () => state.choice.selectPlayer(p)]);
-            });
-        } else if (stage == 'give') {
-            title = "Angebotene Rohstoffe";
-            resIndices.forEach((i) => {
-                const amount = state.choice.give[i];
-                const listener = state.resources[i] > 0 ? () => state.choice.selectResource(i) : null;
-                buttons.push([resNames[i] + ": " + amount, listener]);
-            });
-            buttons.push(["Weiter", state.choice.confirm]);
-        } else if (stage == 'take') {
-            title = "Gewünschte Rohstoffe";
-            resIndices.forEach((i) => {
-                const amount = state.choice.take[i];
-                buttons.push([resNames[i] + ": " + amount, () => state.choice.selectResource(i)]);
-            });
-            buttons.push(["Zurücksetzen", state.choice.reset]);
-            buttons.push(["Vorschlagen", state.choice.confirm]);
-        }
+        title = "Angebotene Rohstoffe";
+        state.choice.options.forEach((i) => {
+            const amount = state.choice.resources[i];
+            buttons.push([resNames[i] + ": " + amount, () => state.choice.select(i)]);
+        });
+        const count = countResources(state.choice.resources);
+        const confirmListener = count > 0 ? state.choice.confirm : null;
+        buttons.push(["Weiter", confirmListener]);
+    } else if (state.choice.id == 'demand') {
+        title = "Gewünschte Rohstoffe";
+        state.choice.options.forEach((i) => {
+            const amount = state.choice.resources[i];
+            buttons.push([resNames[i] + ": " + amount, () => state.choice.select(i)]);
+        });
+        const count = countResources(state.choice.resources);
+        const resetListener = count > 0 ? state.choice.reset : null;
+        const confirmListener = count > 0 ? state.choice.confirm : null;
+        buttons.push(["Zurücksetzen", resetListener]);
+        buttons.push(["Vorschlagen", confirmListener]);
     } else if (state.choice.id == 'answer') {
         const give = formatResources(state.choice.give);
         const take = formatResources(state.choice.take);
         title = state.choice.proposer + " bietet dir " + give + " für " + take;
-        buttons.push(["Ablehnen", () => state.choice.respond(false)]);
-        buttons.push(["Annehmen", () => state.choice.respond(true)]);
-    } else if (state.choice.id == 'roadworks') {
-        title = "Straßenbau - 2 freie Straßen setzen";
+        state.choice.options.forEach((b) => {
+            buttons.push([b ? "Annehmen" : "Ablehnen", () => state.choice.select(b)]);
+        });
+    } else if (state.choice.id == 'roadworks1') {
+        title = "Straßenbau - Erste kostenlose Straße setzen";
+    } else if (state.choice.id == 'roadworks2') {
+        title = "Straßenbau - Zweite kostenlose Straße setzen";
+        buttons.push(["Abbrechen", state.choice.revert]);
+    } else if (state.choice.id == 'monopoly') {
+        title = "Monopol auf welchen Rohstoff?";
+        state.choice.options.forEach((i) => {
+            buttons.push([resNames[i], () => state.choice.select(i)]);
+        });
     } else if (state.choice.id == 'invention') {
         const number = countResources(state.choice.resources) + 1;
         title = "Erfindung - " + number + ". Rohstoff auswählen";
-        resIndices.forEach((i) => {
-            buttons.push([resNames[i], () => state.choice.selectResource(i)]);
-        });
-    } else if (state.choice.id == 'monopoly') {
-        title = "Monopol auf welchen Rohstoff?";
-        resIndices.forEach((i) => {
-            buttons.push([resNames[i], () => state.choice.selectResource(i)]);
+        state.choice.options.forEach((i) => {
+            buttons.push([resNames[i], () => state.choice.select(i)]);
         });
     }
     

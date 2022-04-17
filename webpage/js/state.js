@@ -1,4 +1,3 @@
-
 var state = {
     players: [],
     board: {},
@@ -61,6 +60,202 @@ function advanceTurn() {
     }
 }
 
+function getVictoryProgress() {
+    
+    const townAndCityCount = getTowns().length;
+    const cityCount = getUpgradedTowns().length;
+    const townCount = townAndCityCount - cityCount;
+    
+    const cards = state.cards.filter((c) => c.index <= victoryMaxIndex);
+    const longest = state.longestRoadPlayer == state.me;
+    const largest = state.largestForcePlayer == state.me;
+    
+    const points = townCount + 2 * cityCount + cards.length + (longest ? 2 : 0) + (largest ? 2 : 0);
+    
+    return {points, townCount, cityCount, cards, longest, largest};
+}
+
+// TOWNS
+
+function getHometownOptions() {
+    
+    return nodeIds.filter(canBuildHometown);
+}
+
+function canBuildHometown(nodeId) {
+    
+    for (const edgeId of state.board[nodeId].edges) {
+        for (const nextNodeId of state.board[edgeId].nodes) {
+            if (state.board[nextNodeId].player) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function getTownOptions() {
+    
+    return nodeIds.filter(canBuildTown);
+}
+
+function canBuildTown(nodeId) {
+    
+    if (!canBuildHometown(nodeId)) {
+        return false;
+    }
+    
+    var ownedEdgeId = null;
+    for (const edgeId of state.board[nodeId].edges) {
+        if (state.board[edgeId].player == state.me) {
+            ownedEdgeId = edgeId;
+            break;
+        }
+    }
+    
+    if (ownedEdgeId == null) {
+        return false;
+    }
+    
+    for (const nodeId of state.board[ownedEdgeId].nodes) {
+        if (state.board[nodeId].player) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+function claimTown(player, nodeId) {
+    
+    state.board[nodeId].player = player;
+}
+
+function getTowns() {
+    
+    return nodeIds.filter((i) => state.board[i].player == state.me);
+}
+
+// ROADS
+
+function claimRoad(player, edgeId) {
+    
+    state.board[edgeId].player = player;
+}
+
+function getRoads() {
+    
+    return edgeIds.filter((i) => state.board[i].player == state.me);
+}
+
+function getRoadOptions() {
+    
+    return edgeIds.filter(canBuildRoad);
+}
+
+function canBuildRoad(edgeId) {
+    
+    for (const nodeId of state.board[edgeId].nodes) {
+        if (state.board[nodeId].player == player) {
+            return true;
+        }
+        for (const nextEdgeId of state.board[nodeId].edges) {
+            if (state.board[nextEdgeId].player == player) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function computeRoadLength(player) {
+    
+    const roads = getRoads(player);
+    return 0; // TODO implement!
+}
+
+function updateLongestRoad(player, length) {
+    
+    state.longestRoad = length;
+    state.longestRoadPlayer = player;
+}
+
+// CITIES
+
+function getUpgradeOptions() {
+    
+    return getTowns().filter((i) => state.board[i].city != true);
+}
+
+function upgradeTown(player, nodeId) {
+    
+    state.board[nodeId].city = true;
+}
+
+function getUpgradedTowns() {
+    
+    return getTowns().filter((i) => state.board[i].city == true);
+}
+
+// TILES
+
+function getBanditOptions() {
+    
+    return landTileIds.filter((i) = state.board[i].land < 6 && state.board[i].bandit != true);
+}
+
+function moveBandit(tileId) {
+    
+    for (const otherTileId of landTileIds) {
+        state.board[otherTileId].bandit = false;
+    }
+    state.board[tileId].bandit = true;
+}
+
+function getYieldingTileIds(roll) {
+    
+    return landTileIds.filter((i) => state.board[i].roll == roll && state.board[i].bandit != true);
+}
+
+function getAdjacentTowns(tileId) {
+    
+    return state.board[tileId].nodes.map((i) => state.board[i]).filter((c) => c.player);
+}
+
+// CARDS
+
+function takeCard(player, cardIndex, listener) {
+    
+    state.stack = state.stack.filter((i) => i != cardIndex);
+    
+    if (player == state.me) {
+        const card = {
+            index: cardIndex,
+            locked: true,
+            listener,
+        };
+        state.cards.push(card);
+    }
+}
+
+function discardCard(player, cardIndex) {
+    
+    if (player == state.me) {
+        state.cards = state.cards.filter((c) => c.index != cardIndex);
+        if (cardIndex >= knightMinIndex) {
+            state.playedKnights += 1;
+        }
+    }
+}
+
+function updateLargestForce(player, size) {
+    
+    state.largestForce = size;
+    state.largestForcePlayer = player;
+}
+
+// RESOURCES
+
 function updateResources(player, resources, add) {
     
     if (player == state.me) {
@@ -100,80 +295,34 @@ function expandResources(resources) {
     return expanded;
 }
 
-function claimTown(player, nodeId) {
+function formatResources(resources) {
     
-    state.board[nodeId].player = player;
+    return resIndices.filter((i) => resources[i]).map((i) => resources[i] + " " + resNames[i]).join(', ');
 }
 
-function claimRoad(player, edgeId) {
+function getSwapRates() {
     
-    state.board[edgeId].player = player;
-}
-
-function getTowns(player) {
+    var canTrade3To1 = false;
+    var resIndices2To1 = [];
     
-    return nodeIds.map((i) => state.board[i]).filter((c) => c.player == player);
-}
-
-function getRoads(player) {
-    
-    return edgeIds.map((i) => state.board[i]).filter((c) => c.player == player);
-}
-
-function computeRoadLength(player) {
-    
-    const roads = getRoads(player);
-    return 0; // TODO implement!
-}
-
-function upgradeTown(player, nodeId) {
-    
-    state.board[nodeId].city = true;
-}
-
-function moveBandit(tileId) {
-    
-    for (const otherTileId of landTileIds) {
-        state.board[otherTileId].bandit = false;
-    }
-    state.board[tileId].bandit = true;
-}
-
-function takeCard(player, cardIndex, listener) {
-    
-    state.stack = state.stack.filter((i) => i != cardIndex);
-    
-    if (player == state.me) {
-        const card = {
-            index: cardIndex,
-            locked: true,
-            listener,
-        };
-        state.cards.push(card);
-    }
-}
-
-function discardCard(player, cardIndex) {
-    
-    if (player == state.me) {
-        state.cards = state.cards.filter((c) => c.index != cardIndex);
-        if (cardIndex >= knightMinIndex) {
-            state.playedKnights += 1;
+    getTowns().forEach((i) => {
+        const rate = state.board[i].rate;
+        if (rate) {
+            const trade = state.board[i].trade;
+            if (trade) {
+                resIndices2To1.push(trade);
+            } else {
+                canTrade3To1 = true;
+            }
         }
-    }
+    });
+    
+    const rates = noResources().map((n) => canTrade3To1 ? 3 : 4);
+    resIndices2To1.forEach((i) => rates[i] = 2);
+    return rates;
 }
 
-function updateLargestForce(player, size) {
-    
-    state.largestForce = size;
-    state.largestForcePlayer = player;
-}
-
-function updateLongestRoad(player, length) {
-    
-    state.longestRoad = length;
-    state.longestRoadPlayer = player;
-}
+// CHOICES
 
 function pushChoice(choice) {
     
@@ -196,109 +345,13 @@ function insertChoice(choice) {
     state.choice.parent = choice;
 }
 
+function replaceChoice(choice) {
+    
+    choice.parent = state.choice.parent;
+    state.choice = choice;
+}
+
 function resetChoice(choice) {
     
     state.choice = {};
-}
-
-function getSwapRates(player) {
-    
-    const portTowns = getTowns(player).filter((t) => t.rate);
-    const specPortTowns = portTowns.filter((t) => t.trade);
-    
-    const canTrade3 = portTowns.length > specPortTowns.length;
-    const rates = noResources().map((n) => canTrade3 ? 3 : 4);
-    
-    specPortTowns.forEach((t) => rates[t.trade] = 2);
-    
-    return rates;
-}
-
-function getAdjacentTowns(tileId) {
-    
-    return state.board[tileId].nodes.map((i) => state.board[i]).filter((c) => c.player);
-}
-
-function getYieldingTileIds(roll) {
-    
-    return landTileIds.filter((i) => state.board[i].roll == roll && state.board[i].bandit != true);
-}
-
-function canBuildHometown(nodeId) {
-    
-    for (const edgeId of state.board[nodeId].edges) {
-        for (const nextNodeId of state.board[edgeId].nodes) {
-            if (state.board[nextNodeId].player) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-function canBuildTown(player, nodeId) {
-    
-    if (!canBuildHometown(nodeId)) {
-        return false;
-    }
-    
-    var ownedEdgeId = null;
-    for (const edgeId of state.board[nodeId].edges) {
-        if (state.board[edgeId].player == player) {
-            ownedEdgeId = edgeId;
-            break;
-        }
-    }
-    
-    if (ownedEdgeId == null) {
-        return false;
-    }
-    
-    for (const nodeId of state.board[ownedEdgeId].nodes) {
-        if (state.board[nodeId].player) {
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-function canBuildRoad(player, edgeId) {
-    
-    for (const nodeId of state.board[edgeId].nodes) {
-        if (state.board[nodeId].player == player) {
-            return true;
-        }
-        for (const edgeId of state.board[nodeId].edges) {
-            if (state.board[edgeId].player == player) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-function getVictoryProgress() {
-    
-    var townCount = 0, cityCount = 0;
-    getTowns(state.me).forEach((t) => {
-        if (t.city) {
-            cityCount += 1;
-        } else {
-            townCount += 1;
-        }
-    });
-    
-    const cards = state.cards.filter((c) => c.index <= victoryMaxIndex);
-    const longest = state.longestRoadPlayer == state.me;
-    const largest = state.largestForcePlayer == state.me;
-    
-    const points = townCount + 2 * cityCount + cards.length + (longest ? 2 : 0) + (largest ? 2 : 0);
-    
-    return {points, townCount, cityCount, cards, longest, largest};
-}
-
-function formatResources(resources) {
-    
-    return resIndices.filter((i) => resources[i]).map((i) => resources[i] + " " + resNames[i]).join(', ');
 }

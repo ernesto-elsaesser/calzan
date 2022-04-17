@@ -414,8 +414,8 @@ function refreshActionButtons() {
             buttons.push([resNames[i], () => state.choice.select(i)]);
         });
     } else if (state.choice.id == 'invention') {
-        const number = countResources(state.choice.resources) + 1;
-        title = "Erfindung - " + number + ". Rohstoff auswählen";
+        const count = countResources(state.choice.resources);
+        title = "Erfindung - " + (count == 1 ? "Zweiten" : "Ersten") + " Rohstoff auswählen";
         state.choice.options.forEach((i) => {
             buttons.push([resNames[i], () => state.choice.select(i)]);
         });

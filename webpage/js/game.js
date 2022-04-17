@@ -425,7 +425,7 @@ function monopolySent(player, args) {
             pushChoice(turnChoice);
         }
     } else if (state.players[playerIndex + 1] == state.me) {
-        obeyMonopoly(player, resIndex);
+        obeyMonopoly(receiver, resIndex);
     }
 }
         

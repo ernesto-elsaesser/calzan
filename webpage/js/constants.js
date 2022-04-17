@@ -1,7 +1,7 @@
 const rolls = [2, 3, 3, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 11, 11, 12];
 
 const resIndices = [1, 2, 3, 4, 5];
-const resNames = [null, "Holz", "Lehm", "Getreide", "Wolle", "Erz"];
+const resNames = ["Sand", "Holz", "Lehm", "Getreide", "Wolle", "Erz"];
 
 const noResources = () => ['R', 0, 0, 0, 0, 0];
 

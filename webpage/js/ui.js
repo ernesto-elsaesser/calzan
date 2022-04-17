@@ -68,11 +68,11 @@ function refreshBoard() {
             
             if (cell.player) {
                 var upgradeListener = null;
-                if (state.choice.token == 'city' && state.choice.nodeIds.includes(cellId)) {
+                if (state.choice.token == 'city' && state.choice.options.includes(cellId)) {
                     upgradeListener = () => state.choice.select(cellId);
                 }
                 addTown(cell.player, cell.city, x, sy, null, upgradeListener);
-            } else if (state.choice.token == 'town' && state.choice.nodeIds.includes(cellId)) {
+            } else if (state.choice.token == 'town' && state.choice.options.includes(cellId)) {
                 addTown(state.me, false, x, sy, () => state.choice.select(cellId), null);
             }
             
@@ -80,7 +80,7 @@ function refreshBoard() {
             
             if (cell.player) {
                 addRoad(cell.player, cell.dir, x, y, null);
-            } else if (state.choice.token == 'road' && state.choice.edgeIds.includes(cellId)) {
+            } else if (state.choice.token == 'road' && state.choice.options.includes(cellId)) {
                 addRoad(state.me, cell.dir, x, y, () => state.choice.select(cellId));
             }
         }
@@ -143,10 +143,6 @@ function addBandit(x, y, listener) {
         `;
     if (listener) {
         bandit.setAttribute('opacity', 0.5);
-        // needed?
-        //bandit.setAttribute('stroke', 'black');
-        bandit.setAttribute('stroke-width', 1);
-        bandit.setAttribute('stroke-opacity', 1.0);
         bandit.addEventListener('click', listener);
     }
     
@@ -406,7 +402,7 @@ function refreshActionButtons() {
     } else if (state.choice.id == 'answer') {
         const give = formatResources(state.choice.give);
         const take = formatResources(state.choice.take);
-        title = state.choice.proposer + " bietet dir " + give + " für " + take;
+        title = state.choice.proposer + " bietet dir [ " + give + " ] für [ " + take + " ]";
         state.choice.options.forEach((b) => {
             buttons.push([b ? "Annehmen" : "Ablehnen", () => state.choice.select(b)]);
         });

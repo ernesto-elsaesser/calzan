@@ -123,7 +123,7 @@ function createTradeDemandChoice(player, give) {
     
     return {
         id: 'demand',
-        resource,
+        resources,
         options: resIndices,
         select: (index) => {
             resources[index] += 1;

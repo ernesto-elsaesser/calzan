@@ -201,7 +201,7 @@ function getUpgradedTowns() {
 
 function getBanditOptions() {
     
-    return landTileIds.filter((i) = state.board[i].land < 6 && state.board[i].bandit != true);
+    return landTileIds.filter((i) => state.board[i].land < 6 && state.board[i].bandit != true);
 }
 
 function moveBandit(tileId) {
@@ -256,17 +256,14 @@ function updateLargestForce(player, size) {
 
 // RESOURCES
 
-function updateResources(player, resources, add) {
+function addResources(resources) {
     
-    if (player == state.me) {
-        for (const index of resIndices) {
-            if (add) {
-                state.resources[index] += resources[index];
-            } else {
-                state.resources[index] -= resources[index];
-            }
-        }
-    }
+    resIndices.forEach((i) => state.resources[i] += resources[i]);
+}
+
+function subtractResources(resources) {
+    
+    resIndices.forEach((i) => state.resources[i] -= resources[i]);
 }
 
 function countResources(resources) {
@@ -293,11 +290,6 @@ function expandResources(resources) {
         }
     });
     return expanded;
-}
-
-function formatResources(resources) {
-    
-    return resIndices.filter((i) => resources[i]).map((i) => resources[i] + " " + resNames[i]).join(', ');
 }
 
 function getSwapRates() {

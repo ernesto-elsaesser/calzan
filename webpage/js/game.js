@@ -321,7 +321,7 @@ function purchaseMade(player, args) {
         if (purchaseIndex == 1) {
             const length = computeRoadLength(state.me);
             if (length > state.longestRoad) {
-                postEvent('claim-roads', length);
+                postEvent('claim-longest', length);
                 return;
             }
         }
@@ -354,7 +354,7 @@ function knightPlayed(player, args) {
     
     if (player == state.me) {
         if (state.playedKnights > state.largestForce) {
-            postEvent('claim-force', state.playedKnights);
+            postEvent('claim-largest', state.playedKnights);
         } else {
             const banditChoice = createBanditChoice();
             pushChoice(banditChoice);
@@ -375,7 +375,7 @@ function roadsPlayed(player, args) {
         
         const length = computeRoadLength(state.me);
         if (length > state.longestRoad) {
-            postEvent('claim-roads', length);
+            postEvent('claim-longest', length);
             return;
         }
         
@@ -460,7 +460,7 @@ function largestClaimed(player, args) {
     
     const size = args;
     updateLargestForce(player, size);
-    logLine(player + " hält nun die größte Rittermacht");
+    logLine(player + " hält nun die größte Rittermacht (" + size + ")");
     
     if (player == state.me) {
         if (checkVictory()) {
@@ -475,7 +475,7 @@ function longestClaimed(player, args) {
     
     const length = args;
     updateLongestRoad(player, length);
-    logLine(player + " hält nun die längste Handelsstraße");
+    logLine(player + " hält nun die längste Handelsstraße (" + length + ")");
     
     if (player == state.me) {
         if (checkVictory()) {
@@ -545,5 +545,8 @@ function gameWon(player, args) {
 // TEMPORARY FUNCTION UNTIL ALGORITHM IMPLEMENTED
 
 function lhs(length) {
-    postEvent('claim-roads', length);
+    
+    if (state.current == state.me) {
+        postEvent('claim-longest', length);
+    }
 }

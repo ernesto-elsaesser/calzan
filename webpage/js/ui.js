@@ -364,7 +364,7 @@ function refreshActionButtons() {
         title = "Werfe " + state.choice.targetCount + " Rohstoffe ab:";
         state.choice.options.forEach((i) => {
             const amount = state.choice.resources[i];
-            buttons.push([resNames[i] + ": " + amount, state.choice.select(i)]);
+            buttons.push([resNames[i] + ": " + amount, () => state.choice.select(i)]);
         });
         const count = countResources(state.choice.resources);
         const confirmListener = count == state.choice.targetCount ? state.choice.confirm : null;

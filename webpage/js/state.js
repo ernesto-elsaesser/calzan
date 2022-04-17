@@ -298,9 +298,9 @@ function getSwapRates() {
     var resIndices2To1 = [];
     
     getTowns().forEach((i) => {
-        const rate = state.board[i].rate;
-        if (rate) {
-            const trade = state.board[i].trade;
+        const tileId = state.board[i].route;
+        if (tileId) {
+            const trade = state.board[tileId].trade;
             if (trade) {
                 resIndices2To1.push(trade);
             } else {
@@ -309,7 +309,8 @@ function getSwapRates() {
         }
     });
     
-    const rates = noResources().map((n) => canTrade3To1 ? 3 : 4);
+    const rates = noResources();
+    resIndices.forEach((i) => rates[i] = canTrade3To1 ? 3 : 4);
     resIndices2To1.forEach((i) => rates[i] = 2);
     return rates;
 }

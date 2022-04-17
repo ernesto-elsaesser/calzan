@@ -91,10 +91,10 @@ function updateResources(player, resources, add, cause) {
     var parts;
     if (add) {
         addResources(resources);
-        parts = changes.map((i) => "+" + resources[i] + " " + resNames[i]);
+        parts = changes.map((i) => "+" + resources[i] + "&nbsp;" + resNames[i]);
     } else {
         subtractResources(resources);
-        parts = changes.map((i) => "-" + resources[i] + " " + resNames[i]);
+        parts = changes.map((i) => "-" + resources[i] + "&nbsp;" + resNames[i]);
     }
 
     if (parts.length) {
@@ -239,6 +239,8 @@ function banditMoved(player, args) {
                 const resources = noResources();
                 resources[resIndex] = 1;
                 postEvent('send-loot', [player, resources]);
+            } else {
+                postEvent('send-loot', [player, null]);
             }
         }
         
@@ -255,8 +257,10 @@ function lootSent(player, args) {
     
     const [receiver, resources] = args;
     
-    updateResources(receiver, resources, true, "BEUTE")
-    updateResources(player, resources, false, "GESTOHLEN");
+    if (resources) {
+        updateResources(receiver, resources, true, "BEUTE")
+        updateResources(player, resources, false, "GESTOHLEN");
+    }
     
     if (state.current == state.me) {
         const turnChoice = createTurnChoice();

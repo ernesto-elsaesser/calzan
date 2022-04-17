@@ -46,11 +46,7 @@ function createTurnChoice() {
     const swapRates = getSwapRates();
     const swapOptions = resIndices.filter((i) => state.resources[i] >= swapRates[i]);
     
-    var tradeOptions = [];
-    const count = countResources(state.resources);
-    if (count > 0) {
-        tradeOptions = state.players.filter((p) => p != state.me);
-    }
+    const tradeOptions = state.players.filter((p) => p != state.me);
     
     return {
         id: 'turn',

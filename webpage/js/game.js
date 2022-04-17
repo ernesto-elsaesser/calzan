@@ -107,7 +107,7 @@ function townPlaced(player, args) {
             state.board[nodeId].tiles.map((i) => state.board[i]).forEach((t) => {
                 if (t.land > 0) resources[t.land] += 1;
             });
-            updateResources(player, resources);
+            updateResources(player, resources, true);
             logLine("ERTRÄGE: " + formatResources(resources));
         }
         const roadChoice = createHometownRoadChoice(nodeId);
@@ -168,7 +168,7 @@ function diceRolled(player, args) {
         });
         const count = countResources(resources);
         if (count > 0) {
-            updateResources(state.me, resources);
+            updateResources(state.me, resources, true);
             logLine("ERTRÄGE: " + formatResources(resources));
         }
         if (player == state.me) {
@@ -213,7 +213,7 @@ function purchaseMade(player, args) {
     
     const purchaseIndex = args[0];
     const costs = purchaseCosts[purchaseIndex];
-    updateResources(player, costs);
+    updateResources(player, costs, false);
     
     if (state.choice.purchaseIndex) {
         popChoice();
@@ -320,7 +320,7 @@ function inventPlayed(player, args) {
     
     const [cardIndex, resources] = args;
     discardCard(player, cardIndex);
-    updateResources(player, resources);
+    updateResources(player, resources, true);
     
     if (state.choice.id == 'invention') {
         popChoice();
@@ -349,7 +349,7 @@ function turnEnded(player, args) {
 function resourcesDropped(player, args) {
     
     const resources = args;
-    updateResources(player, resources);
+    updateResources(player, resources, false);
     
     if (player == state.me) {
         popChoice();
@@ -363,10 +363,9 @@ function resourcesDropped(player, args) {
 function resourcesSent(player, args) {
     
     const [cause, recipient, resources] = args;
-    const negResources = negateResources(resources);
     
-    updateResources(recipient, resources);
-    updateResources(player, negResources);
+    updateResources(recipient, resources, true);
+    updateResources(player, resources, false);
     
     if (player == state.me || recipient == state.me) {
         logLine(cause + ": " + formatResources(resources));
@@ -375,8 +374,9 @@ function resourcesSent(player, args) {
 
 function resourcesSwapped(player, args) {
     
-    const resources = args;
-    updateResources(player, resources);
+    const [give, take] = args;
+    updateResources(player, give, false);
+    updateResources(player, take, true);
     
     if (state.choice.id == 'swap') {
         popChoice();
@@ -419,16 +419,24 @@ function tradeOffered(player, args) {
     
     const [partner, give, take] = args;
     
-    if (state.choice.id = 'offer') {
+    if (state.choice.id == 'offer') {
         popChoice();
     }
     
+    if (player == state.me || partner == state.me) {
+        logLine(player + " schlägt " + partner + " einen Handel vor");
+    }
+    
     if (partner == state.me) {
-        const answerChoice = createTradeAnswerChoice(player, give, take);
-        if (state.choice.id) {
-            insertChoice(answerChoice);
+        if (hasResources(take)) {
+            const answerChoice = createTradeAnswerChoice(player, give, take);
+            if (state.choice.id) {
+                insertChoice(answerChoice);
+            } else {
+                pushChoice(answerChoice);
+            }
         } else {
-            pushChoice(answerChoice);
+            postEvent('answer-offer', [player, give, take, false]);
         }
     }
 }
@@ -437,17 +445,15 @@ function offerAnswered(player, args) {
     
     const [proposer, give, take, accepted] = args;
     
-    if (state.choice.id = 'answer') {
+    if (state.choice.id == 'answer') {
         popChoice();
     }
     
     if (accepted) {
-        const negGive = negateResources(give);
-        const negTake = negateResources(take);
-        updateResources(proposer, negGive);
-        updateResources(player, give);
-        updateResources(proposer, take);
-        updateResources(player, negTake);
+        updateResources(proposer, give, false);
+        updateResources(player, give, true);
+        updateResources(proposer, take, true);
+        updateResources(player, take, false);
         logLine(proposer + " handelt mit  " + player);
     } else if (proposer == state.me) {
         logLine(player + " lehnt den vorgeschlagenen Handel ab");

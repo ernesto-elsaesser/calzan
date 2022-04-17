@@ -33,7 +33,7 @@ function createTurnChoice() {
     
     return {
         id: 'turn',
-        tradeRates,
+        swapRates,
         purchase: (index) => {
             if (index == 4) { // knight is separated into 2 events
                 postEvent('make-purchase', [index]);
@@ -44,7 +44,7 @@ function createTurnChoice() {
             }
         },
         swap: (index) => {
-            const swapChoice = createSwapChoice(index, tradeRates[index]);
+            const swapChoice = createSwapChoice(index, swapRates[index]);
             pushChoice(swapChoice);
             refreshUI();
         },
@@ -141,15 +141,15 @@ function createTradeAnswerChoice(proposer, give, take) {
 
 function createSwapChoice(resIndex, rate) {
     
-    const resources = noResources();
-    resources[resIndex] = -rate;
-    
     return {
         id: 'swap',
-        resources,
+        resIndex,
         selectResource: (index) => {
-            resources[index] = 1;
-            postEvent('swap-res', resources);
+            const give = noResources();
+            give[resIndex] = rate;
+            const take = noResources();
+            take[index] = 1;
+            postEvent('swap-res', [give, take]);
         },
         abortable: true,
     };
@@ -228,8 +228,7 @@ function createDropChoice() {
             refreshUI();
         },
         confirm: () => {
-            const negResources = negateResources(resources);
-            postEvent('drop-res', negResources);
+            postEvent('drop-res', resources);
         },
     };
 }
@@ -254,7 +253,7 @@ function createBanditChoice() {
             if (targets.length == 0) {
                 postEvent('move-bandit', [tileId, null]);
             } else if (targets.length == 1) {
-                postEvent('move-bandit', [tileId, targets[0]);
+                postEvent('move-bandit', [tileId, targets[0]]);
             } else {
                 selectedTileId = tileId;
                 targets.forEach((p) => targetOptions.push(p));

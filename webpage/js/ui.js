@@ -352,13 +352,13 @@ function refreshActionButtons() {
     
     
     if (state.choice.id == 'turn') {
-        purchaseIndices.filter((i) => canBuy(i)).forEach((i) => {
+        purchaseIndices.filter((i) => hasResources(purchaseCosts[i])).forEach((i) => {
             buttons.push([purchaseActionNames[i], () => state.choice.purchase(i)]);
         });
         resIndices.forEach((i) => {
-            const rate = state.choice.tradeRates[i];
+            const rate = state.choice.swapRates[i];
             if (state.resources[i] >= rate) {
-                buttons.push([rate + " " + resNames[i] + " umtauschen", () => state.choice.trade(i)]);
+                buttons.push([rate + " " + resNames[i] + " umtauschen", () => state.choice.swap(i)]);
             }
         });
         const count = countResources(state.resources);
@@ -385,7 +385,7 @@ function refreshActionButtons() {
         }
     } else if (state.choice.id == 'swap') {
         title = "Tauschen gegen";
-        resIndices.filter((i) => state.choice.resources[i] == 0).forEach((i) => {
+        resIndices.filter((i) => i != state.choice.resIndex).forEach((i) => {
             buttons.push([resNames[i], () => state.choice.selectResource(i)]);
         });
     } else if (state.choice.id == 'offer') {
@@ -409,12 +409,13 @@ function refreshActionButtons() {
                 const amount = state.choice.take[i];
                 buttons.push([resNames[i] + ": " + amount, () => state.choice.selectResource(i)]);
             });
+            buttons.push(["Zurücksetzen", state.choice.reset]);
             buttons.push(["Vorschlagen", state.choice.confirm]);
         }
     } else if (state.choice.id == 'answer') {
         const give = formatResources(state.choice.give);
         const take = formatResources(state.choice.take);
-        title = state.choice.proposer + " bietet dir " + give " für " + take;
+        title = state.choice.proposer + " bietet dir " + give + " für " + take;
         buttons.push(["Ablehnen", () => state.choice.respond(false)]);
         buttons.push(["Annehmen", () => state.choice.respond(true)]);
     } else if (state.choice.id == 'roadworks') {

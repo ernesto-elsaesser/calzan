@@ -6,7 +6,7 @@ const resNames = [null, "Holz", "Lehm", "Getreide", "Wolle", "Erz"];
 const noResources = () => ['R', 0, 0, 0, 0, 0];
 
 const purchaseIndices = [1, 2, 3, 4];
-const purchaseCosts = [null, ['R', -1, -1, 0, 0, 0], ['R', -1, -1, -1, -1, 0], ['R', 0, 0, -2, 0, -3], ['R', 0, 0, -1, -1, -1]];
+const purchaseCosts = [null, ['R', 1, 1, 0, 0, 0], ['R', 1, 1, 1, 1, 0], ['R', 0, 0, 2, 0, 3], ['R', 0, 0, 1, 1, 1]];
 const purchaseNames = [null, "Straße", "Siedlung", "Stadt", "Entwicklungskarte"];
 const purchaseActionNames = [null, "Straße bauen", "Siedlung bauen", "Siedlung ausbauen", "Entwicklungskarte kaufen"];
 

@@ -61,13 +61,43 @@ function advanceTurn() {
     }
 }
 
-function updateResources(player, resources) {
+function updateResources(player, resources, add) {
     
     if (player == state.me) {
         for (const index of resIndices) {
-            state.resources[index] += resources[index];
+            if (add) {
+                state.resources[index] += resources[index];
+            } else {
+                state.resources[index] -= resources[index];
+            }
         }
     }
+}
+
+function countResources(resources) {
+    
+    return resIndices.reduce((acc, i) => acc + resources[i], 0);
+}
+
+function hasResources(resources) {
+    
+    for (const index of resIndices) {
+        if (state.resources[index] - resources[index] < 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function expandResources(resources) {
+    
+    var expanded = [];
+    resIndices.forEach((i) => {
+        for (var r = 0; r < resources[i]; r += 1) {
+            expanded.push(i);
+        }
+    });
+    return expanded;
 }
 
 function claimTown(player, nodeId) {
@@ -78,6 +108,16 @@ function claimTown(player, nodeId) {
 function claimRoad(player, edgeId) {
     
     state.board[edgeId].player = player;
+}
+
+function getTowns(player) {
+    
+    return nodeIds.map((i) => state.board[i]).filter((c) => c.player == player);
+}
+
+function getRoads(player) {
+    
+    return edgeIds.map((i) => state.board[i]).filter((c) => c.player == player);
 }
 
 function computeRoadLength(player) {
@@ -161,37 +201,6 @@ function resetChoice(choice) {
     state.choice = {};
 }
 
-function countResources(resources) {
-    
-    return resIndices.reduce((acc, i) => acc + resources[i], 0);
-}
-
-function negateResources(resources) {
-    
-    return resources.map((n) => n == 'R' ? 'R' : -n);
-}
-
-function expandResources(resources) {
-    
-    var expanded = [];
-    resIndices.forEach((i) => {
-        for (var r = 0; r < resources[i]; r += 1) {
-            expanded.push(i);
-        }
-    });
-    return expanded;
-}
-
-function getTowns(player) {
-    
-    return nodeIds.map((i) => state.board[i]).filter((c) => c.player == player);
-}
-
-function getRoads(player) {
-    
-    return edgeIds.map((i) => state.board[i]).filter((c) => c.player == player);
-}
-
 function getSwapRates(player) {
     
     const portTowns = getTowns(player).filter((t) => t.rate);
@@ -213,17 +222,6 @@ function getAdjacentTowns(tileId) {
 function getYieldingTileIds(roll) {
     
     return landTileIds.filter((i) => state.board[i].roll == roll && state.board[i].bandit != true);
-}
-
-function canBuy(purchase) {
-    
-    const costs = purchaseCosts[purchase];
-    for (const index of resIndices) {
-        if (state.resources[index] + costs[index] < 0) {
-            return false;
-        }
-    }
-    return true;
 }
 
 function canBuildHometown(nodeId) {

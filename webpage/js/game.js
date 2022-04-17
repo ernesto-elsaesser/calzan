@@ -41,11 +41,11 @@ function dispatchEvent(event, prevId) {
         'play-monopoly': monopolyPlayed,
         'play-invent': inventPlayed,
         'send-res': resourcesSent,
+        'swap-res': resourcesSwapped,
         'claim-force': forceClaimed,
         'claim-roads': roadsClaimed,
-        'trade-sea': seaTraded,
         'offer-trade': tradeOffered,
-        'accept-trade': tradeAccepted,
+        'answer-offer': offerAnswered,
         'end-turn': turnEnded,
         'win-game': gameWon,
     };
@@ -373,6 +373,16 @@ function resourcesSent(player, args) {
     }
 }
 
+function resourcesSwapped(player, args) {
+    
+    const resources = args;
+    updateResources(player, resources);
+    
+    if (state.choice.id == 'swap') {
+        popChoice();
+    }
+}
+
 function getRaided(player, random) {
     
     const expResources = expandResources(state.resources);
@@ -405,22 +415,43 @@ function roadsClaimed(player, args) {
     if (player == state.me) checkVictory();
 }
 
-function seaTraded(player, args) {
+function tradeOffered(player, args) {
     
-    const resources = args;
-    updateResources(player, resources);
+    const [partner, give, take] = args;
     
-    if (state.choice.id == 'trade') {
+    if (state.choice.id = 'offer') {
         popChoice();
+    }
+    
+    if (partner == state.me) {
+        const answerChoice = createTradeAnswerChoice(player, give, take);
+        if (state.choice.id) {
+            insertChoice(answerChoice);
+        } else {
+            pushChoice(answerChoice);
+        }
     }
 }
 
-function tradeOffered(player, args) {
+function offerAnswered(player, args) {
     
-}
-
-function tradeAccepted(player, args) {
+    const [proposer, give, take, accepted] = args;
     
+    if (state.choice.id = 'answer') {
+        popChoice();
+    }
+    
+    if (accepted) {
+        const negGive = negateResources(give);
+        const negTake = negateResources(take);
+        updateResources(proposer, negGive);
+        updateResources(player, give);
+        updateResources(proposer, take);
+        updateResources(player, negTake);
+        logLine(proposer + " handelt mit  " + player);
+    } else if (proposer == state.me) {
+        logLine(player + " lehnt den vorgeschlagenen Handel ab");
+    }
 }
 
 function checkVictory() {

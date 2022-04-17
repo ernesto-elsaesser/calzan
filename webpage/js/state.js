@@ -150,6 +150,12 @@ function popChoice() {
     }
 }
 
+function insertChoice(choice) {
+    
+    choice.parent = state.choice.parent;
+    state.choice.parent = choice;
+}
+
 function resetChoice(choice) {
     
     state.choice = {};
@@ -186,7 +192,7 @@ function getRoads(player) {
     return edgeIds.map((i) => state.board[i]).filter((c) => c.player == player);
 }
 
-function getTradeRates(player) {
+function getSwapRates(player) {
     
     const portTowns = getTowns(player).filter((t) => t.rate);
     const specPortTowns = portTowns.filter((t) => t.trade);

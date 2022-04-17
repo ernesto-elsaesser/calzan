@@ -385,9 +385,7 @@ function refreshActionButtons() {
             const amount = state.choice.resources[i];
             buttons.push([resNames[i] + ": " + amount, () => state.choice.select(i)]);
         });
-        const count = countResources(state.choice.resources);
-        const confirmListener = count > 0 ? state.choice.confirm : null;
-        buttons.push(["Weiter", confirmListener]);
+        buttons.push(["Weiter", state.choice.confirm]);
     } else if (state.choice.id == 'demand') {
         title = "Gewünschte Rohstoffe";
         state.choice.options.forEach((i) => {
@@ -396,9 +394,8 @@ function refreshActionButtons() {
         });
         const count = countResources(state.choice.resources);
         const resetListener = count > 0 ? state.choice.reset : null;
-        const confirmListener = count > 0 ? state.choice.confirm : null;
         buttons.push(["Zurücksetzen", resetListener]);
-        buttons.push(["Vorschlagen", confirmListener]);
+        buttons.push(["Vorschlagen", state.choice.confirm]);
     } else if (state.choice.id == 'answer') {
         const give = formatTrade(state.choice.give);
         const take = formatTrade(state.choice.take);
@@ -452,5 +449,10 @@ function refreshActionButtons() {
 
 function formatTrade(resources) {
     
-    return resIndices.filter((i) => resources[i]).map((i) => resources[i] + " " + resNames[i]).join(' und ');
+    const positives = resIndices.filter((i) => resources[i]);
+    if (positives.length) {
+        return positives.map((i) => resources[i] + " " + resNames[i]).join(' und ');
+    } else {
+        return "nichts";
+    }
 }

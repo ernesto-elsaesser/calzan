@@ -97,7 +97,9 @@ function updateResources(player, resources, add, cause) {
         parts = changes.map((i) => "-" + resources[i] + " " + resNames[i]);
     }
 
-    logLine(cause + ": " + parts.join(', '));
+    if (parts.length) {
+        logLine(cause + ": " + parts.join(', '));
+    }
 }
 
 function startGame() {

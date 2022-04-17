@@ -293,7 +293,7 @@ function purchaseMade(player, args) {
             listener = () => {
                 var cardChoice;
                 if (cardName == "Straßenbau") {
-                    cardChoice = createRoadworksChoice(cardIndex);
+                    cardChoice = createRoadworksFirstChoice(cardIndex);
                 } else if (cardName == "Monopol") {
                     cardChoice = createMonopolyChoice(cardIndex);
                 } else if (cardName == "Erfindung") {

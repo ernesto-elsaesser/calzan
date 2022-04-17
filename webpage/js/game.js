@@ -41,8 +41,8 @@ function dispatchEvent(event, prevId) {
         'send-monopoly': monopolySent,
         'play-invent': inventPlayed,
         'swap-res': resourcesSwapped,
-        'claim-force': forceClaimed,
-        'claim-roads': roadsClaimed,
+        'claim-largest': largestClaimed,
+        'claim-longest': longestClaimed,
         'offer-trade': tradeOffered,
         'answer-offer': offerAnswered,
         'end-turn': turnEnded,
@@ -308,6 +308,10 @@ function purchaseMade(player, args) {
     
     if (player == state.me) {
         
+        if (checkVictory()) {
+            return;
+        }
+        
         if (purchaseIndex == 1) {
             const length = computeRoadLength(state.me);
             if (length > state.longestRoad) {
@@ -316,7 +320,8 @@ function purchaseMade(player, args) {
             }
         }
         
-        checkVictory();
+        const turnChoice = createTurnChoice();
+        pushChoice(turnChoice);
     }
 }
 
@@ -338,15 +343,16 @@ function knightPlayed(player, args) {
     
     const cardIndex = args;
     
+    discardCard(player, cardIndex);
     logLine(player + " spielt eine Ritter-Karte und darf den Räuber bewegen");
     
     if (player == state.me) {
-        discardCard(player, cardIndex);
         if (state.playedKnights > state.largestForce) {
             postEvent('claim-force', state.playedKnights);
+        } else {
+            const banditChoice = createBanditChoice();
+            pushChoice(banditChoice);
         }
-        const banditChoice = createBanditChoice();
-        pushChoice(banditChoice);
     }
 }
     
@@ -360,6 +366,13 @@ function roadsPlayed(player, args) {
     logLine(player + " spielt Straßenbau und erhält 2 kostenlose Straßen");
     
     if (state.current == state.me) {
+        
+        const length = computeRoadLength(state.me);
+        if (length > state.longestRoad) {
+            postEvent('claim-roads', length);
+            return;
+        }
+        
         const turnChoice = createTurnChoice();
         pushChoice(turnChoice);
     }
@@ -437,35 +450,39 @@ function turnEnded(player, args) {
     }
 }
 
-function forceClaimed(player, args) {
+function largestClaimed(player, args) {
     
     const size = args;
     updateLargestForce(player, size);
     logLine(player + " hält nun die größte Rittermacht");
     
     if (player == state.me) {
-        checkVictory();
+        if (checkVictory()) {
+            return;
+        }
+        const banditChoice = createBanditChoice();
+        pushChoice(banditChoice);
     }
 }
 
-function roadsClaimed(player, args) {
+function longestClaimed(player, args) {
     
     const length = args;
     updateLongestRoad(player, length);
     logLine(player + " hält nun die längste Handelsstraße");
     
     if (player == state.me) {
-        checkVictory();
+        if (checkVictory()) {
+            return;
+        }
+        const turnChoice = createTurnChoice();
+        pushChoice(turnChoice);
     }
 }
 
 function tradeOffered(player, args) {
     
     const [partner, give, take] = args;
-    
-    if (state.choice.id == 'demand') {
-        popChoice();
-    }
     
     if (player == state.me || partner == state.me) {
         logLine(player + " schlägt " + partner + " einen Handel vor");
@@ -474,11 +491,7 @@ function tradeOffered(player, args) {
     if (partner == state.me) {
         if (hasResources(take)) {
             const answerChoice = createTradeAnswerChoice(player, give, take);
-            if (state.choice.id) {
-                insertChoice(answerChoice);
-            } else {
-                pushChoice(answerChoice);
-            }
+            pushChoice(answerChoice);
         } else {
             postEvent('answer-offer', [player, give, take, false]);
         }
@@ -489,18 +502,19 @@ function offerAnswered(player, args) {
     
     const [proposer, give, take, accepted] = args;
     
-    if (state.choice.id == 'answer') {
-        popChoice();
-    }
-    
     if (accepted) {
-        updateResources(proposer, give, false);
-        updateResources(player, give, true);
-        updateResources(proposer, take, true);
-        updateResources(player, take, false);
+        updateResources(proposer, give, false, "GEGEBEN");
+        updateResources(player, give, true, "ERHALTEN");
+        updateResources(proposer, take, true, "ERHALTEN");
+        updateResources(player, take, false, "GEGEBEN");
         logLine(proposer + " handelt mit  " + player);
     } else if (proposer == state.me) {
         logLine(player + " lehnt den vorgeschlagenen Handel ab");
+    }
+    
+    if (state.current == state.me) {
+        const turnChoice = createTurnChoice();
+        pushChoice(turnChoice);
     }
 }
 
@@ -509,7 +523,9 @@ function checkVictory() {
     const progress = getVictoryProgress();
     if (progress.points >= 10) {
         postEvent('win-game', progress.points);
+        return true;
     }
+    return false;
 }
 
 function gameWon(player, args) {

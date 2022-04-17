@@ -400,9 +400,9 @@ function refreshActionButtons() {
         buttons.push(["Zurücksetzen", resetListener]);
         buttons.push(["Vorschlagen", confirmListener]);
     } else if (state.choice.id == 'answer') {
-        const give = formatResources(state.choice.give);
-        const take = formatResources(state.choice.take);
-        title = state.choice.proposer + " bietet dir [ " + give + " ] für [ " + take + " ]";
+        const give = formatTrade(state.choice.give);
+        const take = formatTrade(state.choice.take);
+        title = state.choice.proposer + " bietet dir " + give + " für " + take;
         state.choice.options.forEach((b) => {
             buttons.push([b ? "Annehmen" : "Ablehnen", () => state.choice.select(b)]);
         });
@@ -448,4 +448,9 @@ function refreshActionButtons() {
         }
         actions.appendChild(button);
     }
+}
+
+function formatTrade(resources) {
+    
+    return resIndices.filter((i) => resources[i]).map((i) => resources[i] + " " + resNames[i]).join(' und ');
 }

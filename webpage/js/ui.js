@@ -219,7 +219,7 @@ function addTown(player, isCity, x, y, listener, upgradeListener) {
         dot.setAttribute('cy', y);
         dot.setAttribute('r', '10');
         dot.setAttribute('opacity', 0.5);
-        svgTokens.appendChild(dot);
+        svgBandits.appendChild(dot);
         const button = shape('circle', player);
         button.setAttribute('cx', x);
         button.setAttribute('cy', y);
@@ -228,7 +228,7 @@ function addTown(player, isCity, x, y, listener, upgradeListener) {
         button.setAttribute('stroke-width', 1);
         button.setAttribute('opacity', 0.5);
         button.addEventListener('click', upgradeListener);
-        svgTokens.appendChild(button);
+        svgBandits.appendChild(button);
     }
 }
 

@@ -27,6 +27,12 @@ const cardNames = [
     "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", "Ritter", 
 ];
 
+const oceanTileIds = [
+    "O1", "O2", "O3", "O4", "O5", "O6",
+    "O7", "O8", "O9", "O10", "O11", "O12",
+    "O13", "O14", "O15", "O16", "O17", "O18",
+];
+    
 const landTileIds = [
     'A1', 'A2', 'A3',
     'B1', 'B2', 'B3', 'B4',

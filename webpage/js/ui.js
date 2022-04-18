@@ -1,8 +1,5 @@
 const log = document.getElementById("log");
-const svgOutlines = document.getElementById("outlines");
-const svgTiles = document.getElementById("tiles");
-const svgTokens = document.getElementById("tokens");
-const svgBandits = document.getElementById("bandits");
+const board = document.getElementById("board");
 const actions = document.getElementById("actions");
 const info = document.getElementById("info");
 const resources = document.getElementById("resources");
@@ -36,9 +33,13 @@ function refreshUI() {
 
 function refreshBoard() {
     
-    svgTiles.innerHTML = "";
-    svgTokens.innerHTML = "";
-    svgBandits.innerHTML = "";
+    board.innerHTML = "";
+    
+    const tiles = svg('g');
+    const ports = svg('g');
+    const roads = svg('g');
+    const towns = svg('g');
+    const bandits = svg('g');
     
     for (const [cellId, cell] of Object.entries(state.board)) {
             
@@ -48,14 +49,15 @@ function refreshBoard() {
         if (cell.tile) {
             
             const roll = cell.bandit ? null : cell.roll;
-            addTile(cell.land, roll, x, y);
+            const tile = createTile(cell.land, roll, cell.rate, cell.trade, x, y);
+            tiles.appendChild(tile);
             
-            if (cell.rate) {
-                addTrade(cell.rate, cell.trade, x, y);
-            } else if (cell.bandit) {
-                addBandit(x, y, null);
+            if (cell.bandit) {
+                const bandit = createBandit(x, y, null);
+                bandits.appendChild(bandit);
             } else if (state.choice.token == 'bandit' && state.choice.options.includes(cellId)) {
-                addBandit(x, y, () => state.choice.select(cellId));
+                const bandit = createBandit(x, y, () => state.choice.select(cellId));
+                bandits.appendChild(bandit);
             }
             
         } else if (cell.node) {
@@ -63,7 +65,8 @@ function refreshBoard() {
             const sy = y + cell.shift * 26;
             
             if (cell.route) {
-                addPort(cell.port, x, sy);
+                const port = createPort(cell.port, x, sy);
+                ports.appendChild(port);
             }
             
             if (cell.player) {
@@ -71,50 +74,62 @@ function refreshBoard() {
                 if (state.choice.token == 'city' && state.choice.options.includes(cellId)) {
                     upgradeListener = () => state.choice.select(cellId);
                 }
-                addTown(cell.player, cell.city, x, sy, null, upgradeListener);
+                const town = createTown(cell.player, cell.city, x, sy, null, upgradeListener);
+                towns.appendChild(town);
             } else if (state.choice.token == 'town' && state.choice.options.includes(cellId)) {
-                addTown(state.me, false, x, sy, () => state.choice.select(cellId), null);
+                const town = createTown(state.me, false, x, sy, () => state.choice.select(cellId), null);
+                towns.appendChild(town);
             }
             
         } else if (cell.edge) {
             
             if (cell.player) {
-                addRoad(cell.player, cell.dir, x, y, null);
+                const road = createRoad(cell.player, cell.dir, x, y, null);
+                roads.appendChild(road);
             } else if (state.choice.token == 'road' && state.choice.options.includes(cellId)) {
-                addRoad(state.me, cell.dir, x, y, () => state.choice.select(cellId));
+                const road = createRoad(state.me, cell.dir, x, y, () => state.choice.select(cellId));
+                roads.appendChild(road);
             }
         }
     }
+    
+    board.appendChild(tiles);
+    board.appendChild(ports);
+    board.appendChild(roads);
+    board.appendChild(towns);
+    board.appendChild(bandits);
 }
 
-function addTile(resIndex, roll, x, y) {
+function createTile(resIndex, roll, rate, trade, x, y) {
 
+    const tile = svg('g');
+    
     const color = resColors[resIndex];
     const strokeColor = resStrokeColors[resIndex];
     
     if (resIndex > 5) {
-        const outline = shape('path');
+        const outline = svg('path');
         outline.setAttribute('d', hexaPath);
         outline.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.21)');
-        svgOutlines.appendChild(outline);
+        tile.appendChild(outline);
     }
     
-    const bg = shape('path');
-    bg.setAttribute('d', hexaPath);
-    bg.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.2)');
-    bg.setAttribute('fill', tileColor);
-    svgTiles.appendChild(bg);
+    const background = svg('path');
+    background.setAttribute('d', hexaPath);
+    background.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.2)');
+    background.setAttribute('fill', tileColor);
+    tile.appendChild(background);
 
-    const tile = shape('path');
-    tile.setAttribute('d', hexaPath);
-    tile.setAttribute('transform', 'translate(' + x + ',' + y + ')');
-    tile.setAttribute('fill', color);
-    tile.setAttribute('stroke', strokeColor);
-    tile.setAttribute('stroke-width', 5);
-    svgTiles.appendChild(tile);
+    const foreground = svg('path');
+    foreground.setAttribute('d', hexaPath);
+    foreground.setAttribute('transform', 'translate(' + x + ',' + y + ')');
+    foreground.setAttribute('fill', color);
+    foreground.setAttribute('stroke', strokeColor);
+    foreground.setAttribute('stroke-width', 5);
+    tile.appendChild(foreground);
     
     if (roll) {
-        const label = shape('text');
+        const label = svg('text');
         label.setAttribute('text-anchor', 'middle');
         label.setAttribute('x', x);
         if ('86'.includes(roll)) {
@@ -125,13 +140,41 @@ function addTile(resIndex, roll, x, y) {
             label.setAttribute('class', 'roll');
         }
         label.innerHTML = roll;
-        svgTiles.appendChild(label);
+        tile.appendChild(label);
+    } else if (rate) {
+        const ring = svg('circle');
+        ring.setAttribute('cx', x);
+        ring.setAttribute('cy', y);
+        ring.setAttribute('r', 25);
+
+        const label = svg('text');
+        label.innerHTML = rate + ':1';
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('x', x + 0.5);
+
+        if (trade) {
+            ring.setAttribute('fill', resColors[trade]);
+            label.setAttribute('class', 'port');
+            label.setAttribute('y', y + 7.5);
+        } else {
+            ring.setAttribute('fill-opacity', 0);
+            ring.setAttribute('stroke', 'white');
+            ring.setAttribute('stroke-width', 2);
+            label.setAttribute('class', 'portw');
+            label.setAttribute('y', y + 7);
+        }
+
+        tile.appendChild(ring);
+        tile.appendChild(label);
     }
+    
+    
+    return tile;
 }
 
-function addBandit(x, y, listener) {
+function createBandit(x, y, listener) {
     
-    const bandit = shape('g');
+    const bandit = svg('g');
     const bx = x - 67;
     const by = y - 90;
     bandit.setAttribute('transform', 'translate(' + bx + ',' + by + ') scale(0.45)');
@@ -141,46 +184,18 @@ function addBandit(x, y, listener) {
         <circle cx="104.980469" cy="102.539062" r="7.32421875"></circle>
         <path d="M167.072526,163.201074 L168.356728,165.277438 C155.696726,173.107476 143.073559,173.270602 130.687635,165.760372 L129.897369,165.270574 L131.203504,163.207937 C142.791134,170.545638 154.417091,170.705153 166.281228,163.680057 L167.072526,163.201074 Z" fill-rule="nonzero"></path>
         `;
+    
     if (listener) {
         bandit.setAttribute('opacity', 0.5);
         bandit.addEventListener('click', listener);
     }
     
-    svgBandits.appendChild(bandit);
+    return bandit;
 }
 
-function addTrade(rate, trade, x, y) {
+function createPort(angle, x, y) {
     
-    const ring = shape('circle');
-    ring.setAttribute('cx', x);
-    ring.setAttribute('cy', y);
-    ring.setAttribute('r', 25);
-
-    const label = shape('text');
-    label.innerHTML = rate + ':1';
-    label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('x', x + 0.5);
-
-    if (trade) {
-        ring.setAttribute('fill', resColors[trade]);
-        label.setAttribute('class', 'port');
-        label.setAttribute('y', y + 7.5);
-    } else {
-        ring.setAttribute('fill-opacity', 0);
-        ring.setAttribute('stroke', 'white');
-        ring.setAttribute('stroke-width', 2);
-        label.setAttribute('class', 'portw');
-        label.setAttribute('y', y + 7);
-    }
-    
-    svgTokens.appendChild(ring);
-    svgTokens.appendChild(label);
-}
-
-
-function addPort(angle, x, y) {
-    
-    const port = shape('rect');
+    const port = svg('rect');
     port.setAttribute('x', x - 9);
     port.setAttribute('y', y - 44);
     port.setAttribute('width', 18);
@@ -188,39 +203,41 @@ function addPort(angle, x, y) {
     port.setAttribute('rx', 5);
     port.setAttribute('fill', 'saddlebrown');
     port.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');
-    svgTokens.appendChild(port);
+    return port;
 }
     
-function addTown(player, isCity, x, y, listener, upgradeListener) {
+function createTown(player, isCity, x, y, listener, upgradeListener) {
     
-    const town = shape('circle', player);
-    town.setAttribute('cx', x);
-    town.setAttribute('cy', y);
-    town.setAttribute('r', '25');
-    town.setAttribute('stroke', 'black');
-    town.setAttribute('stroke-width', 1);
+    const town = svg('g');
+    
+    const token = svg('circle', player);
+    token.setAttribute('cx', x);
+    token.setAttribute('cy', y);
+    token.setAttribute('r', '25');
+    token.setAttribute('stroke', 'black');
+    token.setAttribute('stroke-width', 1);
     
     if (listener) {
-        town.setAttribute('opacity', 0.5);
-        town.addEventListener('click', listener);
+        token.setAttribute('opacity', 0.5);
+        token.addEventListener('click', listener);
     }
         
-    svgTokens.appendChild(town);
+    town.appendChild(token);
     
     if (isCity) {
-        const dot = shape('circle');
+        const dot = svg('circle');
         dot.setAttribute('cx', x);
         dot.setAttribute('cy', y);
         dot.setAttribute('r', '10');
-        svgTokens.appendChild(dot);
+        town.appendChild(dot);
     } else if (upgradeListener) {
-        const dot = shape('circle');
+        const dot = svg('circle');
         dot.setAttribute('cx', x);
         dot.setAttribute('cy', y);
         dot.setAttribute('r', '10');
         dot.setAttribute('opacity', 0.5);
-        svgBandits.appendChild(dot);
-        const button = shape('circle', player);
+        town.appendChild(dot);
+        const button = svg('circle', player);
         button.setAttribute('cx', x);
         button.setAttribute('cy', y);
         button.setAttribute('r', '40');
@@ -228,13 +245,15 @@ function addTown(player, isCity, x, y, listener, upgradeListener) {
         button.setAttribute('stroke-width', 1);
         button.setAttribute('opacity', 0.5);
         button.addEventListener('click', upgradeListener);
-        svgBandits.appendChild(button);
+        town.appendChild(button);
     }
+    
+    return town;
 }
 
-function addRoad(player, angle, x, y, listener) {
+function createRoad(player, angle, x, y, listener) {
     
-    const road = shape('rect', player);
+    const road = svg('rect', player);
     road.setAttribute('x', x - 15);
     road.setAttribute('y', y - 20);
     road.setAttribute('width', 30);
@@ -250,17 +269,17 @@ function addRoad(player, angle, x, y, listener) {
         road.addEventListener('click', listener);
     }
     
-    svgTokens.appendChild(road);
+    return road;
 }
 
-function shape(tag, player) {
+function svg(tag, player) {
     
-    const shape = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
     if (player) {
         const playerNum = state.players.indexOf(player);
-        shape.setAttribute('class', 'player' + playerNum);
+        element.setAttribute('class', 'player' + playerNum);
     }
-    return shape;
+    return element;
 }
 
 function refreshResources() {

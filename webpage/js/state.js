@@ -168,12 +168,6 @@ function canBuildRoad(edgeId) {
     return false;
 }
 
-function computeRoadLength(player) {
-    
-    const roads = getRoads(player);
-    return 0; // TODO implement!
-}
-
 function updateLongestRoad(player, length) {
     
     state.longestRoad = length;

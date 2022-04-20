@@ -5,7 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="utf-8" />
         
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora">
         <style>
             body { font-family: Arial, sans; }
             h4 { margin: 30px 0 15px; }
@@ -15,16 +14,6 @@
             #board { max-width: 800px; margin: 0 auto 20px; }
             #actions button { margin: 10px; }
             #reference img { margin: 30px; }
-            .roll { font: bold 48px 'Lora'; }
-            .rollr { font: bold 60px 'Lora'; fill: firebrick; }
-            .port { font: bold 22px 'Lora'; letter-spacing: 2px; }
-            .portw { font: bold 22px 'Lora'; letter-spacing: 2px; fill: white; }
-            .player { font-weight: bold; }
-            .player0 { color: #E33E09; fill: #E33E09; }
-            .player1 { color: #1C79D5; fill: #1C79D5; }
-            .player2 { color: #FBCD19; fill: #FBCD19; }
-            .player3 { color: #8A58E8; fill: #8A58E8; }
-            .player4 { color: #EB7EC5; fill: #EB7EC5; }
             .card { margin-right: 5px; }
         </style>
     </head>
@@ -34,8 +23,23 @@
         </div>
         
         <div id="content">
-            <svg id="board" viewBox="0 0 1280 1200" xmlns="http://www.w3.org/2000/svg">
-                <text text-anchor="middle" x="640" y="600" class="roll">Kein Spiel ausgewählt</text>
+            <svg viewBox="0 0 1280 1200" xmlns="http://www.w3.org/2000/svg">
+                <style>
+                    @import url('https://fonts.googleapis.com/css2?family=Lora&display=swap');
+                    .roll { font: bold 48px 'Lora', serif; }
+                    .rollr { font: bold 60px 'Lora', serif; fill: firebrick; }
+                    .port { font: bold 22px 'Lora', serif; letter-spacing: 2px; }
+                    .portw { font: bold 22px 'Lora', serif; letter-spacing: 2px; fill: white; }
+                    .player { font-weight: bold; }
+                    .player0 { color: #E33E09; fill: #E33E09; }
+                    .player1 { color: #1C79D5; fill: #1C79D5; }
+                    .player2 { color: #FBCD19; fill: #FBCD19; }
+                    .player3 { color: #8A58E8; fill: #8A58E8; }
+                    .player4 { color: #EB7EC5; fill: #EB7EC5; }
+                </style>
+                <g id="board">
+                    <text text-anchor="middle" x="640" y="600" class="roll">Kein Spiel ausgewählt</text>
+                </g>
             </svg>
             
             <div id="actions"></div>

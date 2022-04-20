@@ -35,6 +35,7 @@ function refreshBoard() {
     
     board.innerHTML = "";
     
+    const outlines = svg('g');
     const tiles = svg('g');
     const ports = svg('g');
     const roads = svg('g');
@@ -48,6 +49,11 @@ function refreshBoard() {
 
         if (cell.tile) {
             
+            if (cell.land > 5) {
+                const outline = createOutline(x, y);
+                outlines.appendChild(outline);
+            }
+                
             const roll = cell.bandit ? null : cell.roll;
             const tile = createTile(cell.land, roll, cell.rate, cell.trade, x, y);
             tiles.appendChild(tile);
@@ -93,26 +99,28 @@ function refreshBoard() {
         }
     }
     
+    board.appendChild(outlines);
     board.appendChild(tiles);
     board.appendChild(ports);
     board.appendChild(roads);
-    board.appendChild(towns);
     board.appendChild(bandits);
+    board.appendChild(towns);
 }
 
+function createOutline(x, y) {
+
+    const outline = svg('path');
+    outline.setAttribute('d', hexaPath);
+    outline.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.21)');
+    return outline;
+}
+    
 function createTile(resIndex, roll, rate, trade, x, y) {
 
     const tile = svg('g');
     
     const color = resColors[resIndex];
     const strokeColor = resStrokeColors[resIndex];
-    
-    if (resIndex > 5) {
-        const outline = svg('path');
-        outline.setAttribute('d', hexaPath);
-        outline.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.21)');
-        tile.appendChild(outline);
-    }
     
     const background = svg('path');
     background.setAttribute('d', hexaPath);
@@ -210,18 +218,47 @@ function createTown(player, isCity, x, y, listener, upgradeListener) {
     
     const town = svg('g');
     
+    /*
+    const height = 50.0;
+    const width = 60.0;
+    const topHeight = width / Math.sqrt(2);
+    const topWidth = width / Math.sqrt(2);
+    
+    const token1 = svg('rect');
+    token1.setAttribute('x', x - width / 2);
+    token1.setAttribute('y', y - height / 2);
+    token1.setAttribute('width', width);
+    token1.setAttribute('height', height);
+    token1.setAttribute('stroke', 'black');
+    token1.setAttribute('stroke-width', 2);
+    town.appendChild(token1);
+    
+    const yTop = y - height / 2;
+    
+    const token2 = svg('rect', player);
+    token2.setAttribute('x', x - topWidth / 2);
+    token2.setAttribute('y', yTop - topHeight / 2);
+    token2.setAttribute('width', topWidth);
+    token2.setAttribute('height', topHeight);
+    token2.setAttribute('stroke', 'black');
+    token2.setAttribute('stroke-width', 1);
+    token2.setAttribute('transform', 'rotate(45,' + x + ',' + yTop + ')');
+    town.appendChild(token2);
+    
+    const token3 = svg('rect', player);
+    token3.setAttribute('x', x - width / 2);
+    token3.setAttribute('y', y - height / 2);
+    token3.setAttribute('width', width);
+    token3.setAttribute('height', height);
+    town.appendChild(token3);
+    */
+    
     const token = svg('circle', player);
     token.setAttribute('cx', x);
     token.setAttribute('cy', y);
-    token.setAttribute('r', '25');
+    token.setAttribute('r', '30');
     token.setAttribute('stroke', 'black');
     token.setAttribute('stroke-width', 1);
-    
-    if (listener) {
-        token.setAttribute('opacity', 0.5);
-        token.addEventListener('click', listener);
-    }
-        
     town.appendChild(token);
     
     if (isCity) {
@@ -246,6 +283,9 @@ function createTown(player, isCity, x, y, listener, upgradeListener) {
         button.setAttribute('opacity', 0.5);
         button.addEventListener('click', upgradeListener);
         town.appendChild(button);
+    } else if (listener) {
+        town.setAttribute('opacity', 0.5);
+        town.addEventListener('click', listener);
     }
     
     return town;
@@ -254,14 +294,21 @@ function createTown(player, isCity, x, y, listener, upgradeListener) {
 function createRoad(player, angle, x, y, listener) {
     
     const road = svg('rect', player);
-    road.setAttribute('x', x - 15);
-    road.setAttribute('y', y - 20);
-    road.setAttribute('width', 30);
-    road.setAttribute('height', 40);
+    
+    /*
+    road.setAttribute('x', x - 10);
+    road.setAttribute('y', y - 45);
+    road.setAttribute('width', 20);
+    road.setAttribute('height', 90);
+    */
+    road.setAttribute('x', x - 10);
+    road.setAttribute('y', y - 50);
+    road.setAttribute('width', 20);
+    road.setAttribute('height', 100);
     road.setAttribute('rx', 10);
+    
     road.setAttribute('stroke', 'black');
     road.setAttribute('stroke-width', 1);
-    
     road.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');
     
     if (listener) {

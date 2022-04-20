@@ -11,7 +11,7 @@
             #sidebar { width: 320px; height: 100%; position: fixed; top: 0; left: 0; overflow: auto; background-color: #313a35; }
             #log { margin: 20px; color: white; line-height: 2; }
             #content { margin-left: 320px; padding: 40px; text-align: center; }
-            #board { max-width: 800px; margin: 0 auto 20px; }
+            #canvas { max-width: 800px; margin: 0 auto 20px; }
             #actions button { margin: 10px; }
             #reference img { margin: 30px; }
             .card { margin-right: 5px; }
@@ -23,7 +23,7 @@
         </div>
         
         <div id="content">
-            <svg viewBox="0 0 1280 1200" xmlns="http://www.w3.org/2000/svg">
+            <svg id="canvas" viewBox="0 0 1280 1200" xmlns="http://www.w3.org/2000/svg">
                 <style>
                     @import url('https://fonts.googleapis.com/css2?family=Lora&display=swap');
                     .roll { font: bold 48px 'Lora', serif; }

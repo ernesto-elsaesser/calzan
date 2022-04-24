@@ -20,4 +20,4 @@ Steps to set up a development environment:
     - create one tab for each player so that you can solo-test the game
 - Start testing
 - Create a new branch to make changes
-- Create a merge request to have your changes merged into the master branch
+- Create merge/pull requests to have your changes merged into the `main` branch

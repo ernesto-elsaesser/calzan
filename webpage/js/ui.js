@@ -311,8 +311,8 @@ function createRoad(player, angle, x, y, listener) {
     road.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');
     
     if (listener) {
-        road.setAttribute('x', x - 15);
-        road.setAttribute('width', 30);
+        road.setAttribute('x', x - 20);
+        road.setAttribute('width', 40);
         road.setAttribute('opacity', 0.5);
         road.addEventListener('click', listener);
     } else {

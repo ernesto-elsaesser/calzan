@@ -3,7 +3,7 @@ const state = {
     board: {},
     rng: null,
     current: null,
-    nextEventId: 0,
+    nextEventId: 1,
     me: null,
     postFunc: null,
     phase: 'forward',

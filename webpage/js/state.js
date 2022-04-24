@@ -43,8 +43,8 @@ function nextRandom() {
     
     // xorshift: https://www.jstatsoft.org/article/view/v008i14
 	state.seed ^= state.seed << 13;
-	state.seed ^= state.seed >>> 7;
-	state.seed ^= state.seed << 17;
+	state.seed ^= state.seed >>> 17;
+	state.seed ^= state.seed << 5;
 	state.seed >>>= 0; // uint32 cast
     return state.seed / 4294967296;
 }

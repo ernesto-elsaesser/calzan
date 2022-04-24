@@ -1,21 +1,19 @@
 const state = {
-    players: [],
+    seed: 0,
     board: {},
-    rng: null,
-    current: null,
+    players: [],
     nextEventId: 1,
-    me: null,
     postFunc: null,
+    me: null,
+    current: null,
     phase: 'forward',
     choice: {},
     resources: [],
     stack: [],
     cards: [],
-    playedKnights: 0,
-    longestRoad: 4,
-    longestRoadPlayer: null,
-    largestForce: 2,
-    largestForcePlayer: null,
+    playedKnights: null,
+    longestRoad: {player: null, length: 4},
+    largestForce: {player: null, size: 2},
 };
 
 function initState(data, postFunc, player) {
@@ -23,12 +21,12 @@ function initState(data, postFunc, player) {
     state.seed = data.seed;
     state.board = data.board;
     state.players = data.players;
-    state.me = player;
     state.postFunc = postFunc;
-    state.longestRoads = data.players.map((p) => 0);
+    state.me = player;
     state.current = data.players[0];
     state.resources = noResources();
     state.stack = cardIndices.map((i) => i); // copy
+    state.playedKnights = data.players.map((p) => 0);
 }
 
 function postEvent(action, args) {
@@ -80,8 +78,8 @@ function getVictoryProgress() {
     const townCount = townAndCityCount - cityCount;
     
     const cards = state.cards.filter((c) => c.index <= victoryMaxIndex);
-    const longest = state.longestRoadPlayer == state.me;
-    const largest = state.largestForcePlayer == state.me;
+    const longest = state.longestRoad.player == state.me;
+    const largest = state.largestForce.player == state.me;
     
     const points = townCount + 2 * cityCount + cards.length + (longest ? 2 : 0) + (largest ? 2 : 0);
     
@@ -154,6 +152,21 @@ function getTowns() {
 function claimRoad(player, edgeId) {
     
     state.board[edgeId].player = player;
+    
+    // recompute lengths
+    
+    var maxPlayer = null;
+    var maxLength = 4;
+    
+    for (const player_ of state.players) {
+        const length = computeRoadLength(player_);
+        if (length > maxLength) {
+            maxPlayer = player_;
+            maxLength = length;
+        }
+    }
+    
+    state.longestRoad = {player: maxPlayer, length: maxLength};
 }
 
 function getRoads() {
@@ -169,22 +182,16 @@ function getRoadOptions() {
 function canBuildRoad(edgeId) {
     
     for (const nodeId of state.board[edgeId].nodes) {
-        if (state.board[nodeId].player == player) {
+        if (state.board[nodeId].player == state.me) {
             return true;
         }
         for (const nextEdgeId of state.board[nodeId].edges) {
-            if (state.board[nextEdgeId].player == player) {
+            if (state.board[nextEdgeId].player == state.me) {
                 return true;
             }
         }
     }
     return false;
-}
-
-function updateLongestRoad(player, length) {
-    
-    state.longestRoad = length;
-    state.longestRoadPlayer = player;
 }
 
 // CITIES
@@ -249,16 +256,14 @@ function discardCard(player, cardIndex) {
     
     if (player == state.me) {
         state.cards = state.cards.filter((c) => c.index != cardIndex);
-        if (cardIndex >= knightMinIndex) {
-            state.playedKnights += 1;
+    }
+    
+    if (cardIndex >= knightMinIndex) {
+        const size = state.playedKnights[player] += 1;
+        if (size > state.largestForce.size) {
+            state.largestForce = {player, size};
         }
     }
-}
-
-function updateLargestForce(player, size) {
-    
-    state.largestForce = size;
-    state.largestForcePlayer = player;
 }
 
 // RESOURCES

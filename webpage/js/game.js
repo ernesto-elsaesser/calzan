@@ -39,8 +39,6 @@ function dispatchEvent(eventId, event) {
         'send-monopoly': monopolySent,
         'play-invent': inventPlayed,
         'swap-res': resourcesSwapped,
-        'claim-largest': largestClaimed,
-        'claim-longest': longestClaimed,
         'offer-trade': tradeOffered,
         'answer-offer': offerAnswered,
         'end-turn': turnEnded,
@@ -240,8 +238,22 @@ function purchaseMade(player, args) {
     const costs = purchaseCosts[purchaseIndex];
     
     if (purchaseIndex == 1) {
+        // new roads can extend or disrupt existing roads,
+        // therefore we always need to check for changes
+        const prevLongest = state.longestRoad;
+        
         claimRoad(player, args[1]);
         logLine(player + " baut eine Straße");
+        
+        const newLongest = state.longestRoad;
+        if (prevLongest.player != newLongest.player && prevLongest.length != newLongest.length) {
+            if (newLongest.player) {
+                logLine(newLongest.player + " hält nun die längste Handelsstraße (" + newLongest.length + ")");
+            } else {
+                logLine("Kein Spieler besitzt mehr die längste Handelsstraße");
+            }
+        }
+        
     } else if (purchaseIndex == 2) {
         claimTown(player, args[1]);
         logLine(player + " baut eine Siedlung");
@@ -284,14 +296,6 @@ function purchaseMade(player, args) {
             return;
         }
         
-        if (purchaseIndex == 1) {
-            const length = computeRoadLength(state.me);
-            if (length > state.longestRoad) {
-                postEvent('claim-longest', length);
-                return;
-            }
-        }
-        
         const turnChoice = createTurnChoice();
         pushChoice(turnChoice);
     }
@@ -315,16 +319,24 @@ function knightPlayed(player, args) {
     
     const cardIndex = args;
     
+    const prevLargest = state.largestForce;
+    
     discardCard(player, cardIndex);
     logLine(player + " spielt eine Ritter-Karte und darf den Räuber bewegen");
     
-    if (player == state.me) {
-        if (state.playedKnights > state.largestForce) {
-            postEvent('claim-largest', state.playedKnights);
-        } else {
-            const banditChoice = createBanditChoice();
-            pushChoice(banditChoice);
+    const newLargest = state.largestForce;
+    
+    if (newLargest.size > prevLargest.size) {
+        logLine(newLargest.player + " hält nun die größte Rittermacht (" + newLargest.size + ")");
+        
+        if (player == state.me && checkVictory()) {
+            return;
         }
+    }
+    
+    if (player == state.me) {
+        const banditChoice = createBanditChoice();
+        pushChoice(banditChoice);
     }
 }
     
@@ -422,36 +434,6 @@ function turnEnded(player, args) {
     }
 }
 
-function largestClaimed(player, args) {
-    
-    const size = args;
-    updateLargestForce(player, size);
-    logLine(player + " hält nun die größte Rittermacht (" + size + ")");
-    
-    if (player == state.me) {
-        if (checkVictory()) {
-            return;
-        }
-        const banditChoice = createBanditChoice();
-        pushChoice(banditChoice);
-    }
-}
-
-function longestClaimed(player, args) {
-    
-    const length = args;
-    updateLongestRoad(player, length);
-    logLine(player + " hält nun die längste Handelsstraße (" + length + ")");
-    
-    if (player == state.me) {
-        if (checkVictory()) {
-            return;
-        }
-        const turnChoice = createTurnChoice();
-        pushChoice(turnChoice);
-    }
-}
-
 function tradeOffered(player, args) {
     
     const [partner, give, take] = args;
@@ -502,13 +484,4 @@ function gameWon(player, args) {
     logLine(player + " gewinnt mit " + points + " Siegpunkten");
     
     resetChoice();
-}
-
-// TEMPORARY FUNCTION UNTIL ALGORITHM IMPLEMENTED
-
-function lhs(length) {
-    
-    if (state.current == state.me) {
-        postEvent('claim-longest', length);
-    }
 }

@@ -138,12 +138,14 @@ function createTradeDemandChoice(player, give) {
 
 function createTradeAnswerChoice(proposer, give, take) {
     
+    const options = hasResources(take) ? [false, true] : [false];
+    
     return {
         id: 'answer',
         proposer,
         give,
         take,
-        options: [false, true],
+        options,
         select: (accepted) => postEvent('answer-offer', [proposer, give, take, accepted]),
     };
 }

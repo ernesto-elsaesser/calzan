@@ -495,12 +495,8 @@ function tradeOffered(player, args) {
     }
     
     if (partner == state.me) {
-        if (hasResources(take)) {
-            const answerChoice = createTradeAnswerChoice(player, give, take);
-            pushChoice(answerChoice);
-        } else {
-            postEvent('answer-offer', [player, give, take, false]);
-        }
+        const answerChoice = createTradeAnswerChoice(player, give, take);
+        pushChoice(answerChoice);
     }
 }
 

@@ -41,11 +41,12 @@ function incrementEventId() {
 
 function nextRandom() {
     
-    state.seed += 0x6D2B79F5;
-    var t = state.seed;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    // xorshift: https://www.jstatsoft.org/article/view/v008i14
+	state.seed ^= state.seed << 13;
+	state.seed ^= state.seed >>> 7;
+	state.seed ^= state.seed << 17;
+	state.seed >>>= 0; // uint32 cast
+    return state.seed / 4294967296;
 }
 
 function advanceTurn() {

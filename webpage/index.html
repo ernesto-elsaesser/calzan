@@ -133,7 +133,7 @@
                     const playerList = document.getElementById('playerlist').value;
                     const shuffle = document.getElementById('shuffle').checked;
                     
-                    const seed = Math.floor(Math.random() * 4294967296);
+                    const seed = Math.floor(Math.random() * 4294967296); // 2^32
                     
                     var players = playerList.split(',');
                     if (shuffle) {

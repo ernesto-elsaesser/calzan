@@ -15,7 +15,7 @@ Steps to set up a development environment:
     - 8000 is the default port for Python's built-in HTTP server, adjust accordingly
 - Create a new game using the presented form
 - Open one tab for each player to solo-test the game
-    - the easiest way is to shift-click the undelined player names in the top left corner
+    - the easiest way is to shift-click the underlined player names in the top left corner
 - Start testing!
 
 To contribute, create a new branch and commit your changes to it.

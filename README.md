@@ -13,7 +13,7 @@ Steps to set up a development environment:
     - alternatively, use any other HTTP server (really doesn't matter)
 - Ask for a development game in the database - you will get:
     - the name of the game (e.g. "dev1")
-    - a list of players (e.g. "John", "Clara", "Mike")
+    - a list of players (e.g. "A", "Clara", "Mike")
 - Open a browser and navigate to http://localhost:8000/?game=dev1&player=Clara (for example)
     - use the port on which your local server in listening
     - use the game and player names given to you

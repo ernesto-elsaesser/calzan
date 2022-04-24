@@ -9,6 +9,7 @@
             body { font-family: Arial, sans; }
             h4 { margin: 30px 0 15px; }
             #sidebar { width: 320px; height: 100%; position: fixed; top: 0; left: 0; overflow: auto; background-color: #313a35; }
+            #players { margin: 20px 20px 0; color: white; }
             #log { margin: 20px; color: white; line-height: 2; }
             #content { margin-left: 320px; padding: 40px; text-align: center; }
             #canvas { max-width: 800px; margin: 0 auto 20px; }
@@ -19,10 +20,22 @@
     </head>
     <body>
         <div id="sidebar">
+            <div id="players"></div>
             <div id="log"></div>
         </div>
         
         <div id="content">
+            <form id="form">
+                <h2>Neues Spiel</h2>
+                <label for="game">Name:</label>
+                <input type="text" id="game" name="game" value="Test" /><br><br>
+                <label for="players">Spieler:</label>
+                <input type="text" id="playerlist" name="playerlist" value="Anna,Bene,Cem" /><br><br>
+                <input type="checkbox" id="shuffle" name="shuffle" />
+                <label for="shuffle">Zufällige Reihenfolge</label><br><br>
+                <input type="submit" value="Erstellen">
+            </form>
+        
             <svg id="canvas" viewBox="0 0 1280 1200" xmlns="http://www.w3.org/2000/svg">
                 <style>
                     @import url('https://fonts.googleapis.com/css2?family=Lora&display=swap');
@@ -37,9 +50,7 @@
                     .player3 { color: #8A58E8; fill: #8A58E8; }
                     .player4 { color: #EB7EC5; fill: #EB7EC5; }
                 </style>
-                <g id="board">
-                    <text text-anchor="middle" x="640" y="600" class="roll">Kein Spiel ausgewählt</text>
-                </g>
+                <g id="board"></g>
             </svg>
             
             <div id="actions"></div>
@@ -73,28 +84,27 @@
             import { getDatabase, ref, child, get, set, onChildAdded }
                 from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
             
-            // for shits & giggles
-            const capitals = 'BCDEFGHJKLMNPQRSTVWXYZ';
-            const idx = Math.trunc(Math.random() * capitals.length);
-            document.title = "Die " + capitals[idx] + "eedler von Calzan";
+            const app = initializeApp({
+                apiKey: "AIzaSyCiey2Y0hYdghmZy95YrteZBPEADxbej1k",
+                authDomain: "calzan.firebaseapp.com",
+                databaseURL: "https://calzan-default-rtdb.europe-west1.firebasedatabase.app",
+                projectId: "calzan",
+                storageBucket: "calzan.appspot.com",
+                messagingSenderId: "771193061461",
+                appId: "1:771193061461:web:58564110d8e28f9d3d94dc"
+            });
+
+            const db = getDatabase(app);
   
             const urlParams = new URLSearchParams(window.location.search);
             const game = urlParams.get('game');
             const player = urlParams.get('player');
 
+            const form = document.getElementById('form');
             if (game) {
                 
-                const app = initializeApp({
-                    apiKey: "AIzaSyCiey2Y0hYdghmZy95YrteZBPEADxbej1k",
-                    authDomain: "calzan.firebaseapp.com",
-                    databaseURL: "https://calzan-default-rtdb.europe-west1.firebasedatabase.app",
-                    projectId: "calzan",
-                    storageBucket: "calzan.appspot.com",
-                    messagingSenderId: "771193061461",
-                    appId: "1:771193061461:web:58564110d8e28f9d3d94dc"
-                });
-
-                const db = getDatabase(app);
+                form.remove();
+                
                 const gameRef = ref(db, '/' + game);
                 const eventsRef = child(gameRef, '/events');
                 
@@ -106,10 +116,39 @@
                 get(gameRef).then((snap) => {
 
                     initState(snap.val(), postFunc, player);
+                    initUI(game);
                     startGame();
 
                     onChildAdded(eventsRef, (data) => {
                         dispatchEvent(data.key, data.val());
+                    });
+                });
+            } else {
+                
+                form.addEventListener("submit", (e) => {
+                    
+                    e.preventDefault();
+                    
+                    const game = document.getElementById('game').value;
+                    const playerList = document.getElementById('playerlist').value;
+                    const shuffle = document.getElementById('shuffle').checked;
+                    
+                    const seed = Math.floor(Math.random() * 4294967296);
+                    
+                    var players = playerList.split(',');
+                    if (shuffle) {
+                        // https://stackoverflow.com/a/2450976/4248897
+                        for (var i = players.length - 1; i > 0; i -= 1) {
+                            const ri = Math.floor(Math.random() * (i + 1));
+                            [players[i], players[ri]] = [players[ri], players[i]];
+                        }
+                    }
+
+                    const gameRef = ref(db, '/' + game);
+                    set(gameRef, {seed, players, board: boardTemplate}).then(() => { 
+                        window.location.href = "/?game=" + game;
+                    }).catch((error) => {
+                        window.alert("Ein Spiel mit diesem Namen existiert bereits.");
                     });
                 });
             }

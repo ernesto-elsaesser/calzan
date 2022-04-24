@@ -1,6 +1,11 @@
+// for shits & giggles
+const capitals = 'BCDEFGHJKLMNPQRSTVWXYZ';
+const idx = Math.trunc(Math.random() * capitals.length);
+document.title = "Die " + capitals[idx] + "eedler von Calzan";
+
+
 function startGame(postEvent) {
     
-    logLine("Spieler: " + state.players.join(', '));
     logLine(state.current + " darf setzen");
 
     if (state.current == state.me) {

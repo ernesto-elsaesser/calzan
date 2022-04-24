@@ -1,3 +1,4 @@
+const players = document.getElementById("players");
 const log = document.getElementById("log");
 const board = document.getElementById("board");
 const actions = document.getElementById("actions");
@@ -5,6 +6,20 @@ const info = document.getElementById("info");
 const resources = document.getElementById("resources");
 const cards = document.getElementById("cards");
 const victory = document.getElementById("victory");
+
+function initUI(game) {
+    
+    var html = "Runde: ";
+    for (var n = 0; n < state.players.length; n += 1) {
+        const player = state.players[n];
+        if (n > 0) {
+            html += " &rsaquo; ";
+        }
+        const url = "/?game=" + game + "&player=" + player;
+        html += '<a href="' + url + '" class="player player' + n + '">' + player + '</a>';
+    }
+    players.innerHTML = html;
+}
 
 function logLine(line) {
     

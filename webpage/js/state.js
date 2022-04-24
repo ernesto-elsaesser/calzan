@@ -1,4 +1,4 @@
-var state = {
+const state = {
     players: [],
     board: {},
     rng: null,
@@ -28,7 +28,7 @@ function initState(data, postFunc, player) {
     state.longestRoads = data.players.map((p) => 0);
     state.current = data.players[0];
     state.resources = noResources();
-    state.stack = cardIndices.map((i) => i);
+    state.stack = cardIndices.map((i) => i); // copy
 }
 
 function postEvent(action, args) {

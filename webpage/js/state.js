@@ -2,8 +2,10 @@ var state = {
     players: [],
     board: {},
     rng: null,
-    me: null,
     current: null,
+    nextEventId: 0,
+    me: null,
+    postFunc: null,
     phase: 'forward',
     choice: {},
     resources: [],
@@ -16,16 +18,27 @@ var state = {
     largestForcePlayer: null,
 };
 
-function initState(data, player) {
+function initState(data, postFunc, player) {
     
     state.seed = data.seed;
     state.board = data.board;
     state.players = data.players;
-    state.longestRoads = data.players.map((p) => 0);
     state.me = player;
+    state.postFunc = postFunc;
+    state.longestRoads = data.players.map((p) => 0);
     state.current = data.players[0];
     state.resources = noResources();
     state.stack = cardIndices.map((i) => i);
+}
+
+function postEvent(action, args) {
+    
+    state.postFunc(state.nextEventId, {player: state.me, action, args});
+}
+
+function incrementEventId() {
+    
+    state.nextEventId += 1;
 }
 
 function nextRandom() {

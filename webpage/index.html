@@ -60,10 +60,6 @@
             </div>
         </div>
 
-        <script src="/__/firebase/8.10.1/firebase-app.js"></script>
-        <script src="/__/firebase/8.10.1/firebase-database.js"></script>
-        <script src="/__/firebase/init.js"></script>
-        
         <script src="/js/constants.js"></script>
         <script src="/js/state.js"></script>
         <script src="/js/choices.js"></script>
@@ -71,20 +67,52 @@
         <script src="/js/length.js"></script>
         <script src="/js/game.js"></script>
         
-        <script>
-
+        <script type="module">
+            import { initializeApp }
+                from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+            import { getDatabase, ref, child, get, set, onChildAdded }
+                from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+            
+            // for shits & giggles
             const capitals = 'BCDEFGHJKLMNPQRSTVWXYZ';
             const idx = Math.trunc(Math.random() * capitals.length);
             document.title = "Die " + capitals[idx] + "eedler von Calzan";
-
+  
             const urlParams = new URLSearchParams(window.location.search);
             const game = urlParams.get('game');
             const player = urlParams.get('player');
 
-            if (game != null) {
-                initGame(game, player);
-            }
+            if (game) {
+                
+                const app = initializeApp({
+                    apiKey: "AIzaSyCiey2Y0hYdghmZy95YrteZBPEADxbej1k",
+                    authDomain: "calzan.firebaseapp.com",
+                    databaseURL: "https://calzan-default-rtdb.europe-west1.firebasedatabase.app",
+                    projectId: "calzan",
+                    storageBucket: "calzan.appspot.com",
+                    messagingSenderId: "771193061461",
+                    appId: "1:771193061461:web:58564110d8e28f9d3d94dc"
+                });
 
+                const db = getDatabase(app);
+                const gameRef = ref(db, '/' + game);
+                const eventsRef = child(gameRef, '/events');
+                
+                const postFunc = (eventId, event) => {
+                    const eventRef = child(eventsRef, '/' + eventId.toString());
+                    set(eventRef, event);
+                };
+
+                get(gameRef).then((snap) => {
+
+                    initState(snap.val(), postFunc, player);
+                    startGame();
+
+                    onChildAdded(eventsRef, (data) => {
+                        dispatchEvent(data.key, data.val());
+                    });
+                });
+            }
         </script>
     </body>
 </html>

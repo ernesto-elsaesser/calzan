@@ -1,31 +1,24 @@
-var eventsRef = null;
-var prevEventId = null;
+function startGame(postEvent) {
+    
+    logLine("Spieler: " + state.players.join(', '));
+    logLine(state.current + " darf setzen");
 
-function initGame(game, player) {
-    
-    const gameRef = firebase.database().ref('/' + game);
-    eventsRef = gameRef.child('/events');
-    
-    gameRef.get().then((snap) => {
-        const gameData = snap.val();
-        initState(gameData, player);
-        startGame();
-        
-        eventsRef.on('child_added', (eventSnap, prevId) => {
-            const event = eventSnap.val();
-            dispatchEvent(event, prevId);
-        });
-    });
+    if (state.current == state.me) {
+        const townChoice = createHometownChoice();
+        pushChoice(townChoice);
+    }
+
+    refreshUI();
 }
 
-function dispatchEvent(event, prevId) {
+function dispatchEvent(eventId, event) {
     
-    if (prevId != prevEventId) {
-        console.log("invalid event id", prevId);
+    if (eventId != state.nextEventId) {
+        console.log("invalid event id", eventId);
         return;
     }
     
-    prevEventId += 1;
+    incrementEventId();
     
     const functionMap = {
         'place-town': townPlaced,
@@ -50,9 +43,9 @@ function dispatchEvent(event, prevId) {
     };
     
     if (event.args) {
-        console.log(prevEventId, event.player, event.action, event.args)
+        console.log(eventId, event.player, event.action, event.args)
     } else {
-        console.log(prevEventId, event.player, event.action)
+        console.log(eventId, event.player, event.action)
     }
     
     resetChoice();
@@ -60,25 +53,6 @@ function dispatchEvent(event, prevId) {
     functionMap[event.action](event.player, event.args);
     
     refreshUI();
-}
-
-function postEvent(action, args) {
-       
-    const event = {
-        player: state.me,
-        action: action,
-        args: args,
-    };
-    
-    const eventId = prevEventId + 1;
-    const eventRef = eventsRef.child('/' + eventId.toString());
-    
-    eventRef.get().then((snap) => {
-        // page reload triggers re-commit of old actions
-        if (!snap.exists()) {
-            eventRef.set(event);
-        }
-    });
 }
 
 function updateResources(player, resources, add, cause) {
@@ -100,19 +74,6 @@ function updateResources(player, resources, add, cause) {
     if (parts.length) {
         logLine(cause + ": " + parts.join(', '));
     }
-}
-
-function startGame() {
-    
-    logLine("Spieler: " + state.players.join(', '));
-    logLine(state.current + " darf setzen");
-
-    if (state.current == state.me) {
-        const townChoice = createHometownChoice();
-        pushChoice(townChoice);
-    }
-
-    refreshUI();
 }
     
 function townPlaced(player, args) {

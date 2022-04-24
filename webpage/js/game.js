@@ -246,11 +246,11 @@ function purchaseMade(player, args) {
         logLine(player + " baut eine Straße");
         
         const newLongest = state.longestRoad;
-        if (prevLongest.player != newLongest.player && prevLongest.length != newLongest.length) {
+        if (prevLongest.player != newLongest.player || prevLongest.length != newLongest.length) {
             if (newLongest.player) {
                 logLine(newLongest.player + " hält nun die längste Handelsstraße (" + newLongest.length + ")");
             } else {
-                logLine("Kein Spieler besitzt mehr die längste Handelsstraße");
+                logLine("Kein Spieler hält mehr die längste Handelsstraße");
             }
         }
         

@@ -60,8 +60,8 @@ const edgeIds = [
 const hexaPath = "M-81,0 L-81,48 L0,96 L81,48 L81,-48 L0,-96 L-81,-48 L-81,0";
 
 const tileColor = '#FFFFC0';
-const resColors = ['#EBE3B0', '#6E9B3C', '#DF9327', '#EFDA61', '#AEE670', '#A4A296', '#2D2F6C'];
-const resStrokeColors = ['#D8CC8B', '#4F702A', '#A87325', '#CCB94C', '#89C852', '#7F7E74', '#2D2F6C'];
+// replace styling tiles from presentation attributes to a tile-specific class
+const tileClasses = ['tile_desert', 'tile_lumber', 'tile_brick', 'tile_grain', 'tile_wool', 'tile_ore', 'tile_water']
 
 const boardTemplate = {
     "O1": {"v": -6, "h": -6, "tile": true, "land": 6, "rate": 3},

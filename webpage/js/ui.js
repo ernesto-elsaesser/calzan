@@ -134,8 +134,7 @@ function createTile(resIndex, roll, rate, trade, x, y) {
 
     const tile = svg('g');
     
-    const color = resColors[resIndex];
-    const strokeColor = resStrokeColors[resIndex];
+    const tileClass = tileClasses[resIndex];
     
     const background = svg('path');
     background.setAttribute('d', hexaPath);
@@ -146,9 +145,9 @@ function createTile(resIndex, roll, rate, trade, x, y) {
     const foreground = svg('path');
     foreground.setAttribute('d', hexaPath);
     foreground.setAttribute('transform', 'translate(' + x + ',' + y + ')');
-    foreground.setAttribute('fill', color);
-    foreground.setAttribute('stroke', strokeColor);
-    foreground.setAttribute('stroke-width', 5);
+    
+    // replace styling tiles from presentation attributes to a tile-specific class
+    foreground.setAttribute('class', tileClass);
     tile.appendChild(foreground);
     
     if (roll) {
@@ -190,7 +189,6 @@ function createTile(resIndex, roll, rate, trade, x, y) {
         tile.appendChild(ring);
         tile.appendChild(label);
     }
-    
     
     return tile;
 }

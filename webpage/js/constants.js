@@ -2,6 +2,10 @@ const rolls = [2, 3, 3, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8,
 
 const resIndices = [1, 2, 3, 4, 5];
 const resNames = ["Sand", "Holz", "Lehm", "Getreide", "Wolle", "Erz"];
+const resTiles = [0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5];
+
+const tileRolls = [5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11];
+const tileRollIds = ['A3', 'A2', 'A1', 'B1', 'C1', 'D1', 'E1', 'E2', 'E3', 'D4', 'C5', 'B4', 'B3', 'B2', 'C2', 'D2', 'D3', 'C4', 'C3'];
 
 const noResources = () => ['R', 0, 0, 0, 0, 0];
 
@@ -161,7 +165,7 @@ const boardTemplate = {
     "C2a": {"v": 0, "h": -6, "edge": true, "dir": 0, "nodes": ["D1B", "C2A"]},
     "C2": {"v": 0, "h": -4, "tile": true, "land": 2, "roll": 9, "nodes": ["C2A", "C2B", "C3A", "D2B", "D2A", "D1B"]},
     "C3a": {"v": 0, "h": -2, "edge": true, "dir": 0, "nodes": ["D2B", "C3A"]},
-    "C3": {"v": 0, "h": 0, "tile": true, "land": 0, "bandit": true, "nodes": ["C3A", "C3B", "C4A", "D3B", "D3A", "D2B"]},
+    "C3": {"v": 0, "h": 0, "tile": true, "land": 0, "nodes": ["C3A", "C3B", "C4A", "D3B", "D3A", "D2B"]},
     "C4a": {"v": 0, "h": 2, "edge": true, "dir": 0, "nodes": ["D3B", "C4A"]},
     "C4": {"v": 0, "h": 4, "tile": true, "land": 5, "roll": 6, "nodes": ["C4A", "C4B", "C5A", "D4B", "D4A", "D3B"]},
     "C5a": {"v": 0, "h": 6, "edge": true, "dir": 0, "nodes": ["D4B", "C5A"]},

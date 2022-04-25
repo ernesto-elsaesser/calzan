@@ -16,6 +16,28 @@ function startGame(postEvent) {
     refreshUI();
 }
 
+function boardShuffle(array) {
+    var landTiles = landTileIds.filter((i) => boardTemplate[i]);
+    
+    // bost.ocks.org/mike/shuffle/compare.html -> Fisher-Yates
+    var m = array.length, t, i;
+    while (m) {
+        i = Math.floor(Math.random() * m--);
+        t = array[m];
+        array[m] = array[i];
+        array[i] = t;
+    }
+
+    for (let i = 0; i < landTileIds.length; i++) {
+        boardTemplate[landTiles[i]].land = array[i];
+        if (boardTemplate[landTiles[i]].land == 0) boardTemplate[landTiles[i]].bandit = true;
+    }
+
+    //to do: Rolls verteilen
+    
+    refreshBoard();
+}
+
 function dispatchEvent(eventId, event) {
     
     if (eventId != state.nextEventId) {

@@ -153,6 +153,10 @@
                             [players[i], players[ri]] = [players[ri], players[i]];
                         }
                     }
+                    
+                    if (shuffleBoard) { 
+                        boardShuffle(resTiles); 
+                    }
 
                     const gameRef = ref(db, '/' + game);
                     set(gameRef, {seed, players, board: boardTemplate}).then(() => { 

@@ -125,7 +125,7 @@ function refreshBoard() {
 function createOutline(x, y) {
 
     const outline = svg('path');
-    outline.setAttribute('d', hexaPath);
+    outline.setAttribute('d', hexPath);
     outline.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.21)');
     return outline;
 }
@@ -134,21 +134,17 @@ function createTile(resIndex, roll, rate, trade, x, y) {
 
     const tile = svg('g');
     
-    const tileClass = tileClasses[resIndex];
-    
-    const background = svg('path');
-    background.setAttribute('d', hexaPath);
-    background.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.2)');
-    background.setAttribute('fill', tileColor);
-    tile.appendChild(background);
+    const outer = svg('path');
+    outer.setAttribute('d', hexPath);
+    outer.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.2)');
+    outer.setAttribute('class', 'frame');
+    tile.appendChild(outer);
 
-    const foreground = svg('path');
-    foreground.setAttribute('d', hexaPath);
-    foreground.setAttribute('transform', 'translate(' + x + ',' + y + ')');
-    
-    // replace styling tiles from presentation attributes to a tile-specific class
-    foreground.setAttribute('class', tileClass);
-    tile.appendChild(foreground);
+    const inner = svg('path');
+    inner.setAttribute('d', hexPath);
+    inner.setAttribute('transform', 'translate(' + x + ',' + y + ')');
+    inner.setAttribute('class', 'tile tile' + resIndex);
+    tile.appendChild(inner);
     
     if (roll) {
         const label = svg('text');
@@ -156,7 +152,7 @@ function createTile(resIndex, roll, rate, trade, x, y) {
         label.setAttribute('x', x);
         if ('86'.includes(roll)) {
             label.setAttribute('y', y + 16);
-            label.setAttribute('class', 'rollr');
+            label.setAttribute('class', 'toproll');
         } else { 
             label.setAttribute('y', y + 11);
             label.setAttribute('class', 'roll');
@@ -175,14 +171,14 @@ function createTile(resIndex, roll, rate, trade, x, y) {
         label.setAttribute('x', x + 0.5);
 
         if (trade) {
-            ring.setAttribute('fill', resColors[trade]);
-            label.setAttribute('class', 'port');
+            ring.setAttribute('class', 'tile' + trade);
             label.setAttribute('y', y + 7.5);
+            label.setAttribute('class', 'port');
         } else {
             ring.setAttribute('fill-opacity', 0);
             ring.setAttribute('stroke', 'white');
             ring.setAttribute('stroke-width', 2);
-            label.setAttribute('class', 'portw');
+            label.setAttribute('class', 'port any');
             label.setAttribute('y', y + 7);
         }
 

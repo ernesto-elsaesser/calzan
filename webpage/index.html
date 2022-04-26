@@ -31,10 +31,10 @@
                 <input type="text" id="game" name="game" value="Test" /><br><br>
                 <label for="players">Spieler:</label>
                 <input type="text" id="playerlist" name="playerlist" value="Anna,Bene,Cem" /><br><br>
-                <input type="checkbox" id="shuffle" name="shuffle" />
-                <label for="shuffle">Zufällige Reihenfolge</label><br><br>
-                <input type="checkbox" id="shuffleBoard" name="shuffle" />
-                <label for="shuffleBoard">Zufälliges Spielbrett</label><br><br>
+                <input type="checkbox" id="playershuffle" name="playershuffle" />
+                <label for="playershuffle">Zufällige Reihenfolge</label><br><br>
+                <input type="checkbox" id="boardshuffle" name="boardshuffle" />
+                <label for="boardshuffle">Zufälliges Spielbrett</label><br><br>
                 <input type="submit" value="Erstellen">
             </form>
         
@@ -42,22 +42,24 @@
                 <style>
                     @import url('https://fonts.googleapis.com/css2?family=Lora&display=swap');
                     .roll { font: bold 48px 'Lora', serif; }
-                    .rollr { font: bold 60px 'Lora', serif; fill: firebrick; }
-                    .port { font: bold 22px 'Lora', serif; letter-spacing: 2px; }
-                    .portw { font: bold 22px 'Lora', serif; letter-spacing: 2px; fill: white; }
+                    .toproll { font: bold 60px 'Lora', serif; fill: firebrick; }
                     .player { font-weight: bold; }
                     .player0 { color: #E33E09; fill: #E33E09; }
                     .player1 { color: #1C79D5; fill: #1C79D5; }
                     .player2 { color: #FBCD19; fill: #FBCD19; }
                     .player3 { color: #8A58E8; fill: #8A58E8; }
                     .player4 { color: #EB7EC5; fill: #EB7EC5; }                
-                    .tile_desert { fill: #EBE3B0; stroke: #D8CC8B; stroke-width: 5; }
-                    .tile_lumber { fill: #6E9B3C; stroke: #4F702A; stroke-width: 5; }
-                    .tile_brick { fill: #DF9327; stroke: #A87325; stroke-width: 5; }
-                    .tile_grain { fill: #EFDA61; stroke: #CCB94C; stroke-width: 5; }
-                    .tile_wool { fill: #AEE670; stroke: #89C852; stroke-width: 5; }
-                    .tile_ore { fill: #A4A296; stroke: #7F7E74; stroke-width: 5; }
-                    .tile_water { fill: #2D2F6C; stroke: #2D2F6C; stroke-width: 5; }
+                    .tile { stroke-width: 5; }
+                    .frame { fill: #FFFFC0; }
+                    .tile0 { fill: #EBE3B0; stroke: #D8CC8B; }
+                    .tile1 { fill: #6E9B3C; stroke: #4F702A; }
+                    .tile2 { fill: #DF9327; stroke: #A87325; }
+                    .tile3 { fill: #EFDA61; stroke: #CCB94C; }
+                    .tile4 { fill: #AEE670; stroke: #89C852; }
+                    .tile5 { fill: #A4A296; stroke: #7F7E74; }
+                    .tile6 { fill: #2D2F6C; stroke: #2D2F6C; }
+                    .port { font: bold 22px 'Lora', serif; letter-spacing: 2px; }
+                    .any { fill: white; }
                 </style>
                 <g id="board"></g>
             </svg>
@@ -140,26 +142,14 @@
                     
                     const game = document.getElementById('game').value;
                     const playerList = document.getElementById('playerlist').value;
-                    const shuffle = document.getElementById('shuffle').checked;
-                    const shuffleBoard = document.getElementById('shuffleBoard').checked;
+                    const shufflePlayers = document.getElementById('playershuffle').checked;
+                    const shuffleBoard = document.getElementById('boardshuffle').checked;
                     
-                    const seed = Math.floor(Math.random() * 4294967296); // 2^32
+                    const players = playerList.split(',');
+                    const gameData = createGame(players, shufflePlayers, shuffleBoard);
                     
-                    var players = playerList.split(',');
-                    if (shuffle) {
-                        // https://stackoverflow.com/a/2450976/4248897
-                        for (var i = players.length - 1; i > 0; i -= 1) {
-                            const ri = Math.floor(Math.random() * (i + 1));
-                            [players[i], players[ri]] = [players[ri], players[i]];
-                        }
-                    }
-                    
-                    if (shuffleBoard) { 
-                        boardShuffle(resTiles); 
-                    }
-
                     const gameRef = ref(db, '/' + game);
-                    set(gameRef, {seed, players, board: boardTemplate}).then(() => { 
+                    set(gameRef, gameData).then(() => { 
                         window.location.href = "/?game=" + game;
                     }).catch((error) => {
                         window.alert("Ein Spiel mit diesem Namen existiert bereits.");

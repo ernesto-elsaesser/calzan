@@ -38,9 +38,15 @@
             }
             .ocean {                
                 background: #99BBFF;
+                display: grid;
+                grid-template: auto;
             }
             .land {
                 background: #DDDDDD;
+            }
+            .portSelect {
+                display: grid;
+                justify-self: center;
             }
         </style>
     </head>
@@ -52,14 +58,14 @@
             <fieldset class="tileSelect">
                 <legend>Ressource:</legend>
                 <input type="radio" id="wood" name="ressource" value="1">
-                <label for="wood">Wood</label>
+                <label for="wood">Lumber</label>
                 <input type="radio" id="brick" name="ressource" value="2">
                 <label for="brick">Brick</label>
                 <input type="radio" id="grain" name="ressource" value="3">
                 <label for="grain">Grain</label>
                 <br>
                 <input type="radio" id="wool" name="ressource" value="4">
-                <label for="wool">Wool</label>
+                <label for="wool">Wool&nbsp;&nbsp;</label>
                 <input type="radio" id="ore" name="ressource" value="5">
                 <label for="ore">Ore&nbsp;&nbsp;</label>
                 <input type="radio" id="desert" name="ressource" value="0">
@@ -161,6 +167,19 @@
             </div>
         </div>
         
+        <div id="cF"><form>
+            <select name="ports">
+                <option value="null">No Port</option>
+                <option value="0">3 : 1</option>
+                <option value="1">Lumber</option>
+                <option value="2">Brick</option>
+                <option value="3">Grain</option>
+                <option value="4">Wool</option>
+                <option value="5">Ore</option>
+            </select>
+            </form>
+        </div>
+        
         <script>
             const arrResources = Array(), arrRolls = Array();
             const landTileIds = [
@@ -179,7 +198,7 @@
                 "O14", "O9", 
                 "O13", "O13", "O11", "O10"
             ];
-            const portSelectHTML = "TEST";
+            const portSelectHTML = "<form class='portSelect'><select name='ports'><option value='null'>No Port</option><option value='0'>3 : 1</option><option value='1'>Lumber</option><option value='2'>Brick</option><option value='3'>Grain</option><option value='4'>Wool</option><option value='5'>Ore</option></select></form>";
             
             prepareBoard();
             

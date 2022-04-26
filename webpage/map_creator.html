@@ -1,16 +1,31 @@
 <!DOCTYPE html>
-<html style=" font-family: monospace">
+<html>
     <head>
         <title>Calzan Map Creator</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="utf-8" />
+        
+        <style>
+            html {
+                font-family: monospace;
+            }
+            .tileSelect {
+                 width: 250px;
+            }
+            .button {
+                border: 1px solid grey;
+                border-radius: 3px;
+                padding: 7px;
+                margin: 5px;
+            }
+        </style>
     </head>
     <body>
         
         <form>
-            <label id="tile">Tile: A1</label>
-            <br><br>
-            <fieldset style="width: 250px;">
+            <h2 id="tile">Tile: A1</h2>
+            <br>
+            <fieldset class="tileSelect">
                 <legend>Ressource:</legend>
                 <input type="radio" id="wood" name="ressource" value="1">
                 <label for="wood">Wood</label>
@@ -27,7 +42,7 @@
                 <label for="desert">Desert</label>
             </fieldset>
             <br>
-            <fieldset style="width: 250px;">
+            <fieldset class="tileSelect">
                 <legend>Roll:</legend>
                 <input type="radio" id="roll_2" name="roll" value="2">
                 <label for="roll_2">2</label>
@@ -52,17 +67,17 @@
                 <label for="roll_12">12</label>
             </fieldset>
             <br>
-            <label onclick="addTile()">Confirm</label>
+            <label class="button" onclick="addTile()">Confirm</label>
             <br>
             <br>
             <br>
-            <fieldset style="in-width: 250px;">
+            <fieldset>
                 <legend>Result:</legend>
                 <label onclick="copyToClipboard('resultTiles')">resTiles&nbsp; </label><label id="resultTiles" onclick="copyToClipboard(this.id)">[ ]</label><br>
                 <label onclick="copyToClipboard('resultRolls')">tileRolls </label><label id="resultRolls" onclick="copyToClipboard(this.id)">[ ]</label>
             </fieldset>
             <br>
-            <label onclick="sessionStorage.removeItem('count'); console.log('Counter deleted');">Reset Counter</label>
+            <label class="button" onclick="sessionStorage.removeItem('count'); console.log('Counter deleted');">Reset Counter</label>
             <br>
         </form>
         
@@ -94,6 +109,7 @@
                     sessionStorage.setItem('count', count);
             }
             
+            // https://www.arclab.com/en/kb/htmlcss/how-to-copy-text-from-html-element-to-clipboard.html
             function copyToClipboard(id) {
                 var r = document.createRange();
                 r.selectNode(document.getElementById(id));

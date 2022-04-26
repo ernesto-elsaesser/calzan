@@ -4,6 +4,47 @@ const idx = Math.trunc(Math.random() * capitals.length);
 document.title = "Die " + capitals[idx] + "eedler von Calzan";
 
 
+function createGame(players, shufflePlayers, shuffleBoard) {
+    
+    if (shufflePlayers) {
+        shuffle(players);
+    }
+    
+    // recommended map for beginners
+    const lands = [5, 3, 1, 5, 3, 4, 3, 4, 1, 2, 3, 2, 4, 4, 1, 2, 5, 1, 0];
+    const rolls = [5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11];
+    
+    if (shuffleBoard) {
+        shuffle(lands);
+    }
+    
+    const board = Object.assign({}, boardTemplate); // copy template
+    
+    oceanTileIds.forEach((i) => board[i].land = 6);
+    
+    landTileIds.forEach((i) => {
+        board[i].land = lands.shift();
+        if (board[i].land == 0) {
+            board[i].bandit = true;
+        } else {
+            board[i].roll = rolls.shift();
+        }
+    });
+    
+    const seed = Math.floor(Math.random() * 4294967296); // 2^32
+
+    return {seed, players, board};
+}
+
+function shuffle(array) {
+    
+    // https://stackoverflow.com/a/2450976/4248897
+    for (var i = array.length - 1; i > 0; i -= 1) {
+        const ri = Math.floor(Math.random() * (i + 1));
+        [array[i], array[ri]] = [array[ri], array[i]];
+    }
+}
+
 function startGame(postEvent) {
     
     logLine(state.current + " darf setzen");
@@ -14,34 +55,6 @@ function startGame(postEvent) {
     }
 
     refreshUI();
-}
-
-function boardShuffle(array) {
-    var landTiles = landTileIds.filter((i) => boardTemplate[i]),
-        landTilesRoll = tileRollIds.filter((i) => boardTemplate[i]);
-    
-    // bost.ocks.org/mike/shuffle/compare.html -> Fisher-Yates
-    var m = array.length, t, i;
-    while (m) {
-        i = Math.floor(Math.random() * m--);
-        t = array[m];
-        array[m] = array[i];
-        array[i] = t;
-    }
-
-    for (let i = 0; i < landTileIds.length; i++) {
-        boardTemplate[landTiles[i]].land = array[i];
-        if (boardTemplate[landTiles[i]].land == 0) boardTemplate[landTiles[i]].bandit = true;
-    }
-    
-    for (let i = 0, n = 0; i < tileRollIds.length; i++) {
-        if (boardTemplate[landTilesRoll[i]].land != 0) {
-            boardTemplate[landTilesRoll[i]].roll = tileRolls[n];
-            n++;
-        }
-    }
-    
-    refreshBoard();
 }
 
 function dispatchEvent(eventId, event) {

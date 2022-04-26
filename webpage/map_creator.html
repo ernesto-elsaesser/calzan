@@ -22,7 +22,7 @@
                 margin: 5px;
             }
             
-            #grid {
+            #boardGrid {
                 display: grid;
                 grid-template-columns: repeat(14, calc(var(--hexagon-width) / 2));
                 grid-template-rows: repeat(7, calc((var(--hexagon-width) / 0.8660254) - calc(var(--hexagon-width)/5)));
@@ -107,7 +107,7 @@
         
         <br><br>
         
-        <div id="grid">
+        <div id="boardGrid">
             <div id="row1">
                 <div class="tile ocean"></div>
                 <div class="tile ocean"></div>
@@ -164,11 +164,20 @@
         <script>
             const arrResources = Array(), arrRolls = Array();
             const landTileIds = [
-            'A1', 'A2', 'A3',
-            'B1', 'B2', 'B3', 'B4',
-            'C1', 'C2', 'C3', 'C4', 'C5',
-            'D1', 'D2', 'D3', 'D4',
-            'E1', 'E2', 'E3',
+                'A1', 'A2', 'A3',
+                'B1', 'B2', 'B3', 'B4',
+                'C1', 'C2', 'C3', 'C4', 'C5',
+                'D1', 'D2', 'D3', 'D4',
+                'E1', 'E2', 'E3',
+            ];
+            const oceanTileIds = [
+                "O1", "O2", "O3", "O4", 
+                "O18", "O5", 
+                "O17", "O6", 
+                "O16", "O7", 
+                "O15", "O8", 
+                "O14", "O9", 
+                "O13", "O13", "O11", "O10"
             ];
             
             prepareBoard();
@@ -192,12 +201,17 @@
             }
             
             function prepareBoard(){
-                var offset = [4, 3, 2, 1, 2, 3, 4]
+                var offset = [4, 3, 2, 1, 2, 3, 4];
+                var o = 0;
                 for(let i = 1; i <= 7; i++){
                     var tilesInRow = document.getElementById('row' + i).children;
                     for (let j = 0; j < tilesInRow.length; j++){
                         var column = offset[i-1] + 2 * j;
                         tilesInRow[j].setAttribute('style', 'grid-row: ' + i + '; grid-column: ' + column + ';');
+                        if(tilesInRow[j].classList == 'tile ocean') {
+                            tilesInRow[j].setAttribute('data-tileID', oceanTileIds[o]);
+                            o++;
+                        }
                     }
                     const wrapper = document.getElementById('row' + i);
                     wrapper.outerHTML = wrapper.innerHTML;

@@ -179,6 +179,7 @@
                 "O14", "O9", 
                 "O13", "O13", "O11", "O10"
             ];
+            const portSelectHTML = "TEST";
             
             prepareBoard();
             
@@ -210,12 +211,17 @@
                         tilesInRow[j].setAttribute('style', 'grid-row: ' + i + '; grid-column: ' + column + ';');
                         if(tilesInRow[j].classList == 'tile ocean') {
                             tilesInRow[j].setAttribute('data-tileID', oceanTileIds[o]);
+                            addPortSelect(tilesInRow[j]);
                             o++;
                         }
                     }
                     const wrapper = document.getElementById('row' + i);
                     wrapper.outerHTML = wrapper.innerHTML;
                 }
+            }
+            
+            function addPortSelect(tile){
+                tile.innerHTML = portSelectHTML;
             }
             
             // https://www.arclab.com/en/kb/htmlcss/how-to-copy-text-from-html-element-to-clipboard.html

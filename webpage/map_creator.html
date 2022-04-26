@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html style=" font-family: monospace">
+    <head>
+        <title>Calzan Map Creator</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta charset="utf-8" />
+    </head>
+    <body>
+        
+        <form>
+            <label id="tile">Tile: A1</label>
+            <br><br>
+            <fieldset style="width: 250px;">
+                <legend>Ressource:</legend>
+                <input type="radio" id="wood" name="ressource" value="1">
+                <label for="wood">Wood</label>
+                <input type="radio" id="brick" name="ressource" value="2">
+                <label for="brick">Brick</label>
+                <input type="radio" id="grain" name="ressource" value="3">
+                <label for="grain">Grain</label>
+                <br>
+                <input type="radio" id="wool" name="ressource" value="4">
+                <label for="wool">Wool</label>
+                <input type="radio" id="ore" name="ressource" value="5">
+                <label for="ore">Ore&nbsp;&nbsp;</label>
+                <input type="radio" id="desert" name="ressource" value="0">
+                <label for="desert">Desert</label>
+            </fieldset>
+            <br>
+            <fieldset style="width: 250px;">
+                <legend>Roll:</legend>
+                <input type="radio" id="roll_2" name="roll" value="2">
+                <label for="roll_2">2</label>
+                <input type="radio" id="roll_3" name="roll" value="3">
+                <label for="roll_3">3</label>
+                <input type="radio" id="roll_4" name="roll" value="4">
+                <label for="roll_4">4&nbsp;</label>
+                <input type="radio" id="roll_5" name="roll" value="5">
+                <label for="roll_5">5&nbsp;</label>
+                <input type="radio" id="roll_6" name="roll" value="6">
+                <label for="roll_2">6&nbsp;</label>
+                <br>
+                <input type="radio" id="roll_8" name="roll" value="8">
+                <label for="roll_8">8</label>
+                <input type="radio" id="roll_9" name="roll" value="9">
+                <label for="roll_9">9</label>
+                <input type="radio" id="roll_10" name="roll" value="10">
+                <label for="roll_10">10</label>
+                <input type="radio" id="roll_11" name="roll" value="11">
+                <label for="roll_11">11</label>
+                <input type="radio" id="roll_12" name="roll" value="12">
+                <label for="roll_12">12</label>
+            </fieldset>
+            <br>
+            <label onclick="addTile()">Confirm</label>
+            <br>
+            <br>
+            <br>
+            <fieldset style="in-width: 250px;">
+                <legend>Result:</legend>
+                <label onclick="copyToClipboard('resultTiles')">resTiles&nbsp; </label><label id="resultTiles" onclick="copyToClipboard(this.id)">[ ]</label><br>
+                <label onclick="copyToClipboard('resultRolls')">tileRolls </label><label id="resultRolls" onclick="copyToClipboard(this.id)">[ ]</label>
+            </fieldset>
+            <br>
+            <label onclick="sessionStorage.removeItem('count'); console.log('Counter deleted');">Reset Counter</label>
+            <br>
+        </form>
+        
+        <script>
+            const arrResources = Array(), arrRolls = Array();
+            const landTileIds = [
+            'A1', 'A2', 'A3',
+            'B1', 'B2', 'B3', 'B4',
+            'C1', 'C2', 'C3', 'C4', 'C5',
+            'D1', 'D2', 'D3', 'D4',
+            'E1', 'E2', 'E3',
+            ];                  
+            
+            function addTile() {
+                var count;
+                count = sessionStorage.getItem('count');
+                if (count == "NaN") { count = 1; } else { count = parseInt(count); }   
+                
+                    arrResources.push(document.querySelector('input[name="ressource"]:checked').value);
+                    if(document.querySelector('input[name="ressource"]:checked').value != 0) {
+                        arrRolls.push(document.querySelector('input[name="roll"]:checked').value);
+                    } else {
+                        arrRolls.push(0);
+                    }
+                    document.getElementById("resultTiles").innerHTML = '[' + arrResources + ']';
+                    document.getElementById("resultRolls").innerHTML = '[' + arrRolls + ']';
+                    count+=1;                    
+                    document.getElementById("tile").innerHTML = ('Tile: ' + landTileIds[count]);
+                    sessionStorage.setItem('count', count);
+            }
+            
+            function copyToClipboard(id) {
+                var r = document.createRange();
+                r.selectNode(document.getElementById(id));
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(r);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+            }
+        </script>
+        
+    </body>
+</html>

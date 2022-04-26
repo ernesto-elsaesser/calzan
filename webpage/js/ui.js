@@ -137,13 +137,14 @@ function createTile(resIndex, roll, rate, trade, x, y) {
     const outer = svg('path');
     outer.setAttribute('d', hexPath);
     outer.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.2)');
-    outer.setAttribute('class', 'frame');
+    outer.classList.add('frame');
     tile.appendChild(outer);
 
     const inner = svg('path');
     inner.setAttribute('d', hexPath);
     inner.setAttribute('transform', 'translate(' + x + ',' + y + ')');
-    inner.setAttribute('class', 'tile tile' + resIndex);
+    inner.classList.add('tile');
+    inner.classList.add('tile' + resIndex);
     tile.appendChild(inner);
     
     if (roll) {
@@ -152,10 +153,10 @@ function createTile(resIndex, roll, rate, trade, x, y) {
         label.setAttribute('x', x);
         if ('86'.includes(roll)) {
             label.setAttribute('y', y + 16);
-            label.setAttribute('class', 'toproll');
+            label.classList.add('toproll');
         } else { 
             label.setAttribute('y', y + 11);
-            label.setAttribute('class', 'roll');
+            label.classList.add('roll');
         }
         label.innerHTML = roll;
         tile.appendChild(label);
@@ -169,16 +170,14 @@ function createTile(resIndex, roll, rate, trade, x, y) {
         label.innerHTML = rate + ':1';
         label.setAttribute('text-anchor', 'middle');
         label.setAttribute('x', x + 0.5);
+        label.classList.add('port');
 
         if (trade) {
-            ring.setAttribute('class', 'tile' + trade);
+            ring.classList.add('tile' + trade);
             label.setAttribute('y', y + 7.5);
-            label.setAttribute('class', 'port');
         } else {
-            ring.setAttribute('fill-opacity', 0);
-            ring.setAttribute('stroke', 'white');
-            ring.setAttribute('stroke-width', 2);
-            label.setAttribute('class', 'port any');
+            ring.classList.add('ringany');
+            label.classList.add('labelany');
             label.setAttribute('y', y + 7);
         }
 
@@ -203,7 +202,7 @@ function createBandit(x, y, listener) {
         `;
     
     if (listener) {
-        bandit.setAttribute('opacity', 0.5);
+        bandit.classList.add('active');
         bandit.addEventListener('click', listener);
     }
     
@@ -218,7 +217,7 @@ function createPort(angle, x, y) {
     port.setAttribute('width', 18);
     port.setAttribute('height', 44);
     port.setAttribute('rx', 5);
-    port.setAttribute('fill', 'saddlebrown');
+    port.classList.add('pier');
     port.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');
     return port;
 }
@@ -227,47 +226,11 @@ function createTown(player, isCity, x, y, listener, upgradeListener) {
     
     const town = svg('g');
     
-    /*
-    const height = 50.0;
-    const width = 60.0;
-    const topHeight = width / Math.sqrt(2);
-    const topWidth = width / Math.sqrt(2);
-    
-    const token1 = svg('rect');
-    token1.setAttribute('x', x - width / 2);
-    token1.setAttribute('y', y - height / 2);
-    token1.setAttribute('width', width);
-    token1.setAttribute('height', height);
-    token1.setAttribute('stroke', 'black');
-    token1.setAttribute('stroke-width', 2);
-    town.appendChild(token1);
-    
-    const yTop = y - height / 2;
-    
-    const token2 = svg('rect', player);
-    token2.setAttribute('x', x - topWidth / 2);
-    token2.setAttribute('y', yTop - topHeight / 2);
-    token2.setAttribute('width', topWidth);
-    token2.setAttribute('height', topHeight);
-    token2.setAttribute('stroke', 'black');
-    token2.setAttribute('stroke-width', 1);
-    token2.setAttribute('transform', 'rotate(45,' + x + ',' + yTop + ')');
-    town.appendChild(token2);
-    
-    const token3 = svg('rect', player);
-    token3.setAttribute('x', x - width / 2);
-    token3.setAttribute('y', y - height / 2);
-    token3.setAttribute('width', width);
-    token3.setAttribute('height', height);
-    town.appendChild(token3);
-    */
-    
     const token = svg('circle', player);
     token.setAttribute('cx', x);
     token.setAttribute('cy', y);
     token.setAttribute('r', '30');
-    token.setAttribute('stroke', 'black');
-    token.setAttribute('stroke-width', 1);
+    token.classList.add('token');
     town.appendChild(token);
     
     if (isCity) {
@@ -281,19 +244,18 @@ function createTown(player, isCity, x, y, listener, upgradeListener) {
         dot.setAttribute('cx', x);
         dot.setAttribute('cy', y);
         dot.setAttribute('r', '10');
-        dot.setAttribute('opacity', 0.5);
+        dot.classList.add('active');
         town.appendChild(dot);
         const button = svg('circle', player);
         button.setAttribute('cx', x);
         button.setAttribute('cy', y);
         button.setAttribute('r', '40');
-        button.setAttribute('stroke', 'black');
-        button.setAttribute('stroke-width', 1);
-        button.setAttribute('opacity', 0.5);
+        button.classList.add('token');
+        button.classList.add('active');
         button.addEventListener('click', upgradeListener);
         town.appendChild(button);
     } else if (listener) {
-        town.setAttribute('opacity', 0.5);
+        token.classList.add('active');
         town.addEventListener('click', listener);
     }
     
@@ -304,25 +266,17 @@ function createRoad(player, angle, x, y, listener) {
     
     const road = svg('rect', player);
     
-    /*
-    road.setAttribute('x', x - 10);
-    road.setAttribute('y', y - 45);
-    road.setAttribute('width', 20);
-    road.setAttribute('height', 90);
-    */
-    
     road.setAttribute('y', y - 50);
     road.setAttribute('height', 100);
     road.setAttribute('rx', 10);
+    road.classList.add('token');
     
-    road.setAttribute('stroke', 'black');
-    road.setAttribute('stroke-width', 1);
     road.setAttribute('transform', 'rotate(' + angle + ',' + x + ',' + y + ')');
     
     if (listener) {
         road.setAttribute('x', x - 20);
         road.setAttribute('width', 40);
-        road.setAttribute('opacity', 0.5);
+        road.classList.add('active');
         road.addEventListener('click', listener);
     } else {
         road.setAttribute('x', x - 10);

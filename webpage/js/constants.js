@@ -1,3 +1,12 @@
+/* 
+* constants.js
+* 
+* Various immutable constants, among them the board template, which
+* is copied into each new game (with some dynamic additions).
+* For resource, purchase and card indices, the 0 is skipped to
+* avoid falsey comparisons.
+*/
+
 const rolls = [2, 3, 3, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 11, 11, 12];
 
 const resIndices = [1, 2, 3, 4, 5];
@@ -11,14 +20,6 @@ const purchaseNames = [null, "Straße", "Siedlung", "Stadt", "Entwicklungskarte"
 const purchaseActionNames = [null, "Straße bauen", "Siedlung bauen", "Siedlung ausbauen", "Entwicklungskarte kaufen"];
 
 const cardIndices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
-const victoryMaxIndex = 5;
-const knightMinIndex = 12;
-const cardActions = [
-    null, null, null, null, null, null,
-    "play-roads", "play-roads", "play-monopoly", "play-monopoly", "play-invent", "play-invent",
-    'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 
-    'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 'play-knight', 
-];
 const cardNames = [
     null,
     "Bibliothek", "Marktplatz", "Rathaus", "Kirche", "Universität",
@@ -33,7 +34,7 @@ const oceanTileIds = [
     "O13", "O14", "O15", "O16", "O17", "O18",
 ];
     
-// in order of roll-token placement, an inward spiral
+// arranged in an inward spiral, as required for roll-value assignment
 const landTileIds = [
     'A3', 'A2', 'A1', 'B1', 'C1', 'D1', 'E1', 'E2', 'E3',
     'D4', 'C5', 'B4', 'B3', 'B2', 'C2', 'D2', 'D3', 'C4', 'C3',
@@ -54,8 +55,6 @@ const edgeIds = [
     'D1b', 'D1c', 'D2b', 'D2c', 'D3b', 'D3c', 'D4b', 'D4c', 'C5e', 'D1a', 'D2a', 'D3a', 'D4a', 'D4f', 'D1d',
     'E1b', 'E1c', 'E2b', 'E2c', 'E3b', 'E3c', 'D4e', 'E1a', 'E2a', 'E3a', 'E3f', 'E1d', 'E1e', 'E2d', 'E2e', 'E3d', 'E3e',
 ];
-
-const hexPath = "M-81,0 L-81,48 L0,96 L81,48 L81,-48 L0,-96 L-81,-48 L-81,0";
 
 const boardTemplate = {
     "O1": {"v": -6, "h": -6, "tile": true, "rate": 3},

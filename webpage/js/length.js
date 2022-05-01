@@ -1,3 +1,10 @@
+/* 
+* length.js
+* 
+* Contains the (recursive) algorithm to determine the
+* longest road on the board for a given player.
+*/
+
 function computeRoadLength(player) {
     
     var connections = {};

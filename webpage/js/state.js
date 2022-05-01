@@ -1,17 +1,25 @@
+/* 
+* state.js
+* 
+* Manages the game state, a single object that contains
+* all information needed on client side to render and
+* process the game.
+*/
+
 const state = {
-    seed: 0,
-    board: {},
-    players: [],
-    nextEventId: 1,
-    postFunc: null,
-    me: null,
-    current: null,
-    phase: 'forward',
-    choice: {},
-    resources: [],
-    stack: [],
-    cards: [],
-    playedKnights: null,
+    seed: 0, // fixed random seed for dice rolls
+    players: [], // list of player names, in turn order
+    board: {}, // contains all board elements, linked via their key
+    round: -2, // round counter, negative indicates hometown placement
+    nextEventId: 1, // inrementing ID to maintain event order
+    postFunc: null, // injected function to post events to the DB
+    me: null, // player name of the selected player (if any)
+    current: null, // player name of the player who's turn it is
+    choice: {}, // object that determines the buttons below the map
+    resources: [], // array with the player's current resource count
+    stack: [], // array of development cards not yet drawn
+    cards: [], // array of development cards drawn by the player
+    playedKnights: [], // number of played knights for each players
     longestRoad: {player: null, length: 4},
     largestForce: {player: null, size: 2},
 };
@@ -19,8 +27,8 @@ const state = {
 function initState(data, postFunc, player) {
     
     state.seed = data.seed;
-    state.board = data.board;
     state.players = data.players;
+    state.board = data.board;
     state.postFunc = postFunc;
     state.me = player;
     state.current = data.players[0];
@@ -53,22 +61,26 @@ function advanceTurn() {
     
     const currentIndex = state.players.indexOf(state.current);
     
-    if (state.phase == 'forward') {
+    if (state.round == -2) { // first hometown, forward
         if (currentIndex == state.players.length - 1) {
-            state.phase = 'backward';
+            state.round += 1;
         } else {
             state.current = state.players[currentIndex + 1];
         }
-    } else if (state.phase == 'backward') {
+    } else if (state.round == -1) { // second hometown, backward
         if (currentIndex == 0) {
-            state.phase = 'game';
+            state.round += 1;
         } else {
             state.current = state.players[currentIndex - 1];
         }
-    } else if (state.phase == 'game') {
+    } else {
         const nextIndex = (currentIndex + 1) % state.players.length;
+        if (nextIndex == 0) {
+            state.round += 1;
+            // newly drawn cards can only be played in the following round
+            state.cards.forEach((c) => c.locked = false);
+        }
         state.current = state.players[nextIndex];
-        state.cards.forEach((c) => c.locked = false);
     }
 }
 
@@ -78,7 +90,7 @@ function getVictoryProgress() {
     const cityCount = getUpgradedTowns().length;
     const townCount = townAndCityCount - cityCount;
     
-    const cards = state.cards.filter((c) => c.index <= victoryMaxIndex);
+    const cards = state.cards.filter((c) => isVictoryCard(c.index));
     const longest = state.longestRoad.player == state.me;
     const largest = state.largestForce.player == state.me;
     
@@ -259,12 +271,22 @@ function discardCard(player, cardIndex) {
         state.cards = state.cards.filter((c) => c.index != cardIndex);
     }
     
-    if (cardIndex >= knightMinIndex) {
+    if (isKnight(cardIndex)) {
         const size = state.playedKnights[player] += 1;
         if (size > state.largestForce.size) {
             state.largestForce = {player, size};
         }
     }
+}
+
+function isVictoryCard(cardIndex) {
+    
+    return cardIndex < 6;
+}
+
+function isKnight(cardIndex) {
+    
+    return cardIndex > 11;
 }
 
 // RESOURCES

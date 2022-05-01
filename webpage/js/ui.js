@@ -1,3 +1,12 @@
+/* 
+* ui.js
+* 
+* Responsible for rendering the game, i.e. updating the DOM
+* according to game state changes. Contains the logic to
+* re-build the board SVG, append to the textual log on the
+* left sidebar and update player action buttons, resources, etc.
+*/
+
 const players = document.getElementById("players");
 const log = document.getElementById("log");
 const board = document.getElementById("board");
@@ -124,28 +133,18 @@ function refreshBoard() {
 
 function createOutline(x, y) {
 
-    const outline = svg('path');
-    outline.setAttribute('d', hexPath);
-    outline.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.21)');
-    return outline;
+    return createHex(x, y, 1.21, []);
 }
     
 function createTile(resIndex, roll, rate, trade, x, y) {
 
     const tile = svg('g');
     
-    const outer = svg('path');
-    outer.setAttribute('d', hexPath);
-    outer.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(1.2)');
-    outer.classList.add('frame');
-    tile.appendChild(outer);
+    const outerHex = createHex(x, y, 1.2, ['frame']);
+    tile.appendChild(outerHex);
 
-    const inner = svg('path');
-    inner.setAttribute('d', hexPath);
-    inner.setAttribute('transform', 'translate(' + x + ',' + y + ')');
-    inner.classList.add('tile');
-    inner.classList.add('tile' + resIndex);
-    tile.appendChild(inner);
+    const innerHex = createHex(x, y, 1, ['tile', 'tile' + resIndex]);
+    tile.appendChild(innerHex);
     
     if (roll) {
         const label = svg('text');
@@ -187,6 +186,16 @@ function createTile(resIndex, roll, rate, trade, x, y) {
     
     return tile;
 }
+
+function createHex(x, y, scale, classNames) {
+    
+    const hex = svg('path');
+    hex.setAttribute('d', "M-81,0 L-81,48 L0,96 L81,48 L81,-48 L0,-96 L-81,-48 L-81,0");
+    hex.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(' + scale + ')');
+    classNames.forEach((c) => hex.classList.add(c));
+    return hex;
+}
+
 
 function createBandit(x, y, listener) {
     

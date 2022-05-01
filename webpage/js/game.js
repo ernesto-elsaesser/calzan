@@ -1,3 +1,10 @@
+/* 
+* game.js
+* 
+* Contains the game logic. Processes events posted by other players
+* and posts own events based on player actions.
+*/
+
 // for shits & giggles
 const capitals = 'BCDEFGHJKLMNPQRSTVWXYZ';
 const idx = Math.trunc(Math.random() * capitals.length);
@@ -92,10 +99,14 @@ function dispatchEvent(eventId, event) {
         console.log(eventId, event.player, event.action)
     }
     
+    const eventFunction = functionMap[event.action];
+    if (eventFunction == undefined) {
+        console.error("action '" + event.action + "' not recognized")
+        return;
+    }
+    
     resetChoice();
-    
-    functionMap[event.action](event.player, event.args);
-    
+    eventFunction(event.player, event.args);
     refreshUI();
 }
 
@@ -127,7 +138,7 @@ function townPlaced(player, args) {
     logLine(state.current + " setzt eine Siedlung");
     
     if (player == state.me) {
-        if (state.phase == 'backward') {
+        if (state.round == -1) { // second hometown, grant resources
             const resources = noResources();
             state.board[nodeId].tiles.map((i) => state.board[i]).forEach((t) => {
                 if (t.land > 0) resources[t.land] += 1;
@@ -148,16 +159,16 @@ function roadPlaced(player, args) {
     advanceTurn();
     resetChoice();
     
-    if (state.phase == 'game') {
-        logLine(state.current + " ist am Zug");
-        if (state.current == state.me) {
-            postEvent('roll-dice', null);
-        }
-    } else {
+    if (state.round < 0) { // hometown placement
         logLine(state.current + " darf setzen");
         if (state.current == state.me) {
             const townChoice = createHometownChoice();
             pushChoice(townChoice);
+        }
+    } else {
+        logLine(state.current + " ist am Zug");
+        if (state.current == state.me) {
+            postEvent('roll-dice', null);
         }
     }
 }
@@ -306,9 +317,9 @@ function purchaseMade(player, args) {
         const cardIndex = state.stack[Math.floor(state.stack.length * random)];
         const cardName = cardNames[cardIndex];
         var listener = null;
-        if (cardName == "Ritter") {
+        if (isKnight(cardIndex)) {
             listener = () => postEvent('play-knight', cardIndex);
-        } else if (cardIndex > victoryMaxIndex) {
+        } else if (isVictoryCard(cardIndex)) {
             listener = () => {
                 var cardChoice;
                 if (cardName == "Straßenbau") {

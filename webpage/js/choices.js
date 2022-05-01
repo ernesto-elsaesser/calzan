@@ -1,3 +1,13 @@
+/* 
+* choices.js
+* 
+* A choice object represents a set of actions from which the
+* player can choose at a given time in the game.
+* In the UI, a choice is presented as a list of buttons from
+* which the used has to select one to proceed.
+* Some choices have a 'token' attribute. This indicates
+* that the choice involves selecting a token on the board.
+*/
 
 function createHometownChoice() {
     

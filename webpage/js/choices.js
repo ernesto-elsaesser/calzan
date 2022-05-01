@@ -31,26 +31,18 @@ function createHometownRoadChoice(nodeId) {
 
 function createTurnChoice() {
     
-    const purchases = [
-        [1, 'road', getRoadOptions],
-        [2, 'town', getTownOptions],
-        [3, 'city', getUpgradeOptions],
-        [4, null, () => state.stack],
+    const purchaseChoiceOptions = [
+        null,
+        getRoadOptions(),
+        getTownOptions(),
+        getUpgradeOptions(),
+        getCardOptions(),
     ];
     
-    const affordablePurchases = purchases.filter((p) => hasResources(purchaseCosts[p[0]]));
-    
-    var purchaseOptions = [];
-    var purchaseChoices = {};
-    
-    affordablePurchases.forEach(([i, token, getOptions]) => {
-        const options = getOptions();
-        if (options.length) {
-            purchaseOptions.push(i);
-            if (token) {
-                purchaseChoices[i] = createPurchaseChoice(i, token, options);
-            }
-        }
+    const purchaseOptions = purchaseIndices.filter((i) => {
+        const canAfford = hasResources(purchaseCosts[i]);
+        const hasOptions = purchaseChoiceOptions[i].length > 0;
+        return canAfford && hasOptions;
     });
     
     const swapRates = getSwapRates();
@@ -65,8 +57,10 @@ function createTurnChoice() {
         swapRates,
         tradeOptions,
         selectPurchase: (index) => {
-            const purchaseChoice = purchaseChoices[index];
-            if (purchaseChoice) {
+            const token = {1: 'road', 2: 'town', 3: 'city', 4: null}[index];
+            if (token) {
+                const choiceOptions = purchaseChoiceOptions[index];
+                const purchaseChoice = createPurchaseChoice(index, token, choiceOptions);
                 pushChoice(purchaseChoice);
                 refreshUI();
             } else {

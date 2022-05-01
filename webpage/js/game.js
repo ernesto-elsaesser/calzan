@@ -5,12 +5,6 @@
 * and posts own events based on player actions.
 */
 
-// for shits & giggles
-const capitals = 'BCDEFGHJKLMNPQRSTVWXYZ';
-const idx = Math.trunc(Math.random() * capitals.length);
-document.title = "Die " + capitals[idx] + "eedler von Calzan";
-
-
 function createGame(players, shufflePlayers, shuffleBoard) {
     
     if (shufflePlayers) {
@@ -319,7 +313,7 @@ function purchaseMade(player, args) {
         var listener = null;
         if (isKnight(cardIndex)) {
             listener = () => postEvent('play-knight', cardIndex);
-        } else if (isVictoryCard(cardIndex)) {
+        } else if (!isVictoryCard(cardIndex)) {
             listener = () => {
                 var cardChoice;
                 if (cardName == "Straßenbau") {

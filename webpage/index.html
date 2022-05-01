@@ -128,9 +128,15 @@
                     set(eventRef, event);
                 };
 
-                get(gameRef).then((snap) => {
+                get(gameRef).then((snapshot) => {
 
-                    initState(snap.val(), postFunc, player);
+                    const initData = snapshot.val();
+                    if (initData == null) {
+                        window.alert("Das Spiel '" + game + "' existiert nicht.");
+                        return;
+                    }
+                    
+                    initState(initData, postFunc, player);
                     initUI(game);
                     startGame();
 
@@ -160,6 +166,11 @@
                     });
                 });
             }
+            
+            // for shits & giggles
+            const capitals = 'BCDEFGHJKLMNPQRSTVWXYZ';
+            const idx = Math.trunc(Math.random() * capitals.length);
+            document.title = "Die " + capitals[idx] + "eedler von Calzan";
         </script>
     </body>
 </html>

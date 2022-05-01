@@ -251,6 +251,11 @@ function getAdjacentTowns(tileId) {
 
 // CARDS
 
+function getCardOptions() {
+    
+    return state.stack;
+}
+
 function takeCard(player, cardIndex, listener) {
     
     state.stack = state.stack.filter((i) => i != cardIndex);
